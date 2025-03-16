@@ -1,10 +1,10 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { ClientInformation } from '../client/clientInformation';
-import { ApprovedContent } from '../../components/client/ApprovedContent';
-import { UnderReviewContent } from '../../components/client/UnderReview';
-import { PendingContent } from '../../components/client/PendingContent';
-import { RejectedContent } from '../../components/client/RejectedContent';
+import { ClientInformation } from './studentInformation';
+import { ApprovedContent } from './ConfirmedContent';
+import { UnderReviewContent } from './UnderReview';
+import { PendingContent } from './PendingContent';
+import { RejectedContent } from './RejectedContent';
 
 interface ClientDetailsProps {
   client: {
@@ -29,15 +29,15 @@ interface ClientDetailsProps {
   onClose: () => void;
 }
 
-export function ClientDetailsOverlay({ client, onClose }: ClientDetailsProps) {
+export function StudentDetailsOverlay({ client, onClose }: ClientDetailsProps) {
   const renderStatusSpecificContent = () => {
     switch (client.status) {
       case "approved":
-      case "assigned":
+      case "confirmed":
         return <ApprovedContent client={client} />;
-      case "under_review":
+      case "follow-up":
         return <UnderReviewContent />;
-      case "pending":
+      case "new":
         return <PendingContent />;
       case "rejected":
         return <RejectedContent />;
