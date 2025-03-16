@@ -53,7 +53,7 @@ export interface StepContentProps {
   setFormData: React.Dispatch<React.SetStateAction<StudentFormData>>;
 }
 
-export interface AssignStudentOverlayProps {
+export interface AddStudentOverlayProps {
   supervisorId: string;
   onClose: () => void;
   onAssign: (studentData: StudentFormData) => void;

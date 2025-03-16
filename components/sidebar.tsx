@@ -57,7 +57,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
               { icon: Home, label: "Dashboard", href: "/dashboard" },
               { icon: Users, label: "Supervisors", href: "/supervisors" },
               { icon: GraduationCap, label: "Faculties", href: "/faculties" },
-              { icon: Building2, label: "Departments", href: "/departments" },
+              { icon: Building2, label: "Students", href: "/students" },
               { icon: Book, label: "Academics", href: "/academics" },
               { icon: DollarSign, label: "Finance", href: "/finance" },
               { icon: ClipboardList, label: "Attendance", href: "/attendance" },

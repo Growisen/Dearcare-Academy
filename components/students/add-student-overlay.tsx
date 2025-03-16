@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Input } from '../ui/input';
-import { StudentFormData, StepContentProps, AssignStudentOverlayProps } from '../../types/supervisors.types';
+import { StudentFormData, StepContentProps, AddStudentOverlayProps } from '../../types/supervisors.types';
 
 const calculateAge = (dob: string): number => {
   const [birthDate, today] = [new Date(dob), new Date()];
@@ -602,7 +602,7 @@ const StepContent = {
   )
 };
 
-export function AssignStudentOverlay({ supervisorId, onClose, onAssign }: AssignStudentOverlayProps) {
+export function AddStudentOverlay({ supervisorId, onClose, onAssign }: AddStudentOverlayProps) {
   const [currentSection, setCurrentSection] = useState(0);
   const [formData, setFormData] = useState<StudentFormData>({
     // Initialize with empty values
