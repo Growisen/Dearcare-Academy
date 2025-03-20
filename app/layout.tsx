@@ -1,5 +1,6 @@
 "use client";
 import "./globals.css";
+import { Toaster } from 'react-hot-toast'
 
 export default function RootLayout({
   children,
@@ -8,7 +9,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster 
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+          }}
+        />
+      </body>
     </html>
   );
 }
