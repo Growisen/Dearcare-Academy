@@ -1,3 +1,17 @@
+export interface AcademicInfo {
+  institution: string;
+  year: string;
+  grade: string;
+  qualification?: string;
+}
+
+export interface AcademicsData {
+  sslc: AcademicInfo;
+  hsc: AcademicInfo;
+  gda: AcademicInfo;
+  others: AcademicInfo;
+}
+
 export interface StudentFormData {
   fullName: string;
   dateOfBirth: string;
@@ -18,12 +32,7 @@ export interface StudentFormData {
   currentPinCode: string;
   permanentAddress: string;
   permanentPinCode: string;
-  academics: {
-    sslc: { institution: string; year: string; grade: string };
-    hsc: { institution: string; year: string; grade: string };
-    gda: { institution: string; year: string; grade: string };
-    others: { qualification: string; institution: string; year: string; grade: string };
-  };
+  academics: AcademicsData;
   organization: string;
   role: string;
   duration: string;

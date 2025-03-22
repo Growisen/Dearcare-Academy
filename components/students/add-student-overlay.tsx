@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Input } from '../ui/input';
 import { StudentFormData, StepContentProps, AddStudentOverlayProps } from '../../types/supervisors.types';
+import { insertStudentData } from '../../supabase/db';
+import { toast } from 'react-hot-toast';
 
 const calculateAge = (dob: string): number => {
   const [birthDate, today] = [new Date(dob), new Date()];
@@ -625,6 +627,29 @@ export function AddStudentOverlay({ supervisorId, onClose, onAssign }: AddStuden
     sourceSubCategory: '', servicePreferences: {}
   });
 
+  const resetForm = () => {
+    setFormData({
+      fullName: '', dateOfBirth: '', age: '', gender: '', maritalStatus: '',
+      nationality: '', state: '', city: '', taluk: '', motherTongue: '',
+      knownLanguages: '', religion: '', category: '', email: '', mobileNumber: '',
+      currentAddress: '', currentPinCode: '',
+      permanentAddress: '', permanentPinCode: '',
+      academics: {
+        sslc: { institution: '', year: '', grade: '' },
+        hsc: { institution: '', year: '', grade: '' },
+        gda: { institution: '', year: '', grade: '' },
+        others: { qualification: '', institution: '', year: '', grade: '' }
+      },
+      organization: '', role: '', duration: '', responsibilities: '',
+      guardianName: '', guardianRelation: '', guardianContact: '', guardianAddress: '',
+      guardianAadhar: '', healthStatus: '', disability: '', photo: null,
+      documents: null, nocStatus: '', nocCertificate: null, sourceOfInformation: '',
+      assigningAgent: '', priority: '', status: '', sourceCategory: '',
+      sourceSubCategory: '', servicePreferences: {}
+    });
+    setCurrentSection(0);
+  };
+
   const handleNext = async () => {
     if (currentSection === FORM_CONFIG.steps.length - 1) {
       try {
@@ -632,13 +657,24 @@ export function AddStudentOverlay({ supervisorId, onClose, onAssign }: AddStuden
         if (!isValid) {
           return;
         }
-        onAssign(formData);
-                onClose();
+        
+        const { studentId, error } = await insertStudentData(formData);
+        
+        if (error) {
+          toast.error('Error submitting form: ' + error.message);
+          return;
+        }
+
+        toast.success('Student added successfully!', {
+          duration: 3000,
+          onClose: () => {
+            resetForm();
+            onAssign(formData);
+            onClose();
+          }
+        });
       } catch (error) {
-        console.error('Error submitting form:', error);
-      } finally {
-        // Reset loading state if needed
-        // setIsSubmitting(false);
+        toast.error('Error submitting form: ' + error.message);
       }
     } else {
       setCurrentSection(Math.min(FORM_CONFIG.steps.length - 1, currentSection + 1));
