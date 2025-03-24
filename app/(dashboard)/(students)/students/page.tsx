@@ -106,9 +106,10 @@ export default function StudentsPage() {
       .join(' ');
   };
 
-  const handleAssignStudent = (formData: any) => {
+  const handleAssignStudent = (formData: StudentFormData) => {
     // Handle the form data here
     console.log("New student data:", formData);
+    fetchStudents(); // Refresh the students list after adding new student
   };
 
   return (
