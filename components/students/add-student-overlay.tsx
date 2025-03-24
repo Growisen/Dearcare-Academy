@@ -94,8 +94,12 @@ const FormField = ({ label, children }: { label: string, children: React.ReactNo
   </div>
 );
 
+interface FormFieldInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+}
+
 const Fields = {
-  Input: ({ label, ...props }: { label: string; [key: string]: any }) => (
+  Input: ({ label, ...props }: FormFieldInputProps) => (
     <FormField label={label}>
       <Input {...props} className={FORM_CONFIG.styles.input} />
     </FormField>

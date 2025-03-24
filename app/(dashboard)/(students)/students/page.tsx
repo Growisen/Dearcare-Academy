@@ -94,6 +94,18 @@ export default function StudentsPage() {
     return matchesStatus && matchesSearch;
   });
 
+  const getPreferredCourse = (preferences: Record<string, string> = {}) => {
+    const interestedService = Object.entries(preferences)
+      .find(([, interest]) => interest === 'Interested')?.[0];
+      
+    if (!interestedService) return 'Not specified';
+    
+    return interestedService
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   const handleAssignStudent = (formData: any) => {
     // Handle the form data here
     console.log("New student data:", formData);
@@ -174,11 +186,7 @@ export default function StudentsPage() {
                   {filteredStudents.map((student) => {
                     const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
                     const StatusIcon = statusIcons[status as keyof typeof statusIcons];
-                    const preferredCourse = Object.entries(student.student_preferences?.[0] || {})
-                      .find(([_, value]) => value === 'Interested')?.[0]
-                      ?.split('_')
-                      ?.map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                      ?.join(' ') || 'Not specified';
+                    const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
 
                     return (
                       <tr key={student.id} className="hover:bg-gray-50/50">
@@ -232,11 +240,7 @@ export default function StudentsPage() {
             {filteredStudents.map((student) => {
               const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
               const StatusIcon = statusIcons[status as keyof typeof statusIcons];
-              const preferredCourse = Object.entries(student.student_preferences?.[0] || {})
-                .find(([_, value]) => value === 'Interested')?.[0]
-                ?.split('_')
-                ?.map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                ?.join(' ') || 'Not specified';
+              const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
 
               return (
                 <div key={student.id} className="p-4 space-y-3">
