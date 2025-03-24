@@ -217,10 +217,10 @@ const FilterSelect = ({ value, onChange, options, className }: { value: string, 
 )
 
 export default function NursesPage() {
-  const [selectedLocation, setSelectedLocation] = useState<string>("all")
-  const [selectedStatus, setSelectedStatus] = useState<string>("all")
-  const [selectedExperience, setSelectedExperience] = useState<string>("all")
-  const [selectedRating, setSelectedRating] = useState<string>("all")
+  const [selectedLocation] = useState<string>("all")
+  const [selectedStatus] = useState<string>("all")
+  const [selectedExperience] = useState<string>("all")
+  const [selectedRating] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedNurse, setSelectedNurse] = useState<Nurse | null>(null)
   const [showAddNurse, setShowAddNurse] = useState(false)
