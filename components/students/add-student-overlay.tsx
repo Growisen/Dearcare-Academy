@@ -1,13 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { X } from 'lucide-react';
 import { Input } from '../ui/input';
 import { StudentFormData, StepContentProps, AddStudentOverlayProps } from '../../types/supervisors.types';
 import { insertStudentData } from '../../supabase/db';
 import { toast } from 'react-hot-toast';
 
+interface FormChangeEvent extends ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> {
+  target: { value: string };
+}
+
+interface SelectProps {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (e: FormChangeEvent) => void;
+  [key: string]: unknown;
+}
+
 const calculateAge = (dob: string): number => {
   const [birthDate, today] = [new Date(dob), new Date()];
-  let age = today.getFullYear() - birthDate.getFullYear();
+  const age = today.getFullYear() - birthDate.getFullYear();
   return today.getMonth() < birthDate.getMonth() || 
          (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) 
          ? age - 1 : age;
@@ -98,6 +110,15 @@ interface FormFieldInputProps extends React.InputHTMLAttributes<HTMLInputElement
   label: string;
 }
 
+interface TextAreaProps {
+  label: string;
+  value?: string;
+  placeholder?: string;
+  rows?: number;
+  onChange?: (e: FormChangeEvent) => void;
+  className?: string;
+}
+
 const Fields = {
   Input: ({ label, ...props }: FormFieldInputProps) => (
     <FormField label={label}>
@@ -105,7 +126,7 @@ const Fields = {
     </FormField>
   ),
 
-  Select: ({ label, options, ...props }: { label: string; options: string[]; [key: string]: any }) => (
+  Select: ({ label, options, ...props }: SelectProps) => (
     <FormField label={label}>
       <select className={FORM_CONFIG.styles.input} {...props}>
         <option value="">Select {label.toLowerCase()}</option>
@@ -116,7 +137,7 @@ const Fields = {
     </FormField>
   ),
 
-  TextArea: ({ label, ...props }: { label: string; [key: string]: any }) => (
+  TextArea: ({ label, ...props }: TextAreaProps) => (
     <FormField label={label}>
       <textarea {...props} className={FORM_CONFIG.styles.input} rows={3} />
     </FormField>
@@ -156,9 +177,13 @@ const Fields = {
   }
 };
 
+const handleFormChange = (field: keyof StudentFormData, setFormData: React.Dispatch<React.SetStateAction<StudentFormData>>) => (e: FormChangeEvent) => {
+  setFormData(prev => ({ ...prev, [field]: e.target.value }));
+};
+
 const StepContent = {
   Personal: ({ formData, setFormData }: StepContentProps) => {
-    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleDateChange = (e: FormChangeEvent) => {
       const dob = e.target.value;
       if (dob) {
         const calculatedAge = calculateAge(dob);
@@ -186,7 +211,7 @@ const StepContent = {
           label="Full Name" 
           placeholder="Enter full name"
           value={formData.fullName}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, fullName: e.target.value })}
+          onChange={handleFormChange('fullName', setFormData)}
         />
         <Fields.Input 
           label="Date of Birth" 
@@ -204,43 +229,43 @@ const StepContent = {
           label="Gender" 
           options={FORM_CONFIG.options.gender}
           value={formData.gender}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, gender: e.target.value })}
+          onChange={handleFormChange('gender', setFormData)}
         />
         <Fields.Select 
           label="Marital Status" 
           options={FORM_CONFIG.options.maritalStatus}
           value={formData.maritalStatus}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, maritalStatus: e.target.value })}
+          onChange={handleFormChange('maritalStatus', setFormData)}
         />
         <Fields.Input 
           label="Nationality" 
           placeholder="Enter nationality"
           value={formData.nationality}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, nationality: e.target.value })}
+          onChange={handleFormChange('nationality', setFormData)}
         />
         <Fields.Input 
           label="State" 
           placeholder="Enter state"
           value={formData.state}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, state: e.target.value })}
+          onChange={handleFormChange('state', setFormData)}
         />
         <Fields.Input 
           label="City" 
           placeholder="Enter city"
           value={formData.city}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, city: e.target.value })}
+          onChange={handleFormChange('city', setFormData)}
         />
         <Fields.Input 
           label="Taluk" 
           placeholder="Enter taluk"
           value={formData.taluk}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, taluk: e.target.value })}
+          onChange={handleFormChange('taluk', setFormData)}
         />
         <Fields.Select
           label="Mother Tongue"
           options={FORM_CONFIG.options.motherTongue}
           value={formData.motherTongue}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, motherTongue: e.target.value })}
+          onChange={handleFormChange('motherTongue', setFormData)}
         />
         <div>
           <label className={FORM_CONFIG.styles.label}>Known Languages</label>
@@ -264,13 +289,13 @@ const StepContent = {
           label="Religion" 
           placeholder="Enter religion"
           value={formData.religion}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, religion: e.target.value })}
+          onChange={handleFormChange('religion', setFormData)}
         />
         <Fields.Select 
           label="Category" 
           options={FORM_CONFIG.options.category}
           value={formData.category}
-          onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, category: e.target.value })}
+          onChange={handleFormChange('category', setFormData)}
         />
       </div>
     );
@@ -304,14 +329,14 @@ const StepContent = {
               type="email" 
               placeholder="Enter email address"
               value={formData.email}
-              onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, email: e.target.value })}
+              onChange={handleFormChange('email', setFormData)}
             />
             <Fields.Input 
               label="Mobile Number" 
               type="tel" 
               placeholder="Enter mobile number"
               value={formData.mobileNumber}
-              onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, mobileNumber: e.target.value })}
+              onChange={handleFormChange('mobileNumber', setFormData)}
             />
           </div>
         </div>
@@ -323,18 +348,14 @@ const StepContent = {
             label="Address" 
             placeholder="Enter current address"
             value={formData.currentAddress}
-            onChange={(e: { target: { value: any; }; }) => {
-              setFormData({ ...formData, currentAddress: e.target.value });
-            }}
+            onChange={handleFormChange('currentAddress', setFormData)}
           />
           <div className={FORM_CONFIG.styles.layout}>
             <Fields.Input 
               label="PIN Code" 
               placeholder="Enter PIN code"
               value={formData.currentPinCode}
-              onChange={(e: { target: { value: any; }; }) => {
-                setFormData({ ...formData, currentPinCode: e.target.value });
-              }}
+              onChange={handleFormChange('currentPinCode', setFormData)}
             />
           </div>
         </div>
@@ -356,14 +377,14 @@ const StepContent = {
             label="Address" 
             placeholder="Enter permanent address"
             value={formData.permanentAddress}
-            onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, permanentAddress: e.target.value })}
+            onChange={handleFormChange('permanentAddress', setFormData)}
           />
           <div className={FORM_CONFIG.styles.layout}>
             <Fields.Input 
               label="PIN Code" 
               placeholder="Enter PIN code"
               value={formData.permanentPinCode}
-              onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, permanentPinCode: e.target.value })}
+              onChange={handleFormChange('permanentPinCode', setFormData)}
             />
           </div>
         </div>
@@ -472,25 +493,25 @@ const StepContent = {
         label="Organization Name" 
         placeholder="Enter organization name"
         value={formData.organization}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, organization: e.target.value })}
+        onChange={handleFormChange('organization', setFormData)}
       />
       <Fields.Input 
         label="Role/Designation" 
         placeholder="Enter role/designation"
         value={formData.role}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, role: e.target.value })}
+        onChange={handleFormChange('role', setFormData)}
       />
       <Fields.Input 
         label="Duration" 
         placeholder="Enter duration"
         value={formData.duration}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, duration: e.target.value })}
+        onChange={handleFormChange('duration', setFormData)}
       />
       <Fields.TextArea 
         label="Responsibilities" 
         placeholder="Enter responsibilities"
         value={formData.responsibilities}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, responsibilities: e.target.value })}
+        onChange={handleFormChange('responsibilities', setFormData)}
       />
     </div>
   ),
@@ -501,32 +522,32 @@ const StepContent = {
         label="Name" 
         placeholder="Enter guardian name"
         value={formData.guardianName}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, guardianName: e.target.value })}
+        onChange={handleFormChange('guardianName', setFormData)}
       />
       <Fields.Input 
         label="Relationship" 
         placeholder="Enter relationship"
         value={formData.guardianRelation}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, guardianRelation: e.target.value })}
+        onChange={handleFormChange('guardianRelation', setFormData)}
       />
       <Fields.Input 
         label="Contact Number" 
         type="tel" 
         placeholder="Enter contact number"
         value={formData.guardianContact}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, guardianContact: e.target.value })}
+        onChange={handleFormChange('guardianContact', setFormData)}
       />
       <Fields.TextArea 
         label="Address" 
         placeholder="Enter guardian address"
         value={formData.guardianAddress}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, guardianAddress: e.target.value })}
+        onChange={handleFormChange('guardianAddress', setFormData)}
       />
       <Fields.Input 
         label="Aadhar Number" 
         placeholder="Enter aadhar number"
         value={formData.guardianAadhar}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, guardianAadhar: e.target.value })}
+        onChange={handleFormChange('guardianAadhar', setFormData)}
       />
     </div>
   ),
@@ -537,13 +558,13 @@ const StepContent = {
         label="Current Health Status" 
         placeholder="Enter current health status"
         value={formData.healthStatus}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, healthStatus: e.target.value })}
+        onChange={handleFormChange('healthStatus', setFormData)}
       />
       <Fields.TextArea 
         label="Disability Details" 
         placeholder="Enter disability details if any"
         value={formData.disability}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, disability: e.target.value })}
+        onChange={handleFormChange('disability', setFormData)}
       />
     </div>
   ),
@@ -554,37 +575,37 @@ const StepContent = {
         label="Source of Information" 
         options={FORM_CONFIG.options.sourceOfInformation}
         value={formData.sourceOfInformation}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, sourceOfInformation: e.target.value })}
+        onChange={handleFormChange('sourceOfInformation', setFormData)}
       />
       <Fields.Input 
         label="Assigning Agent" 
         placeholder="Enter assigning agent"
         value={formData.assigningAgent}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, assigningAgent: e.target.value })}
+        onChange={handleFormChange('assigningAgent', setFormData)}
       />
       <Fields.Select 
         label="Priority" 
         options={FORM_CONFIG.options.priority}
         value={formData.priority}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, priority: e.target.value })}
+        onChange={handleFormChange('priority', setFormData)}
       />
       <Fields.Select 
         label="Status" 
         options={FORM_CONFIG.options.status}
         value={formData.status}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, status: e.target.value })}
+        onChange={handleFormChange('status', setFormData)}
       />
       <Fields.Input 
         label="Category" 
         placeholder="Enter category"
         value={formData.sourceCategory}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, sourceCategory: e.target.value })}
+        onChange={handleFormChange('sourceCategory', setFormData)}
       />
       <Fields.Input 
         label="Sub Category" 
         placeholder="Enter sub category"
         value={formData.sourceSubCategory}
-        onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, sourceSubCategory: e.target.value })}
+        onChange={handleFormChange('sourceSubCategory', setFormData)}
       />
     </div>
   ),
@@ -597,7 +618,7 @@ const StepContent = {
             label={service}
             options={FORM_CONFIG.options.serviceInterest}
             value={formData.servicePreferences[service]}
-            onChange={(e: { target: { value: any; }; }) => setFormData({ 
+            onChange={(e: FormChangeEvent) => setFormData({ 
               ...formData, 
               servicePreferences: { ...formData.servicePreferences, [service]: e.target.value } 
             })}
@@ -608,7 +629,7 @@ const StepContent = {
   )
 };
 
-export function AddStudentOverlay({ supervisorId, onClose, onAssign }: AddStudentOverlayProps) {
+export function AddStudentOverlay({ onClose, onAssign }: AddStudentOverlayProps) {
   const [currentSection, setCurrentSection] = useState(0);
   const [formData, setFormData] = useState<StudentFormData>({
     // Initialize with empty values
@@ -659,10 +680,11 @@ export function AddStudentOverlay({ supervisorId, onClose, onAssign }: AddStuden
       try {
         const isValid = validateFormData(formData);
         if (!isValid) {
+          toast.error('Please fill in all required fields');
           return;
         }
         
-        const { studentId, error } = await insertStudentData(formData);
+        const { error } = await insertStudentData(formData);
         
         if (error) {
           toast.error('Error submitting form: ' + error.message);
@@ -678,7 +700,8 @@ export function AddStudentOverlay({ supervisorId, onClose, onAssign }: AddStuden
           }
         });
       } catch (error) {
-        toast.error('Error submitting form: ' + error.message);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        toast.error('Error submitting form: ' + errorMessage);
       }
     } else {
       setCurrentSection(Math.min(FORM_CONFIG.steps.length - 1, currentSection + 1));
@@ -686,8 +709,8 @@ export function AddStudentOverlay({ supervisorId, onClose, onAssign }: AddStuden
   };
 
   const validateFormData = (data: StudentFormData): boolean => {
-    // Add your validation logic here
-    return true;
+    const required = ['fullName', 'dateOfBirth', 'email', 'mobileNumber'];
+    return required.every(field => Boolean(data[field as keyof StudentFormData]));
   };
 
   const renderStep = () => {
@@ -713,7 +736,7 @@ export function AddStudentOverlay({ supervisorId, onClose, onAssign }: AddStuden
              label="NOC Certificate Status" 
              options={FORM_CONFIG.options.nocStatus}
              value={formData.nocStatus}
-             onChange={(e: { target: { value: any; }; }) => setFormData({ ...formData, nocStatus: e.target.value })}
+             onChange={handleFormChange('nocStatus', setFormData)}
            />
            {formData.nocStatus === 'Yes' && (
              <Fields.File 
