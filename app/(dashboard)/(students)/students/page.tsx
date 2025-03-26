@@ -5,6 +5,7 @@ import { Search, CheckCircle, Clock, User, XCircle } from "lucide-react";
 import { Input } from "../../../../components/ui/input";
 import { AddStudentOverlay } from "../../../../components/students/add-student-overlay";
 import { StudentDetailsOverlay } from "../../../../components/students/student-details-overlay";
+import { StudentFormData } from "../../../../types/supervisors.types";
 
 interface Student {
   id: string;
@@ -237,7 +238,7 @@ export default function StudentsPage() {
                               email: student.email,
                               phone: student.mobile,
                               course: preferredCourse,
-                              status: status,
+                              status: status as "confirmed" | "follow-up" | "new" | "rejected",
                               enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                               location: `${student.city}, ${student.state}`
                             })}
@@ -290,7 +291,7 @@ export default function StudentsPage() {
                       email: student.email,
                       phone: student.mobile,
                       course: preferredCourse,
-                      status: status,
+                      status: status as "confirmed" | "follow-up" | "new" | "rejected",
                       enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                       location: `${student.city}, ${student.state}`
                     })}

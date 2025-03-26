@@ -63,6 +63,7 @@ export interface StepContentProps {
 }
 
 export interface AddStudentOverlayProps {
+  supervisorId: string;
   onClose: () => void;
   onAssign: (studentData: StudentFormData) => void;
 }
