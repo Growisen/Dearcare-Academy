@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import Map from '../map/Map';
+import { Nurse } from '../../types/nurse.types';
+//import Map from '../map/Map';
 
 interface ApprovedContentProps {
   client: {
@@ -20,7 +21,14 @@ const ratingOptions = ['All Ratings', ...[1, 2, 3, 4, 5].map(rating => `<=${rati
 const experienceOptions = ['All Experience', ...Array.from({ length: 11 }, (_, i) => i.toString())];
 const salaryOptions = ['All Salaries', ...[500, 600, 700, 800, 900, 1000].map(String)];
 
-const FilterInput = ({ label, type, value, onChange }: { label: string, type: string, value: any, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+interface FilterInputProps {
+  label: string;
+  type: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const FilterInput = ({ label, type, value, onChange }: FilterInputProps) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
     <input type={type} value={value} onChange={onChange} className="w-full p-2 border rounded-lg" />
@@ -38,7 +46,7 @@ const FilterDropdown = ({ label, options, value, onChange }: { label: string, op
   </div>
 );
 
-const NurseCard = ({ nurse, onRemove, isAssigned = false }: { nurse: any, onRemove: (id: string) => void, isAssigned?: boolean }) => (
+const NurseCard = ({ nurse, onRemove, isAssigned = false }: { nurse: Nurse, onRemove: (id: string) => void, isAssigned?: boolean }) => (
   <div 
     key={nurse._id}
     className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors duration-200"
@@ -77,7 +85,7 @@ export function ApprovedContent({ client }: ApprovedContentProps) {
   const [filters, setFilters] = useState({ experience: 'All Experience', rating: 'All Ratings', salary: 'All Salaries', location: client.location });
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [nurses] = useState([
+  const [nurses] = useState<Nurse[]>([
     {
       _id: "1",
       firstName: "Anjali",
@@ -120,13 +128,14 @@ export function ApprovedContent({ client }: ApprovedContentProps) {
   ]);
 
   const assignedNurse = nurses.find(nurse => nurse._id === client.assignedNurse);
-
+{/*
   const handleAssignNurse = (nurseId: string) => {
     setShowNurseList(false);
     // Here you would typically make an API call to update the assignment
   };
+  */}
 
-  const handleRemoveNurse = (nurseId: string) => {
+  const handleRemoveNurse = () => {
     // Here you would typically make an API call to remove the assignment
   };
 

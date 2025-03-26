@@ -1,13 +1,11 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { X } from 'lucide-react';
 import { Input } from '../ui/input';
-import { StudentFormData, StepContentProps, AddStudentOverlayProps } from '../../types/supervisors.types';
+import { StudentFormData, StepContentProps, AddStudentOverlayProps } from '../../types/student.types';
 import { insertStudentData } from '../../supabase/db';
 import { toast } from 'react-hot-toast';
 
-interface FormChangeEvent extends ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> {
-  target: { value: string };
-}
+type FormChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
 
 interface SelectProps {
   label: string;
@@ -691,14 +689,14 @@ export function AddStudentOverlay({ onClose, onAssign }: AddStudentOverlayProps)
           return;
         }
 
-        toast.success('Student added successfully!', {
-          duration: 3000,
-          onClose: () => {
-            resetForm();
-            onAssign(formData);
-            onClose();
-          }
+        await toast.success('Student added successfully!', {
+          duration: 3000
         });
+        
+        resetForm();
+        onAssign(formData);
+        onClose();
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         toast.error('Error submitting form: ' + errorMessage);

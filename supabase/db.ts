@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { StudentFormData } from '../types/supervisors.types'
-import { StudentInsertData, StudentRecord } from '../types/student.types'
+import {StudentFormData ,StudentInsertData, StudentRecord } from '../types/student.types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -16,7 +15,7 @@ supabase.auth.getSession()
     console.error('DB connection error:', error.message)
   })
 
-const uploadStudentFile = async (studentId: number, file: File, type: 'photo' | 'documents') => {
+const uploadStudentFile = async (studentId: number, file: File, type: 'photo' | 'documents' | 'noc') => {
   // Convert photo to jpg if it's an image
   if (type === 'photo') {
     try {
@@ -32,10 +31,11 @@ const uploadStudentFile = async (studentId: number, file: File, type: 'photo' | 
       if (error) throw error;
       return filePath;
     } catch (error) {
-      throw new Error(`Failed to upload photo: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to upload photo: ${errorMessage}`);
     }
   } else {
-    // Handle other file types as before
+    // Handle other file types (documents and noc)
     const fileExt = file.name.split('.').pop();
     const filePath = `Students/${studentId}/${type}.${fileExt}`;
     

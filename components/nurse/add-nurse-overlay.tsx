@@ -32,7 +32,17 @@ const InputField = ({ label, type = 'text', placeholder }: { label: string, type
   </div>
 );
 
-const Dropdown = ({ label, options, selectedOptions, toggleOption, isOpen, setIsOpen, dropdownRef }: any) => (
+interface DropdownProps {
+  label: string;
+  options: string[];
+  selectedOptions: string[];
+  toggleOption: (option: string) => void;
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  dropdownRef: React.RefObject<HTMLDivElement>;
+}
+
+const Dropdown = ({ label, options, selectedOptions, toggleOption, isOpen, setIsOpen, dropdownRef }: DropdownProps) => (
   <div className="relative" ref={dropdownRef}>
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label}
@@ -81,7 +91,7 @@ export function AddNurseOverlay({ onClose, onAdd }: AddNurseProps) {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const locationDropdownRef = useRef<HTMLDivElement>(null);
+  const locationDropdownRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();

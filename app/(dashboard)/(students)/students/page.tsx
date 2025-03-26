@@ -5,6 +5,7 @@ import { Search, CheckCircle, Clock, User, XCircle } from "lucide-react";
 import { Input } from "../../../../components/ui/input";
 import { AddStudentOverlay } from "../../../../components/students/add-student-overlay";
 import { StudentDetailsOverlay } from "../../../../components/students/student-details-overlay";
+import { StudentFormData } from "../../../../types/student.types";
 
 interface Student {
   id: string;
@@ -24,6 +25,23 @@ interface DatabaseStudent {
   mobile: string;
   created_at: string;
   status?: string;
+  city?: string;
+  state?: string;
+  student_source?: {
+    status: string;
+    priority: string;
+  }[];
+  student_preferences?: {
+    home_care: string;
+    delivery_care: string;
+    old_age_home: string;
+    hospital_care: string;
+    senior_citizen_assist: string;
+    icu_home_care: string;
+    critical_illness_care: string;
+    companionship: string;
+    clinical_assist: string;
+  }[];
 }
 
 export default function StudentsPage() {
@@ -220,7 +238,7 @@ export default function StudentsPage() {
                               email: student.email,
                               phone: student.mobile,
                               course: preferredCourse,
-                              status: status,
+                              status: status as "confirmed" | "follow-up" | "new" | "rejected",
                               enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                               location: `${student.city}, ${student.state}`
                             })}
@@ -273,7 +291,7 @@ export default function StudentsPage() {
                       email: student.email,
                       phone: student.mobile,
                       course: preferredCourse,
-                      status: status,
+                      status: status as "confirmed" | "follow-up" | "new" | "rejected",
                       enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                       location: `${student.city}, ${student.state}`
                     })}
