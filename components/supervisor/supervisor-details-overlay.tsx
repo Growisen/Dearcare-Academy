@@ -3,16 +3,16 @@ import { X, UserPlus, Check } from 'lucide-react';
 import { SupervisorDetailsProps } from '../../types/supervisors.types';
 
 type SupervisorType = SupervisorDetailsProps['supervisor'];
-const SUPERVISOR_FIELDS = [
+const SUPERVISOR_FIELDS: Array<[string, ((s: SupervisorType) => string) | keyof SupervisorType]> = [
   ['Name', 'name'],
   ['Email', 'email'],
   ['Phone', 'phone'],
   ['Department', 'department'],
   ['Join Date', 'joinDate'],
   ['Status', (s: SupervisorType) => s.status.replace('_', ' ')]
-] as const;
+];
 
-const InfoField = ({ label, value }: { label: string; value: string }) => (
+const InfoField = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="space-y-1.5">
     <label className="block text-sm font-medium text-gray-700">{label}</label>
     <div className="w-full rounded-lg border border-gray-200 py-2 px-3 text-sm text-gray-900 bg-gray-50">
@@ -118,7 +118,9 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
                 <InfoField 
                   key={label} 
                   label={label} 
-                  value={typeof key === 'function' ? key(supervisor) : supervisor[key as keyof typeof supervisor]} 
+                  value={typeof key === 'function' 
+                    ? key(supervisor) 
+                    : String(supervisor[key])} 
                 />
               ))}
             </div>

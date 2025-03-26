@@ -91,7 +91,7 @@ export function AddNurseOverlay({ onClose, onAdd }: AddNurseProps) {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const locationDropdownRef = useRef<HTMLDivElement>(null);
+  const locationDropdownRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
