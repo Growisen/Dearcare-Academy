@@ -24,6 +24,23 @@ interface DatabaseStudent {
   mobile: string;
   created_at: string;
   status?: string;
+  city?: string;
+  state?: string;
+  student_source?: {
+    status: string;
+    priority: string;
+  }[];
+  student_preferences?: {
+    home_care: string;
+    delivery_care: string;
+    old_age_home: string;
+    hospital_care: string;
+    senior_citizen_assist: string;
+    icu_home_care: string;
+    critical_illness_care: string;
+    companionship: string;
+    clinical_assist: string;
+  }[];
 }
 
 export default function StudentsPage() {
