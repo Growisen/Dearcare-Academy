@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { X, UserPlus, Check } from 'lucide-react';
 import { SupervisorDetailsProps } from '../../types/supervisors.types';
 
+type SupervisorType = SupervisorDetailsProps['supervisor'];
 const SUPERVISOR_FIELDS = [
   ['Name', 'name'],
   ['Email', 'email'],
   ['Phone', 'phone'],
   ['Department', 'department'],
   ['Join Date', 'joinDate'],
-  ['Status', (s: any) => s.status.replace('_', ' ')]
+  ['Status', (s: SupervisorType) => s.status.replace('_', ' ')]
 ] as const;
 
 const InfoField = ({ label, value }: { label: string; value: string }) => (

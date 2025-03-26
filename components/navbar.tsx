@@ -1,6 +1,6 @@
 "use client"
-import { Bell, Search, User, Menu, BarChart2, HelpCircle } from "lucide-react"
-import Image from "next/image"
+import { Bell, Search, User, Menu} from "lucide-react"
+//import Image from "next/image"
 import { Input } from "./ui/input"
 
 export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {

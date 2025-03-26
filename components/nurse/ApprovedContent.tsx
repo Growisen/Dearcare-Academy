@@ -95,7 +95,7 @@ export function ApprovedContent({ nurse }: ApprovedContentProps) {
         
         {nurse.reviews && nurse.reviews.length > 0 ? (
           <div className="space-y-6">
-            {nurse.reviews.map((review, index) => (
+            {nurse.reviews.map((review) => (
               <div 
                 key={review.id}
                 className="p-5 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors duration-200"
