@@ -5,7 +5,7 @@ import { Search, CheckCircle, Clock, User, XCircle } from "lucide-react";
 import { Input } from "../../../../components/ui/input";
 import { AddStudentOverlay } from "../../../../components/students/add-student-overlay";
 import { StudentDetailsOverlay } from "../../../../components/students/student-details-overlay";
-import { StudentFormData } from "../../../../types/supervisors.types";
+import { StudentFormData } from "../../../../types/student.types";
 
 interface Student {
   id: string;
