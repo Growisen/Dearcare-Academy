@@ -76,6 +76,18 @@ export default function StudentsPage() {
         router.push('/signin');
         return;
       }
+
+      const { data: userRole } = await supabase
+        .from('academy_roles')
+        .select('role')
+        .eq('uid', session.user.id)
+        .single();
+
+      if (!userRole || userRole.role !== 'admin') {
+        router.push('/signin');
+        return;
+      }
+
       setAuthChecked(true);
       fetchStudents();
     };
