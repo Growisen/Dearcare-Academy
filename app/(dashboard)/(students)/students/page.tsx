@@ -1,52 +1,20 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "../../../../supabase/db";
+import { supabase } from "../../../lib/supabase";
+import { useRouter } from "next/navigation";
 import { Search, CheckCircle, Clock, User, XCircle } from "lucide-react";
 import { Input } from "../../../../components/ui/input";
 import { AddStudentOverlay } from "../../../../components/students/add-student-overlay";
 import { StudentDetailsOverlay } from "../../../../components/students/student-details-overlay";
-import { StudentFormData } from "../../../../types/student.types";
+import { StudentFormData,DatabaseStudent,Student } from "../../../../types/student.types";
 
-interface Student {
-  id: string;
-  fullName: string;
-  course: string;
-  status: "confirmed" | "follow-up" | "new" | "rejected";
-  email: string;
-  phone: string;
-  enrollmentDate: string;
-  location: string;
-}
 
-interface DatabaseStudent {
-  id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  created_at: string;
-  status?: string;
-  city?: string;
-  state?: string;
-  student_source?: {
-    status: string;
-    priority: string;
-  }[];
-  student_preferences?: {
-    home_care: string;
-    delivery_care: string;
-    old_age_home: string;
-    hospital_care: string;
-    senior_citizen_assist: string;
-    icu_home_care: string;
-    critical_illness_care: string;
-    companionship: string;
-    clinical_assist: string;
-  }[];
-}
 
 export default function StudentsPage() {
+  const router = useRouter();
   const [students, setStudents] = useState<DatabaseStudent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAssignOverlay, setShowAssignOverlay] = useState(false);
@@ -67,8 +35,30 @@ export default function StudentsPage() {
   };
 
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/signin');
+        return;
+      }
+
+      const { data: userRole } = await supabase
+        .from('academy_roles')
+        .select('role')
+        .eq('uid', session.user.id)
+        .single();
+
+      if (!userRole || userRole.role !== 'admin') {
+        router.push('/signin');
+        return;
+      }
+
+      setAuthChecked(true);
+      fetchStudents();
+    };
+    
+    checkAuth();
+  }, [router]);
 
   const fetchStudents = async () => {
     try {
@@ -131,203 +121,209 @@ export default function StudentsPage() {
   };
 
   return (
-    <div>
-      <div className="space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Students
-          </h1>
-          <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            onClick={() => setShowAssignOverlay(true)}
-          >
-            Add Student
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search students..."
-              className="pl-10 w-full bg-white text-base text-gray-900 placeholder:text-gray-500 border-gray-200"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2">
-            {["all", "confirmed", "follow-up", "new", "rejected"].map(
-              (status) => (
-                <button
-                  key={status}
-                  onClick={() => setSelectedStatus(status)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    selectedStatus === status
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </button>
-              )
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-          {loading ? (
-            <div className="p-8 text-center text-gray-500">Loading students...</div>
-          ) : filteredStudents.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No students found</div>
-          ) : (
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr className="text-left">
-                    <th className="py-4 px-6 font-semibold text-gray-700">
-                      Full Name
-                    </th>
-                    <th className="py-4 px-6 font-semibold text-gray-700">
-                      Course
-                    </th>
-                    <th className="py-4 px-6 font-semibold text-gray-700">
-                      Status
-                    </th>
-                    <th className="py-4 px-6 font-semibold text-gray-700">
-                      Contact
-                    </th>
-                    <th className="py-4 px-6 font-semibold text-gray-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredStudents.map((student) => {
-                    const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
-                    const StatusIcon = statusIcons[status as keyof typeof statusIcons];
-                    const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
-
-                    return (
-                      <tr key={student.id} className="hover:bg-gray-50/50">
-                        <td className="py-4 px-6 text-gray-900 font-medium">
-                          {student.name}
-                        </td>
-                        <td className="py-4 px-6 text-gray-700">
-                          {preferredCourse}
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
-                            statusColors[status as keyof typeof statusColors]
-                          }`}>
-                            <StatusIcon className="w-3.5 h-3.5" />
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div>
-                            <div className="text-gray-900">{student.email}</div>
-                            <div className="text-gray-600">{student.mobile}</div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <button
-                            className="px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                            onClick={() => setSelectedStudent({
-                              id: student.id,
-                              fullName: student.name,
-                              email: student.email,
-                              phone: student.mobile,
-                              course: preferredCourse,
-                              status: status as "confirmed" | "follow-up" | "new" | "rejected",
-                              enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
-                              location: `${student.city}, ${student.state}`
-                            })}
-                          >
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+    <>
+      {!authChecked ? (
+        <div className="p-8 text-center text-gray-500">Loading...</div>
+      ) : (
+        <div>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                Students
+              </h1>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => setShowAssignOverlay(true)}
+              >
+                Add Student
+              </button>
             </div>
-          )}
 
-          {/* Mobile view */}
-          <div className="sm:hidden divide-y divide-gray-200">
-            {filteredStudents.map((student) => {
-              const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
-              const StatusIcon = statusIcons[status as keyof typeof statusIcons];
-              const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
-
-              return (
-                <div key={student.id} className="p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">
-                        {student.name}
-                      </h3>
-                      <p className="text-sm text-gray-600">{preferredCourse}</p>
-                    </div>
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
-                        statusColors[status as keyof typeof statusColors]
+            <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search students..."
+                  className="pl-10 w-full bg-white text-base text-gray-900 placeholder:text-gray-500 border-gray-200"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                {["all", "confirmed", "follow-up", "new", "rejected"].map(
+                  (status) => (
+                    <button
+                      key={status}
+                      onClick={() => setSelectedStatus(status)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        selectedStatus === status
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
-                      <StatusIcon className="w-3.5 h-3.5" />
                       {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </span>
-                  </div>
-                  <div className="text-sm">
-                    <p className="text-gray-900">{student.email}</p>
-                    <p className="text-gray-600">{student.mobile}</p>
-                  </div>
-                  <button
-                    className="w-full mt-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                    onClick={() => setSelectedStudent({
-                      id: student.id,
-                      fullName: student.name,
-                      email: student.email,
-                      phone: student.mobile,
-                      course: preferredCourse,
-                      status: status as "confirmed" | "follow-up" | "new" | "rejected",
-                      enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
-                      location: `${student.city}, ${student.state}`
-                    })}
-                  >
-                    View Details
-                  </button>
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+              {loading ? (
+                <div className="p-8 text-center text-gray-500">Loading students...</div>
+              ) : filteredStudents.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">No students found</div>
+              ) : (
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr className="text-left">
+                        <th className="py-4 px-6 font-semibold text-gray-700">
+                          Full Name
+                        </th>
+                        <th className="py-4 px-6 font-semibold text-gray-700">
+                          Course
+                        </th>
+                        <th className="py-4 px-6 font-semibold text-gray-700">
+                          Status
+                        </th>
+                        <th className="py-4 px-6 font-semibold text-gray-700">
+                          Contact
+                        </th>
+                        <th className="py-4 px-6 font-semibold text-gray-700">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredStudents.map((student) => {
+                        const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
+                        const StatusIcon = statusIcons[status as keyof typeof statusIcons];
+                        const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
+
+                        return (
+                          <tr key={student.id} className="hover:bg-gray-50/50">
+                            <td className="py-4 px-6 text-gray-900 font-medium">
+                              {student.name}
+                            </td>
+                            <td className="py-4 px-6 text-gray-700">
+                              {preferredCourse}
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
+                                statusColors[status as keyof typeof statusColors]
+                              }`}>
+                                <StatusIcon className="w-3.5 h-3.5" />
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              <div>
+                                <div className="text-gray-900">{student.email}</div>
+                                <div className="text-gray-600">{student.mobile}</div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <button
+                                className="px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                                onClick={() => setSelectedStudent({
+                                  id: student.id,
+                                  fullName: student.name,
+                                  email: student.email,
+                                  phone: student.mobile,
+                                  course: preferredCourse,
+                                  status: status as "confirmed" | "follow-up" | "new" | "rejected",
+                                  enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
+                                  location: `${student.city}, ${student.state}`
+                                })}
+                              >
+                                View Details
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              );
-            })}
+              )}
+
+              {/* Mobile view */}
+              <div className="sm:hidden divide-y divide-gray-200">
+                {filteredStudents.map((student) => {
+                  const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
+                  const StatusIcon = statusIcons[status as keyof typeof statusIcons];
+                  const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
+
+                  return (
+                    <div key={student.id} className="p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium text-gray-900">
+                            {student.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">{preferredCourse}</p>
+                        </div>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
+                            statusColors[status as keyof typeof statusColors]
+                          }`}
+                        >
+                          <StatusIcon className="w-3.5 h-3.5" />
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        <p className="text-gray-900">{student.email}</p>
+                        <p className="text-gray-600">{student.mobile}</p>
+                      </div>
+                      <button
+                        className="w-full mt-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                        onClick={() => setSelectedStudent({
+                          id: student.id,
+                          fullName: student.name,
+                          email: student.email,
+                          phone: student.mobile,
+                          course: preferredCourse,
+                          status: status as "confirmed" | "follow-up" | "new" | "rejected",
+                          enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
+                          location: `${student.city}, ${student.state}`
+                        })}
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
+
+          {showAssignOverlay && (
+            <AddStudentOverlay
+              supervisorId="1" // Pass actual supervisor ID if needed
+              onClose={() => setShowAssignOverlay(false)}
+              onAssign={handleAssignStudent}
+            />
+          )}
+
+          {selectedStudent && (
+            <StudentDetailsOverlay
+              client={{
+                id: selectedStudent.id,
+                name: selectedStudent.fullName,
+                email: selectedStudent.email,
+                phone: selectedStudent.phone,
+                service: selectedStudent.course,
+                requestDate: selectedStudent.enrollmentDate,
+                status: selectedStudent.status,
+                location: selectedStudent.location,
+              }}
+              onClose={() => setSelectedStudent(null)}
+            />
+          )}
         </div>
-      </div>
-
-      {showAssignOverlay && (
-        <AddStudentOverlay
-          supervisorId="1" // Pass actual supervisor ID if needed
-          onClose={() => setShowAssignOverlay(false)}
-          onAssign={handleAssignStudent}
-        />
       )}
-
-      {selectedStudent && (
-        <StudentDetailsOverlay
-          client={{
-            id: selectedStudent.id,
-            name: selectedStudent.fullName,
-            email: selectedStudent.email,
-            phone: selectedStudent.phone,
-            service: selectedStudent.course,
-            requestDate: selectedStudent.enrollmentDate,
-            status: selectedStudent.status,
-            location: selectedStudent.location,
-          }}
-          onClose={() => setSelectedStudent(null)}
-        />
-      )}
-    </div>
+    </>
   );
 }

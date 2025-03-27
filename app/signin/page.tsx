@@ -5,15 +5,39 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Lock, Mail, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { supabase } from "../lib/supabase";
 
 const LoginPage = () => {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSignIn = (e: React.FormEvent) => {
-    console.log("helloo");
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push('/dashboard');
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      if (err instanceof Error || (typeof err === 'object' && err && 'message' in err)) {
+        setError((err as { message: string }).message);
+      } else {
+        setError('An unexpected error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,37 +61,56 @@ const LoginPage = () => {
           </motion.div>
 
           <form onSubmit={handleSignIn} className="space-y-5">
-            {[{ Icon: Mail, type: "email", placeholder: "Email Address" },
-              { Icon: Lock, type: showPassword ? "text" : "password", placeholder: "Password" },
-            ].map(({ Icon, type, placeholder }, i) => (
-              <motion.div key={i} initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 + i * 0.1, type: "spring" }}>
-                <div className="relative group">
-                  <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-dCblue/70 group-focus-within:text-dCorange transition-colors" />
-                  <input
-                    type={type}
-                    required
-                    placeholder={placeholder}
-                    className="w-full pl-12 pr-3 py-2 rounded-lg border border-dCblue/30 focus:border-dCorange focus:ring-2 focus:ring-dCorange/30 transition duration-300 text-dCblack text-sm"
-                  />
-                  {placeholder === "Password" && (
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-dCblue/70 hover:text-dCorange transition-colors text-sm"
-                    >
-                      {showPassword ? "Hide" : "Show"}
-                    </button>
-                  )}
-                </div>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="p-3 text-sm text-red-500 bg-red-50 rounded-lg"
+              >
+                {error}
               </motion.div>
-            ))}
+            )}
+            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3, type: "spring" }}>
+              <div className="relative group">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-dCblue/70 group-focus-within:text-dCorange transition-colors" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email Address"
+                  className="w-full pl-12 pr-3 py-2 rounded-lg border border-dCblue/30 focus:border-dCorange focus:ring-2 focus:ring-dCorange/30 transition duration-300 text-dCblack text-sm"
+                />
+              </div>
+            </motion.div>
+            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4, type: "spring" }}>
+              <div className="relative group">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-dCblue/70 group-focus-within:text-dCorange transition-colors" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full pl-12 pr-3 py-2 rounded-lg border border-dCblue/30 focus:border-dCorange focus:ring-2 focus:ring-dCorange/30 transition duration-300 text-dCblack text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-dCblue/70 hover:text-dCorange transition-colors text-sm"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+            </motion.div>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="submit"
-              className="w-full py-2 bg-dCblue text-white rounded-lg hover:bg-dCorange group transition duration-300 flex items-center justify-center text-sm"
+              disabled={loading}
+              className="w-full py-2 bg-dCblue text-white rounded-lg hover:bg-dCorange group transition duration-300 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {loading ? "Signing in..." : "Sign In"}
               <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" />
             </motion.button>
           </form>

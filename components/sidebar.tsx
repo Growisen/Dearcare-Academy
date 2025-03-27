@@ -1,17 +1,19 @@
 "use client"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
+import { usePathname, useRouter } from "next/navigation"
+//import { signOut } from "next-auth/react"
 import { 
   Users, Book, Settings, ClipboardList, 
   Home, LogOut, ArrowLeftCircle, GraduationCap, DollarSign,
   Building2
 } from "lucide-react"
 import { useEffect } from "react"
+import { supabase } from "../app/lib/supabase"
 
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
     if (isOpen) {
@@ -94,7 +96,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
         {/* Logout Button */}
         <div className="p-3 border-t border-slate-700/50">
           <button
-            onClick={() => signOut()}
+            onClick={async () => {
+              await supabase.auth.signOut()
+              router.push('/signin')
+            }}
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 w-full
               text-slate-300 hover:bg-slate-700/50 hover:text-slate-100"
           >
