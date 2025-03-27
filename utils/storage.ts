@@ -1,4 +1,4 @@
-import { supabase } from '../supabase/db';
+import { supabase } from '../app/lib/supabase';
 
 export const getStudentFileUrl = async (studentId: number, fileType: 'photo' | 'documents' | 'noc') => {
   // Can only access specific student folder

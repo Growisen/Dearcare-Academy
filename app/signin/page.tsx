@@ -21,7 +21,7 @@ const LoginPage = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -29,8 +29,12 @@ const LoginPage = () => {
       if (error) throw error;
       
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error || (typeof err === 'object' && err && 'message' in err)) {
+        setError((err as { message: string }).message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }

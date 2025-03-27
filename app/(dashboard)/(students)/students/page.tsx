@@ -6,44 +6,9 @@ import { Search, CheckCircle, Clock, User, XCircle } from "lucide-react";
 import { Input } from "../../../../components/ui/input";
 import { AddStudentOverlay } from "../../../../components/students/add-student-overlay";
 import { StudentDetailsOverlay } from "../../../../components/students/student-details-overlay";
-import { StudentFormData } from "../../../../types/student.types";
+import { StudentFormData,DatabaseStudent,Student } from "../../../../types/student.types";
 
-interface Student {
-  id: string;
-  fullName: string;
-  course: string;
-  status: "confirmed" | "follow-up" | "new" | "rejected";
-  email: string;
-  phone: string;
-  enrollmentDate: string;
-  location: string;
-}
 
-interface DatabaseStudent {
-  id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  created_at: string;
-  status?: string;
-  city?: string;
-  state?: string;
-  student_source?: {
-    status: string;
-    priority: string;
-  }[];
-  student_preferences?: {
-    home_care: string;
-    delivery_care: string;
-    old_age_home: string;
-    hospital_care: string;
-    senior_citizen_assist: string;
-    icu_home_care: string;
-    critical_illness_care: string;
-    companionship: string;
-    clinical_assist: string;
-  }[];
-}
 
 export default function StudentsPage() {
   const router = useRouter();
