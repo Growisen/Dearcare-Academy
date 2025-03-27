@@ -2,7 +2,7 @@ import React, { useState, useEffect, ChangeEvent } from 'react';
 import { X } from 'lucide-react';
 import { Input } from '../ui/input';
 import { StudentFormData, StepContentProps, AddStudentOverlayProps } from '../../types/student.types';
-import { insertStudentData } from '../../supabase/db';
+import { insertStudentData } from '../../app/lib/supabase';
 import { toast } from 'react-hot-toast';
 
 type FormChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;

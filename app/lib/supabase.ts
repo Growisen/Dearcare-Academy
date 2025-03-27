@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
-import {StudentFormData ,StudentInsertData, StudentRecord } from '../types/student.types'
+import {StudentFormData ,StudentInsertData, StudentRecord } from '../../types/student.types'
+
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
 
 // Check connection status
 supabase.auth.getSession()
@@ -13,7 +15,8 @@ supabase.auth.getSession()
   })
   .catch((error) => {
     console.error('DB connection error:', error.message)
-  })
+})
+
 
 const uploadStudentFile = async (studentId: number, file: File, type: 'photo' | 'documents' | 'noc') => {
   // Convert photo to jpg if it's an image
