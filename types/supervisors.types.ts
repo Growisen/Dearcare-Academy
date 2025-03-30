@@ -1,4 +1,3 @@
-
 export interface Faculty {
     id: string;
     name: string;
@@ -16,6 +15,38 @@ export interface SupervisorDetailsProps {
         joinDate: string;
         status: string;
         faculties: Faculty[];
+        assignedStudents: AssignedStudent[];
     };
     onClose: () => void;
+}
+
+export interface DatabaseSupervisor {
+    id: bigint;
+    created_at: string;
+    name: string | null;
+    join_date: string | null;
+    department: string | null;
+    email: string | null;
+    phone_no: string | null;
+}
+
+export interface UnassignedStudent {
+    id: number;
+    name: string;
+    course?: string;
+    email?: string;
+}
+
+export interface SupervisorAssignment {
+    student_id: number;
+    supervisor_id: number;
+}
+
+export interface AssignedStudent {
+    id: number;
+    name: string;
+    email: string;
+    student_source?: {
+        status: string;
+    }[];
 }

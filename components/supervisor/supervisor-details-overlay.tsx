@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Check } from 'lucide-react';
-import { SupervisorDetailsProps } from '../../types/supervisors.types';
+import { SupervisorDetailsProps, UnassignedStudent, AssignedStudent } from '../../types/supervisors.types';
+import { supabase } from '../../app/lib/supabase';
 
 type SupervisorType = SupervisorDetailsProps['supervisor'];
 const SUPERVISOR_FIELDS: Array<[string, ((s: SupervisorType) => string) | keyof SupervisorType]> = [
@@ -21,27 +22,130 @@ const InfoField = ({ label, value }: { label: string; value: React.ReactNode }) 
   </div>
 );
 
-// Add this mock data for available students
-const AVAILABLE_STUDENTS = [
-  { id: '1', name: 'John Doe', course: 'Emergency Care' },
-  { id: '2', name: 'Jane Smith', course: 'Geriatric Care' },
-  { id: '3', name: 'Mike Johnson', course: 'Palliative Care' },
-  { id: '4', name: 'Sarah Williams', course: 'Critical Care' },
-  { id: '5', name: 'Tom Brown', course: 'Home Care' },
-];
-
 export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDetailsProps) {
   const [showAssignList, setShowAssignList] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [unassignedStudents, setUnassignedStudents] = useState<UnassignedStudent[]>([]);
+  const [assignedStudents, setAssignedStudents] = useState<AssignedStudent[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
+  /*
   const allStudents = supervisor.faculties.flatMap(f => 
     f.students.map(name => ({ name, subject: f.subject }))
   );
+*/
+  useEffect(() => {
+    if (showAssignList) {
+      fetchUnassignedStudents();
+    }
+  }, [showAssignList]);
 
-  const handleAssignStudents = () => {
-    // Handle the assignment logic here
-    console.log('Assigning students:', selectedStudents);
-    setShowAssignList(false);
-    setSelectedStudents([]);
+  useEffect(() => {
+    fetchAssignedStudents();
+  }, [supervisor.id]);
+
+  const fetchUnassignedStudents = async () => {
+    setIsLoading(true);
+    try {
+      // First get the subquery as a string of IDs
+      const { data: assignments } = await supabase
+        .from('supervisor_assignment')
+        .select('student_id');
+
+      const assignedIds = assignments?.map(a => a.student_id) || [];
+
+      // Then get all students who aren't in the assigned list
+      const query = supabase
+        .from('students')
+        .select(`
+          id,
+          name,
+          email,
+          student_source!left (
+            status
+          )
+        `)
+        .filter('id', 'not.in', `(${assignedIds.join(',')})`);
+      
+      if (!assignedIds.length) {
+        query.limit(100); // Apply limit only when there are no assigned IDs
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      setUnassignedStudents((data || []).map(student => ({
+        id: student.id,
+        name: student.name || 'Unnamed Student',
+        email: student.email || '',
+        course: student.student_source?.[0]?.status || 'Not specified'
+      })));
+
+    } catch (error) {
+      console.error('Error fetching unassigned students:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchAssignedStudents = async () => {
+    setIsLoadingAssigned(true);
+    try {
+      const { data, error } = await supabase
+        .from('supervisor_assignment')
+        .select(`
+          student_id,
+          students (
+            id,
+            name,
+            email,
+            student_source (
+              status
+            )
+          )
+        `)
+        .eq('supervisor_id', supervisor.id);
+
+      if (error) throw error;
+
+      const students = data?.map(item => item.students).flat() || [];
+      setAssignedStudents(students);
+    } catch (error) {
+      console.error('Error fetching assigned students:', error);
+    } finally {
+      setIsLoadingAssigned(false);
+    }
+  };
+
+  const handleAssignStudents = async () => {
+    try {
+      // Insert supervisor assignments
+      const assignments = selectedStudents.map(studentId => ({
+        student_id: parseInt(studentId),
+        supervisor_id: parseInt(supervisor.id),
+        created_at: new Date().toISOString()
+      }));
+
+      const { error } = await supabase
+        .from('supervisor_assignment')
+        .insert(assignments)
+        .select();
+
+      if (error) throw error;
+
+      // Refresh both lists
+      await Promise.all([
+        fetchUnassignedStudents(),
+        fetchAssignedStudents()
+      ]);
+      
+      setShowAssignList(false);
+      setSelectedStudents([]);
+
+    } catch (error) {
+      console.error('Error assigning students:', error);
+    }
   };
 
   const toggleStudent = (studentId: string) => {
@@ -67,27 +171,39 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
           </div>
 
           <div className="p-6">
-            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-              {AVAILABLE_STUDENTS.map((student) => (
-                <div
-                  key={student.id}
-                  onClick={() => toggleStudent(student.id)}
-                  className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors
-                    ${selectedStudents.includes(student.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-200'
-                    }`}
-                >
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-medium text-gray-900">{student.name}</h3>
-                    <p className="text-xs text-gray-500">{student.course}</p>
+            {isLoading ? (
+              <div className="text-center py-4">Loading students...</div>
+            ) : (
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                {unassignedStudents.map((student) => (
+                  <div
+                    key={student.id}
+                    onClick={() => toggleStudent(student.id.toString())}
+                    className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors
+                      ${selectedStudents.includes(student.id.toString())
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-200'
+                      }`}
+                  >
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-medium text-gray-900">{student.name}</h3>
+                      <p className="text-xs text-gray-500">{student.email || 'No email'}</p>
+                      {student.course && (
+                        <p className="text-xs text-gray-400">{student.course}</p>
+                      )}
+                    </div>
+                    {selectedStudents.includes(student.id.toString()) && (
+                      <Check className="h-5 w-5 text-blue-500" />
+                    )}
                   </div>
-                  {selectedStudents.includes(student.id) && (
-                    <Check className="h-5 w-5 text-blue-500" />
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+                {unassignedStudents.length === 0 && !isLoading && (
+                  <div className="text-center py-4 text-gray-500">
+                    No unassigned students found
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
@@ -129,7 +245,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
               <div className="flex justify-between items-center border-b border-gray-200 pb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Assigned Students</h3>
-                  <p className="text-sm text-gray-500">Total {allStudents.length} students</p>
+                  <p className="text-sm text-gray-500">Total {assignedStudents.length} students</p>
                 </div>
                 <button 
                   onClick={() => setShowAssignList(true)}
@@ -140,17 +256,25 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
               </div>
 
               <div className="grid gap-2 max-h-[40vh] overflow-y-auto pr-2">
-                {allStudents.map(({ name, subject }, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-200 transition-colors">
-                    <div className="space-y-0.5">
-                      <h4 className="text-sm font-medium text-gray-900">{name}</h4>
-                      <p className="text-xs text-gray-500">{subject}</p>
+                {isLoadingAssigned ? (
+                  <div className="text-center py-4">Loading assigned students...</div>
+                ) : assignedStudents.length > 0 ? (
+                  assignedStudents.map((student) => (
+                    <div key={student.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-200 transition-colors">
+                      <div className="space-y-0.5">
+                        <h4 className="text-sm font-medium text-gray-900">{student.name}</h4>
+                        <p className="text-xs text-gray-500">{student.email}</p>
+                      </div>
+                      <span className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100">
+                        {student.student_source?.[0]?.status || 'Active'}
+                      </span>
                     </div>
-                    <span className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                      Active
-                    </span>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    No students assigned yet
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
