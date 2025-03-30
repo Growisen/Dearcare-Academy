@@ -1,8 +1,10 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Eye, CheckCircle, Book } from "lucide-react"
 import { Input } from "../../../../components/ui/input"
 import { SupervisorDetailsOverlay } from "../../../../components/supervisor/supervisor-details-overlay"
+import { supabase } from "../../../lib/supabase"
+import type { DatabaseSupervisor } from "../../../../types/supervisors.types"
 
 interface Faculty {
   id: string
@@ -22,93 +24,39 @@ interface Supervisor {
   faculties: Faculty[]
 }
 
-const mockSupervisors: Supervisor[] = [
-  {
-    id: "1",
-    name: "Dr. Sarah Johnson",
-    joinDate: "2023-06-15",
-    department: "Clinical Nursing",
-    status: "active",
-    email: "sarah.johnson@dearcare.edu",
-    phone: "9847123456",
-    faculties: [
-      {
-        id: "f1",
-        name: "Ms. Emily Parker",
-        subject: "Patient Care Fundamentals",
-        students: ["Anna Smith", "John Davis", "Maria Garcia"]
-      },
-      {
-        id: "f2",
-        name: "Mr. James Wilson",
-        subject: "Geriatric Care",
-        students: ["Michael Brown", "Sarah Miller"]
-      }
-    ]
-  },
-  {
-    id: "2",
-    name: "Dr. Rachel Chen",
-    joinDate: "2023-07-20",
-    department: "Emergency Care",
-    status: "active",
-    email: "rachel.chen@dearcare.edu",
-    phone: "9876543210",
-    faculties: [
-      {
-        id: "f3",
-        name: "Ms. Lisa Thompson",
-        subject: "Emergency Response",
-        students: ["David Wilson", "Emma Taylor"]
-      },
-      {
-        id: "f4",
-        name: "Mr. Robert Martinez",
-        subject: "First Aid & CPR",
-        students: ["Sophie Clark", "Oliver White", "Ava Johnson"]
-      }
-    ]
-  },
-  {
-    id: "3",
-    name: "Dr. Thomas Matthews",
-    joinDate: "2023-05-10",
-    department: "Palliative Care",
-    status: "on_leave",
-    email: "thomas.matthews@dearcare.edu",
-    phone: "9898989898",
-    faculties: [
-      {
-        id: "f5",
-        name: "Ms. Patricia Anderson",
-        subject: "End-of-Life Care",
-        students: ["William Brown", "Isabella Martinez"]
-      }
-    ]
-  },
-  {
-    id: "4",
-    name: "Dr. Maya Patel",
-    joinDate: "2023-08-01",
-    department: "Pediatric Care",
-    status: "active",
-    email: "maya.patel@dearcare.edu",
-    phone: "9745123456",
-    faculties: [
-      {
-        id: "f6",
-        name: "Mr. Daniel Lee",
-        subject: "Child Development & Care",
-        students: ["Lucas Thompson", "Sophia Rodriguez", "Ethan Davis"]
-      }
-    ]
-  }
-]
-
 export default function SupervisorsPage() {
+  const [supervisors, setSupervisors] = useState<Supervisor[]>([])
   const [selectedStatus, setSelectedStatus] = useState<string>("active")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null)
+
+  useEffect(() => {
+    async function fetchSupervisors() {
+      const { data: dbSupervisors, error } = await supabase
+        .from('academy_supervisors')
+        .select('*')
+
+      if (error) {
+        console.error('Error fetching supervisors:', error)
+        return
+      }
+
+      const formattedSupervisors: Supervisor[] = (dbSupervisors as DatabaseSupervisor[]).map(sup => ({
+        id: sup.id.toString(),
+        name: sup.name || '',
+        joinDate: sup.join_date || '',
+        department: sup.department || '',
+        status: 'active', // You might want to add a status column in database
+        email: sup.email || '',
+        phone: sup.phone_no || '',
+        faculties: [] // You'll need another query to get faculties
+      }))
+
+      setSupervisors(formattedSupervisors)
+    }
+
+    fetchSupervisors()
+  }, [])
 
   const statusColors = {
     active: "bg-green-100 text-green-700 border border-green-200",
@@ -122,7 +70,7 @@ export default function SupervisorsPage() {
     inactive: Book
   }
 
-  const filteredSupervisors = mockSupervisors.filter(supervisor => {
+  const filteredSupervisors = supervisors.filter(supervisor => {
     const matchesStatus = selectedStatus === "all" ? true : supervisor.status === selectedStatus
     const matchesSearch = supervisor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          supervisor.email.toLowerCase().includes(searchQuery.toLowerCase())
