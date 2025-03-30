@@ -29,10 +29,11 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
   const [assignedStudents, setAssignedStudents] = useState<AssignedStudent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
+  /*
   const allStudents = supervisor.faculties.flatMap(f => 
     f.students.map(name => ({ name, subject: f.subject }))
   );
-
+*/
   useEffect(() => {
     if (showAssignList) {
       fetchUnassignedStudents();
@@ -54,7 +55,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
       const assignedIds = assignments?.map(a => a.student_id) || [];
 
       // Then get all students who aren't in the assigned list
-      const { data, error } = await supabase
+      const query = supabase
         .from('students')
         .select(`
           id,
@@ -64,9 +65,13 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
             status
           )
         `)
-        .filter('id', 'not.in', `(${assignedIds.join(',')})`)
-        // If no assigned IDs, don't filter
-        .limit(assignedIds.length ? undefined : 100);
+        .filter('id', 'not.in', `(${assignedIds.join(',')})`);
+      
+      if (!assignedIds.length) {
+        query.limit(100); // Apply limit only when there are no assigned IDs
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -104,7 +109,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
 
       if (error) throw error;
 
-      const students = data?.map(item => item.students) || [];
+      const students = data?.map(item => item.students).flat() || [];
       setAssignedStudents(students);
     } catch (error) {
       console.error('Error fetching assigned students:', error);

@@ -13,6 +13,13 @@ interface Faculty {
   students: string[]
 }
 
+interface AssignedStudent {
+  id: number;
+  name: string;
+  email: string;
+  student_source: { status: string }[];
+}
+
 interface Supervisor {
   id: string
   name: string
@@ -22,7 +29,21 @@ interface Supervisor {
   email: string
   phone: string
   faculties: Faculty[]
+  assignedStudents: AssignedStudent[]
 }
+
+/*
+interface SupervisorAssignmentResponse {
+  student: {
+    id: number;
+    name: string;
+    email: string;
+    student_source: Array<{
+      status: string;
+    }>;
+  };
+}
+  */
 
 export default function SupervisorsPage() {
   const [supervisors, setSupervisors] = useState<Supervisor[]>([])
@@ -41,16 +62,44 @@ export default function SupervisorsPage() {
         return
       }
 
-      const formattedSupervisors: Supervisor[] = (dbSupervisors as DatabaseSupervisor[]).map(sup => ({
-        id: sup.id.toString(),
-        name: sup.name || '',
-        joinDate: sup.join_date || '',
-        department: sup.department || '',
-        status: 'active', // You might want to add a status column in database
-        email: sup.email || '',
-        phone: sup.phone_no || '',
-        faculties: [] // You'll need another query to get faculties
-      }))
+      const formattedSupervisors: Supervisor[] = await Promise.all(
+        (dbSupervisors as DatabaseSupervisor[]).map(async (sup) => {
+          const { data: assignedStudents } = await supabase
+            .from('supervisor_assignments')
+            .select(`
+              student:students (
+                id,
+                name,
+                email,
+                student_source (
+                  status
+                )
+              )
+            `)
+            .eq('supervisor_id', sup.id)
+
+          const students = (assignedStudents || []).flatMap((assignment: { student: { id: number; name: string; email: string; student_source: { status: string }[] }[] }) =>
+            assignment.student.map((student) => ({
+              id: student.id,
+              name: student.name,
+              email: student.email,
+              student_source: student.student_source || [{ status: 'unknown' }]
+            }))
+          )
+
+          return {
+            id: sup.id.toString(),
+            name: sup.name || '',
+            joinDate: sup.join_date || '',
+            department: sup.department || '',
+            status: 'active',
+            email: sup.email || '',
+            phone: sup.phone_no || '',
+            faculties: [],
+            assignedStudents: students
+          }
+        })
+      )
 
       setSupervisors(formattedSupervisors)
     }
