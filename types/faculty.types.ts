@@ -1,20 +1,11 @@
-
-
-export interface SupervisorDetailsProps {
-    supervisor: {
-        id: string;
-        name: string;
-        email: string;
-        phone: string;
-        department: string;
-        joinDate: string;
-        status: string;
-        assignedStudents: AssignedStudent[];
-    };
-    onClose: () => void;
+export interface Faculty {
+    id: string;
+    name: string;
+    subject: string;
+    students: string[];
 }
 
-export interface DatabaseSupervisor {
+export interface DatabaseFaculty {
     id: bigint;
     created_at: string;
     name: string | null;
@@ -31,11 +22,6 @@ export interface UnassignedStudent {
     email?: string;
 }
 
-export interface SupervisorAssignment {
-    student_id: number;
-    supervisor_id: number;
-}
-
 export interface AssignedStudent {
     id: number;
     name: string;
@@ -43,4 +29,18 @@ export interface AssignedStudent {
     student_source?: {
         status: string;
     }[];
+}
+
+export interface FacultyDetailsProps {
+    faculty: {
+        id: string;
+        name: string;
+        email: string;
+        phone: string;
+        department: string;
+        joinDate: string;
+        status: string;
+        assignedStudents: AssignedStudent[];
+    };
+    onClose: () => void;
 }
