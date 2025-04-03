@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
-import { Mail, Phone, User, Calendar, MapPin, Book, Briefcase, Users, Heart, FileText, File, Eye, Edit, Save, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail,  User,  Book, Briefcase, Users, Heart, FileText, File, Eye, Edit, Save, X, LucideIcon } from 'lucide-react';
+import { fetchStudentData } from '../../utils/studentData';
 
 interface ClientInformationProps {
-  client: {
+  studentId: string;
+  initialData?: {
     id: string;
     name: string;
     email: string;
     phone: string;
-    service: string;
-    requestDate: string;
-    location: string;
-    dateOfBirth?: string;
-    age?: string;
-    gender?: string;
+    //service: string;
+   // requestDate: string;
+    //location: string;
+    dateOfBirth: string;
+    age: string;
+    gender: string;
     maritalStatus?: string;
     nationality?: string;
     state?: string;
@@ -43,7 +45,7 @@ interface ClientInformationProps {
     sourceOfInformation?: string;
     assigningAgent?: string;
     status?: string;
-    priority?: string;
+    //priority?: string;
     sourceCategory?: string;
     sourceSubCategory?: string;
     servicePreferences?: Record<string, string>;
@@ -54,7 +56,7 @@ interface ClientInformationProps {
     photo?: string;
     documents?: string;
     nocCertificate?: string;
-  };
+  } | null; // Add null as a possible type
 }
 
 interface FileUploadProps {
@@ -121,7 +123,7 @@ const calculateAge = (dob: string): number => {
 
 const InfoSection = ({ title, icon: Icon, children, className = '' }: { 
   title: string; 
-  icon: any; 
+  icon: LucideIcon;  // Changed from any to LucideIcon
   children: React.ReactNode;
   className?: string;
 }) => (
@@ -142,7 +144,7 @@ const InfoItem = ({
   onChange,
   type = 'text',
   options,
-  multiple = false,
+//  multiple = false,
   readOnly = false
 }: { 
   label: string; 
@@ -220,13 +222,57 @@ const InfoItem = ({
   </div>
 );
 
+const ImagePreview = ({ url, className = '' }: { url: string; className?: string }) => (
+  <div className={`relative rounded-lg overflow-hidden bg-gray-100 ${className}`}>
+    <img 
+      src={url} 
+      alt="Preview" 
+      className="w-full h-full object-cover"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+      }}
+    />
+  </div>
+);
+
+const DocumentPreview = ({ url }: { url: string }) => {
+  const isPdf = url.toLowerCase().endsWith('.pdf');
+  
+  if (isPdf) {
+    return (
+      <div className="w-[500px] h-[550px] border rounded-lg overflow-hidden">
+        <iframe src={`${url}#view=FitH`} className="w-full h-full"></iframe>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-[300px] flex items-center gap-2 p-3 border rounded-lg bg-gray-50">
+      <FileText className="w-5 h-5 text-gray-500" />
+      <span className="text-sm text-gray-600">Document Preview Not Available</span>
+    </div>
+  );
+};
+
 const DocumentSection = ({ doc, label, url }: { doc: string | undefined, label: string, url?: string }) => (
-  <InfoItem 
-    label={label}
-    value={doc ? "Available" : "Not available"}
-    isDocument={true}
-    documentUrl={url}
-  />
+  <div className="space-y-2">
+    <InfoItem 
+      label={label}
+      value={doc ? "Available" : "Not available"}
+      isDocument={true}
+      documentUrl={url}
+    />
+    {url && (
+      <div className="mt-2">
+        {url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+          <ImagePreview url={url} className="h-[150px] w-[200px]" />
+        ) : (
+          <DocumentPreview url={url} />
+        )}
+      </div>
+    )}
+  </div>
 );
 
 const FileUpload = ({ label, file, existingUrl, onChange }: FileUploadProps) => (
@@ -252,25 +298,151 @@ const FileUpload = ({ label, file, existingUrl, onChange }: FileUploadProps) => 
       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
     />
     {file && (
-      <p className="text-sm text-gray-500">Selected: {file.name}</p>
+      <div className="space-y-2">
+        <p className="text-sm text-gray-500">Selected: {file.name}</p>
+        {file.type.startsWith('image/') && (
+          <ImagePreview 
+            url={URL.createObjectURL(file)} 
+            className="h-[150px] w-[200px]" 
+          />
+        )}
+      </div>
+    )}
+    {existingUrl && !file && (
+      <div className="mt-2">
+        {existingUrl.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+          <ImagePreview url={existingUrl} className="h-[150px] w-[200px]" />
+        ) : (
+          <DocumentPreview url={existingUrl} />
+        )}
+      </div>
     )}
   </div>
 );
 
-export function ClientInformation({ client: initialClient }: ClientInformationProps) {
+export function ClientInformation({ studentId, initialData }: ClientInformationProps) {
+  const [isLoading, setIsLoading] = useState(!initialData);
+  const [error, setError] = useState<string | null>(null);
+  const [client, setClient] = useState<NonNullable<ClientInformationProps['initialData']> | undefined>(initialData || undefined);
   const [isEditing, setIsEditing] = useState(false);
-  const [client, setClient] = useState(initialClient);
   const [files, setFiles] = useState({
     photo: null as File | null,
     documents: null as File | null,
     nocCertificate: null as File | null
   });
 
-  const handleChange = <T extends string | Record<string, any>>(field: string, value: T) => {
-    setClient(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  useEffect(() => {
+    const loadStudentData = async () => {
+      if (!studentId) {
+        setError('No student ID provided');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        console.log('Loading student data for ID:', studentId);
+        const { data, error } = await fetchStudentData(studentId);
+
+        if (error as Error) {
+          console.error('Error details:', error);
+          setError((error as Error).message || 'Failed to load student information');
+          return;
+        }
+
+        if (!data) {
+          setError('No data found for this student');
+          return;
+        }
+
+        // Transform the data to match the required type
+        const transformedData: NonNullable<ClientInformationProps['initialData']> = {
+          id: data.id || '',
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          //service: data.service || 'Not specified',         // Add missing required field
+          //requestDate: data.requestDate || new Date().toISOString().split('T')[0], // Add missing required field
+          //location: data.location || 'Not specified',       // Add missing required field
+          dateOfBirth: data.dateOfBirth || '',
+          age: data.age?.toString() || '',
+          gender: data.gender || '',
+          // Optional fields
+          maritalStatus: data.maritalStatus || undefined,
+          nationality: data.nationality || undefined,
+          state: data.state || undefined,
+          city: data.city || undefined,
+          taluk: data.taluk || undefined,
+          motherTongue: data.motherTongue || undefined,
+          knownLanguages: data.knownLanguages || undefined,
+          religion: data.religion || undefined,
+          category: data.category || undefined,
+          academics: data.academics,
+          organization: data.organization || undefined,
+          role: data.role || undefined,
+          duration: data.duration || undefined,
+          responsibilities: data.responsibilities || undefined,
+          guardianName: data.guardianName || undefined,
+          guardianRelation: data.guardianRelation || undefined,
+          guardianContact: data.guardianContact || undefined,
+          guardianAddress: data.guardianAddress || undefined,
+          guardianAadhar: data.guardianAadhar || undefined,
+          healthStatus: data.healthStatus || undefined,
+          disability: data.disability || undefined,
+          nocStatus: data.nocStatus || undefined,
+          sourceOfInformation: data.sourceOfInformation || undefined,
+          assigningAgent: data.assigningAgent || undefined,
+          status: data.status || undefined,
+          //priority: data.priority || undefined,
+          sourceCategory: data.sourceCategory || undefined,
+          sourceSubCategory: data.sourceSubCategory || undefined,
+          servicePreferences: data.servicePreferences || {},
+          currentAddress: data.currentAddress || undefined,
+          currentPinCode: data.currentPinCode || undefined,
+          permanentAddress: data.permanentAddress || undefined,
+          permanentPinCode: data.permanentPinCode || undefined,
+          photo: data.photo || undefined,
+          documents: data.documents || undefined,
+          nocCertificate: data.nocCertificate || undefined,
+        };
+
+        setClient(transformedData);
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setError('An unexpected error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStudentData();
+  }, [studentId]);
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center min-h-[400px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>;
+  }
+
+  if (error || !client) {
+    return <div className="text-center text-red-600 py-8">
+      {error || 'No student information available'}
+    </div>;
+  }
+
+  type ClientData = NonNullable<ClientInformationProps['initialData']>
+  type ValueType = string | NonNullable<ClientData>['academics'] | Record<string, string>;
+
+  const handleChange = <T extends ValueType>(field: string, value: T) => {
+    setClient(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [field]: value
+      };
+    });
   };
 
   const handleSave = () => {
@@ -279,7 +451,7 @@ export function ClientInformation({ client: initialClient }: ClientInformationPr
   };
 
   const handleCancel = () => {
-    setClient(initialClient);
+    setClient(initialData || undefined);
     setIsEditing(false);
   };
 
@@ -361,10 +533,13 @@ export function ClientInformation({ client: initialClient }: ClientInformationPr
         gda: { institution: '', year: '', grade: '' },
         others: { qualification: '', institution: '', year: '', grade: '' }
       };
-      setClient(prev => ({
-        ...prev,
-        academics: emptyAcademics
-      }));
+      setClient(prev => {
+        if (!prev) return undefined;
+        return {
+          ...prev,
+          academics: emptyAcademics
+        };
+      });
       return null;
     }
     
@@ -388,13 +563,23 @@ export function ClientInformation({ client: initialClient }: ClientInformationPr
                     value={value}
                     isEditing={isEditing}
                     onChange={(newValue) => {
-                      const updatedAcademics = {
-                        ...client.academics,
-                        [level]: {
-                          ...(client.academics?.[level] ?? {}),
-                          [field]: newValue
-                        }
+                      if (!client.academics) return;
+                      
+                      const updatedLevel = {
+                        ...(client.academics[level] || {
+                          institution: '',
+                          year: '',
+                          grade: '',
+                          ...(level === 'others' ? { qualification: '' } : {})
+                        }),
+                        [field]: newValue
                       };
+              
+                      const updatedAcademics = {
+                        ...client.academics,  // Spread existing academics first
+                        [level]: updatedLevel // Then update the specific level
+                      };
+                      
                       handleChange('academics', updatedAcademics);
                     }}
                   />
@@ -563,12 +748,14 @@ export function ClientInformation({ client: initialClient }: ClientInformationPr
                 onChange={(value) => handleChange('phone', value)}
                 type="tel"
               />
+              {/*
               <InfoItem 
                 label="Location" 
                 value={client.location} 
                 isEditing={isEditing}
                 onChange={(value) => handleChange('location', value)}
               />
+              */}
               <InfoItem 
                 label="State" 
                 value={client.state} 
@@ -733,6 +920,7 @@ export function ClientInformation({ client: initialClient }: ClientInformationPr
                 isEditing={isEditing}
                 onChange={(value) => handleChange('assigningAgent', value)}
               />
+              {/*
               <InfoItem 
                 label="Priority" 
                 value={client.priority} 
@@ -741,6 +929,7 @@ export function ClientInformation({ client: initialClient }: ClientInformationPr
                 type="select"
                 options={FORM_CONFIG.options.priority}
               />
+              */}
               <InfoItem 
                 label="Category" 
                 value={client.sourceCategory} 

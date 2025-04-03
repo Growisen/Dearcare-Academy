@@ -6,9 +6,7 @@ import { Search, CheckCircle, Clock, User, XCircle } from "lucide-react";
 import { Input } from "../../../../components/ui/input";
 import { AddStudentOverlay } from "../../../../components/students/add-student-overlay";
 import { StudentDetailsOverlay } from "../../../../components/students/student-details-overlay";
-import { StudentFormData,DatabaseStudent,Student } from "../../../../types/student.types";
-
-
+import { StudentFormData, DatabaseStudent, Student} from "../../../../types/student.types";
 
 export default function StudentsPage() {
   const router = useRouter();
@@ -112,6 +110,13 @@ export default function StudentsPage() {
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  };
+
+  const getLocationString = (student: DatabaseStudent) => {
+    const parts = [];
+    if (student.city) parts.push(student.city);
+    if (student.state) parts.push(student.state);
+    return parts.join(', ') || 'Location not specified';
   };
 
   const handleAssignStudent = (formData: StudentFormData) => {
@@ -234,7 +239,9 @@ export default function StudentsPage() {
                                   course: preferredCourse,
                                   status: status as "confirmed" | "follow-up" | "new" | "rejected",
                                   enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
-                                  location: `${student.city}, ${student.state}`
+                                  location: getLocationString(student),
+                                  //assigningAgent: student.student_source?.[0]?.assigning_agent,
+                                  //priority: student.student_source?.[0]?.priority,
                                 })}
                               >
                                 View Details
@@ -287,7 +294,9 @@ export default function StudentsPage() {
                           course: preferredCourse,
                           status: status as "confirmed" | "follow-up" | "new" | "rejected",
                           enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
-                          location: `${student.city}, ${student.state}`
+                          location: getLocationString(student),
+                          //assigningAgent: student.student_source?.[0]?.assigning_agent,
+                          //priority: student.student_source?.[0]?.priority,
                         })}
                       >
                         View Details
@@ -309,7 +318,7 @@ export default function StudentsPage() {
 
           {selectedStudent && (
             <StudentDetailsOverlay
-              client={{
+              student={{
                 id: selectedStudent.id,
                 name: selectedStudent.fullName,
                 email: selectedStudent.email,
@@ -318,6 +327,9 @@ export default function StudentsPage() {
                 requestDate: selectedStudent.enrollmentDate,
                 status: selectedStudent.status,
                 location: selectedStudent.location,
+                dateOfBirth: "Not specified", // Placeholder or actual value
+                age: "Not specified",         // Placeholder or actual value
+                gender: "Not specified",      // Placeholder or actual value
               }}
               onClose={() => setSelectedStudent(null)}
             />
