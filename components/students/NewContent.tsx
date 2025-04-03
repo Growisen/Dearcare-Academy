@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function PendingContent() {
+export function NewContent() {
   return (
     <div className="space-y-6">
       <div>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function UnderReviewContent() {
+export function FollowUpContent() {
   return (
     <div className="space-y-6">
       <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
