@@ -1,16 +1,38 @@
 import { supabase } from '../app/lib/supabase';
 
 export const getStudentFileUrl = async (studentId: number, fileType: 'photo' | 'documents' | 'noc') => {
-  // Can only access specific student folder
+  if (!studentId) {
+    console.error('Invalid student ID provided');
+    return null;
+  }
+
   try {
+    console.log(`Fetching ${fileType} for student ${studentId}`);
+    
     const { data, error } = await supabase.storage
       .from('DearCare')
       .list(`Students/${studentId}`);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Storage list error:', {
+        error,
+        studentId,
+        fileType,
+        path: `Students/${studentId}`
+      });
+      throw error;
+    }
 
-    const file = data?.find(f => f.name.startsWith(fileType));
-    if (!file) return null;
+    if (!data || data.length === 0) {
+      console.log(`No files found for student ${studentId}`);
+      return null;
+    }
+
+    const file = data.find(f => f.name.startsWith(fileType));
+    if (!file) {
+      console.log(`${fileType} not found for student ${studentId}`);
+      return null;
+    }
 
     const { data: { publicUrl } } = supabase.storage
       .from('DearCare')
@@ -18,7 +40,12 @@ export const getStudentFileUrl = async (studentId: number, fileType: 'photo' | '
 
     return publicUrl;
   } catch (error) {
-    console.error('Error accessing student files:', error);
+    console.error('Error accessing student files:', {
+      error,
+      studentId,
+      fileType,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 };

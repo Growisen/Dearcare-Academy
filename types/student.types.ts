@@ -36,12 +36,11 @@ export interface DatabaseStudent {
   }[];
 }
 
-
 export interface StudentRecord {
   id?: bigint;
   created_at?: string;
   name: string;
-  course: string;  // Added this line
+  course: string;  
   dob: string;
   age: number;
   gender: string;
@@ -73,8 +72,8 @@ export interface StudentAcademics {
   student_id: bigint;
   qualification: string;
   institution: string;
-  year_of_passing: number;  // Changed to number to match int4
-  marks: string;  // Changed from grade to marks
+  year_of_passing: number; 
+  marks: string; 
 }
 
 export interface StudentWorkExperience {
@@ -83,7 +82,7 @@ export interface StudentWorkExperience {
   student_id: bigint;
   org_name: string;
   role: string;
-  duration: number;  // Changed to number to match int4
+  duration: number; 
   responsibility: string;
 }
 
@@ -149,7 +148,7 @@ export interface AcademicsData {
 
 export interface StudentFormData {
   fullName: string;
-  course: string;  // Added this line
+  course: string; 
   dateOfBirth: string;
   age: string;
   gender: string;
@@ -202,5 +201,20 @@ export interface AddStudentOverlayProps {
   supervisorId: string;
   onClose: () => void;
   onAssign: (studentData: StudentFormData) => void;
+}
+
+// Add this new interface for the overlay
+export interface StudentDetailsProps {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  service: string;
+  requestDate: string;
+  status: "confirmed" | "follow-up" | "new" | "rejected";
+  location: string;
+  dateOfBirth: string; // New property
+  age: string;         // New property
+  gender: string;      // New property
 }
 

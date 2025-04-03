@@ -3,6 +3,7 @@ import React from 'react';
 export function FollowUpContent() {
   return (
     <div className="space-y-6">
+      {/*
       <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Review Checklist</h3>
         <div className="space-y-2">
@@ -24,6 +25,7 @@ export function FollowUpContent() {
           </label>
         </div>
       </div>
+      
 
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">Care Plan Draft</h3>
@@ -56,6 +58,7 @@ export function FollowUpContent() {
           ></textarea>
         </div>
       </div>
+      */}
 
       <div className="flex gap-3">
         <button className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">

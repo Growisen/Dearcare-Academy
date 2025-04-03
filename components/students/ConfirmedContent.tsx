@@ -120,7 +120,7 @@ export function ConfirmedContent() {
             Registration Confirmed
           </h3>
           <p className="text-gray-600">
-            You're all set! Ready to enroll in courses.
+            You&apos;re all set! Ready to enroll in courses.
           </p>
         </div>
       )}
