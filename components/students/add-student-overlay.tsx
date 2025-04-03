@@ -84,6 +84,11 @@ const FORM_CONFIG = {
       "Punjabi",
       "Odia"
     ],
+    courses: [
+      "Advanced General Nursing Assistant (AGDA)",
+      "Diploma in Healthcare Assistance",
+      "Ayurveda Nursing & Baby Care"
+    ],
   },
   steps: [
     "Personal Information", "Contact Information", "Academic Details",
@@ -210,6 +215,12 @@ const StepContent = {
           placeholder="Enter full name"
           value={formData.fullName}
           onChange={handleFormChange('fullName', setFormData)}
+        />
+        <Fields.Select 
+          label="Course" 
+          options={FORM_CONFIG.options.courses}
+          value={formData.course}
+          onChange={handleFormChange('course', setFormData)}
         />
         <Fields.Input 
           label="Date of Birth" 
@@ -631,7 +642,7 @@ export function AddStudentOverlay({ onClose, onAssign }: AddStudentOverlayProps)
   const [currentSection, setCurrentSection] = useState(0);
   const [formData, setFormData] = useState<StudentFormData>({
     // Initialize with empty values
-    fullName: '', dateOfBirth: '', age: '', gender: '', maritalStatus: '',
+    fullName: '', dateOfBirth: '', age: '',course:'', gender: '', maritalStatus: '',
     nationality: '', state: '', city: '', taluk: '', motherTongue: '',
     knownLanguages: '', religion: '', category: '', email: '', mobileNumber: '',
     currentAddress: '', currentPinCode: '',
@@ -652,7 +663,7 @@ export function AddStudentOverlay({ onClose, onAssign }: AddStudentOverlayProps)
 
   const resetForm = () => {
     setFormData({
-      fullName: '', dateOfBirth: '', age: '', gender: '', maritalStatus: '',
+      fullName: '', dateOfBirth: '', age: '',course:'', gender: '', maritalStatus: '',
       nationality: '', state: '', city: '', taluk: '', motherTongue: '',
       knownLanguages: '', religion: '', category: '', email: '', mobileNumber: '',
       currentAddress: '', currentPinCode: '',

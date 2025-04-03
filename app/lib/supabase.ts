@@ -88,6 +88,7 @@ export const insertStudentData = async (formData: StudentFormData): Promise<{
       .from('students')
       .insert([{
         name: formData.fullName,
+        course: formData.course,  // Added this line
         dob: formData.dateOfBirth,
         age: parseInt(formData.age),
         gender: formData.gender,
@@ -185,7 +186,7 @@ export const insertStudentData = async (formData: StudentFormData): Promise<{
       source_of_info: formData.sourceOfInformation,
       assigning_agent: formData.assigningAgent,
       priority: formData.priority,
-      status: formData.status,
+      status: 'New', // Changed from formData.status to always be 'New'
       category: formData.sourceCategory,
       sub_category: formData.sourceSubCategory
     });

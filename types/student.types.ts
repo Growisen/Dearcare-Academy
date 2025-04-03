@@ -14,6 +14,7 @@ export interface DatabaseStudent {
   name: string;
   email: string;
   mobile: string;
+  course: string; 
   created_at: string;
   status?: string;
   city?: string;
@@ -40,6 +41,7 @@ export interface StudentRecord {
   id?: bigint;
   created_at?: string;
   name: string;
+  course: string;  // Added this line
   dob: string;
   age: number;
   gender: string;
@@ -147,6 +149,7 @@ export interface AcademicsData {
 
 export interface StudentFormData {
   fullName: string;
+  course: string;  // Added this line
   dateOfBirth: string;
   age: string;
   gender: string;
