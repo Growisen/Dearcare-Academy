@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import {StudentFormData } from '../../types/student.types'
+import {EnquiryFormData } from '../../types/enquiry.types'
 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -203,5 +204,21 @@ export const insertStudentData = async (formData: StudentFormData): Promise<{
   } catch (error) {
     console.error('Error inserting student data:', error);
     return { error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};
+
+export const insertEnquiryData = async (formData: EnquiryFormData) => {
+  try {
+    const { data, error } = await supabase
+      .from('academy_enquiries')
+      .insert([formData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error inserting enquiry:', error);
+    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
   }
 };
