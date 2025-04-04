@@ -9,7 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@headlessui/react": "^2.2.0",
+    "@mui/material": "^7.0.1",
     "@react-google-maps/api": "^2.20.6",
     "@supabase/supabase-js": "^2.49.1",
     "@types/gsap": "^3.0.0",

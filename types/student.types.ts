@@ -14,7 +14,8 @@ export interface DatabaseStudent {
   name: string;
   email: string;
   mobile: string;
-  course: string; 
+  course: string;
+  payment_receipt: boolean;
   created_at: string;
   status?: string;
   city?: string;
@@ -62,6 +63,7 @@ export interface StudentRecord {
   cur_health_status: string;
   disability_details: string;
   noc_status: string;
+  payment_receipt?: boolean;
 }
 
 export type StudentInsertData = Omit<StudentRecord, 'id' | 'created_at'>;
