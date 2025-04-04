@@ -1,6 +1,24 @@
 import nodemailer from 'nodemailer';
 
-async function send_mail(details: any) {
+interface MailDetails {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+}
+
+interface MailDetailsEnquiry{
+    name: string;
+    email: string;
+    courseName: string;
+}
+
+interface MailDetailsReceipt{
+    name: string;
+    email: string;
+}
+
+async function send_mail(details: MailDetails) {
 
 
   const { to, subject, text, html } = details;
@@ -29,8 +47,8 @@ async function send_mail(details: any) {
   }
 }
 
-export async function enquiry_reply(details: any) {
-  const { name, email, message } = details;
+export async function enquiry_reply(details: MailDetailsEnquiry) {
+  const { name, email} = details;
 
   const subject = `Course Enquiry - ${details.courseName}`;
   const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nPlease find the brochure attached and use the link below to register:\n\n[Registration Link]\n\nYour message: ${message}`;
@@ -41,12 +59,12 @@ export async function enquiry_reply(details: any) {
     <p>Please find the course brochure attached.</p>
     <p>You can register here: <a href="https://your-site.com/register?course=${encodeURIComponent(details.courseName)}">Register Now</a></p>
     <hr />
-    <p><strong>Your message:</strong><br>${message}</p>
+  
   `;
   return await send_mail({ to: email, subject, text, html });
 }
 
-export async function receipt_upload(details: any) {
+export async function receipt_upload(details: MailDetailsReceipt) {
 
     const { name, email} = details;
   
@@ -59,8 +77,8 @@ export async function receipt_upload(details: any) {
     return await send_mail({ to: email, subject, text, html });
 }
 
-export async function confirmation_mail(details: any) {
-    const { name, email, message } = details;
+export async function confirmation_mail(details: MailDetailsReceipt) {
+    const { name, email } = details;
   
     const subject = `Registration Approved`;
   
