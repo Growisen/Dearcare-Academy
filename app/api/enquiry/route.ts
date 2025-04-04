@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { insertEnquiryData } from '@/app/lib/supabase';
-import { EnquiryFormData, COURSES } from '@/types/enquiry.types';
-//import { enquiry_reply } from '@/app/lib/mail';
+import { insertEnquiryData, getCourses, getCourseDetails } from '@/app/lib/supabase';
+import { EnquiryFormData } from '@/types/enquiry.types';
+import { enquiry_reply } from '@/app/lib/mail';
 
 export async function POST(request: Request) {
   try {
@@ -15,11 +15,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate course
-    if (!COURSES.includes(body.course)) {
+    // Fetch valid courses and validate
+    const { data: validCourses, error: coursesError } = await getCourses();
+    
+    if (coursesError || !validCourses) {
+      return NextResponse.json(
+        { error: 'Failed to validate course' },
+        { status: 500 }
+      );
+    }
+
+    if (!validCourses.includes(body.course)) {
       return NextResponse.json(
         { error: 'Invalid course selection' },
         { status: 400 }
+      );
+    }
+
+    // Get course details including fees
+    const { data: courseDetails, error: courseDetailsError } = await getCourseDetails(body.course);
+    
+    if (courseDetailsError || !courseDetails) {
+      return NextResponse.json(
+        { error: 'Failed to fetch course details' },
+        { status: 500 }
       );
     }
 
@@ -32,9 +51,15 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    //mail
-    /*
-    const { success} = await enquiry_reply({to: body.email, name: body.name, courseName: body.course, message: "test course" });
+
+    // Send email with course fees
+    const { success } = await enquiry_reply({
+      email: body.email,
+      name: body.name,
+      courseName: body.course,
+      courseFees: courseDetails.course_fees,
+      regFees: courseDetails.reg_fees
+    });
     
     if (!success) {
       return NextResponse.json(
@@ -42,7 +67,7 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-      */
+      
 
     return NextResponse.json(
       { message: 'Enquiry submitted successfully', data },

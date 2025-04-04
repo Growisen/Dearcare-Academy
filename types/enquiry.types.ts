@@ -5,8 +5,9 @@ export type EnquiryFormData = {
   course: string;
 };
 
-export const COURSES = [
-  "Advanced General Nursing Assistant (AGDA)",
-  "Diploma in Healthcare Assistance",
-  "Ayurveda Nursing & Baby Care"
-] as const;
+export type CoursesDB = {
+  id: number;
+  course_name: string;
+  course_fees: number;
+  reg_fees: number;
+}
