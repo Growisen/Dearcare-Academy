@@ -13,6 +13,14 @@ export default function UploadForm({ studentId, studentName, studentEmail }: Upl
   const [status, setStatus] = useState<{message: string; error: boolean} | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    } else {
+      setFile(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || isUploading) return;
@@ -71,7 +79,7 @@ export default function UploadForm({ studentId, studentName, studentEmail }: Upl
         <div>
           <Input
             type="file"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            onChange={handleFileChange}
             inputProps={{ accept: '.pdf' }}
             fullWidth
             required

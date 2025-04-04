@@ -1,16 +1,49 @@
-import { supabase } from '@/app/lib/supabase';
-import UploadForm from './UploadForm';
+'use client';
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import UploadForm from '../UploadForm';
+import { CircularProgress } from '@mui/material';
 
-interface PageProps {
-  params: { studentId: string }
-}
+export default function Page() {
+  const { studentId } = useParams();
+  const [student, setStudent] = useState<{ name?: string; email?: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function Page({ params }: PageProps) {
-  const { data: student } = await supabase
-    .from('students')
-    .select('name, email')
-    .eq('id', params.studentId)
-    .single();
+  useEffect(() => {
+    const fetchStudent = async () => {
+      try {
+        const response = await fetch(`/api/student/${studentId}`);
+        if (!response.ok) throw new Error('Failed to fetch student details');
+        const data = await response.json();
+        setStudent(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  return <UploadForm studentId={params.studentId} studentName={student?.name} studentEmail={student?.email} />;
+    fetchStudent();
+  }, [studentId]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-500 p-4">Error: {error}</div>;
+  }
+
+  return (
+    <UploadForm
+      studentId={studentId as string}
+      studentName={student?.name}
+      studentEmail={student?.email}
+    />
+  );
 }
