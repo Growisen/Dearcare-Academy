@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { insertEnquiryData } from '@/app/lib/supabase';
 import { EnquiryFormData, COURSES } from '@/types/enquiry.types';
+//import { enquiry_reply } from '@/app/lib/mail';
 
 export async function POST(request: Request) {
   try {
@@ -31,6 +32,17 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+    //mail
+    /*
+    const { success} = await enquiry_reply({to: body.email, name: body.name, courseName: body.course, message: "test course" });
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Failed to send confirmation email' },
+        { status: 500 }
+      );
+    }
+      */
 
     return NextResponse.json(
       { message: 'Enquiry submitted successfully', data },
