@@ -51,7 +51,7 @@ export async function enquiry_reply(details: MailDetailsEnquiry) {
   const { name, email} = details;
 
   const subject = `Course Enquiry - ${details.courseName}`;
-  const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nPlease find the brochure attached and use the link below to register:\n\n[Registration Link]\n\nYour message: ${message}`;
+  const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nPlease find the brochure attached and use the link below to register:\n\n[Registration Link]\n`;
 
   const html = `
     <p>Hi <strong>${name}</strong>,</p>
