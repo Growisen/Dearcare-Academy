@@ -222,3 +222,33 @@ export const insertEnquiryData = async (formData: EnquiryFormData) => {
     return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
   }
 };
+
+export const getCourses = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('course_name');
+
+    if (error) throw error;
+    return { data: data.map(course => course.course_name), error: null };
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};
+
+export const getCourseDetails = async (courseName: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('course_name, course_fees, reg_fees')
+      .eq('course_name', courseName)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching course details:', error);
+    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};

@@ -11,6 +11,8 @@ interface MailDetailsEnquiry{
     name: string;
     email: string;
     courseName: string;
+    courseFees?: number;
+    regFees?: number;
 }
 
 interface MailDetailsReceipt{
@@ -48,14 +50,19 @@ async function send_mail(details: MailDetails) {
 }
 
 export async function enquiry_reply(details: MailDetailsEnquiry) {
-  const { name, email} = details;
+  const { name, email, courseFees, regFees } = details;
 
   const subject = `Course Enquiry - ${details.courseName}`;
-  const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nPlease find the brochure attached and use the link below to register:\n\n[Registration Link]\n`;
+  const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nCourse Details:\nRegistration Fee: ₹${regFees}\nCourse Fee: ₹${courseFees}\n\nPlease find the brochure attached and use the link below to register:\n\n[Registration Link]\n`;
 
   const html = `
     <p>Hi <strong>${name}</strong>,</p>
     <p>Thank you for your interest in <strong>${details.courseName}</strong>.</p>
+    <p>Course Details:</p>
+    <ul>
+      <li>Registration Fee: ₹${regFees}</li>
+      <li>Course Fee: ₹${courseFees}</li>
+    </ul>
     <p>Please find the course brochure attached.</p>
     <p>You can register here: <a href="https://your-site.com/register?course=${encodeURIComponent(details.courseName)}">Register Now</a></p>
     <hr />
