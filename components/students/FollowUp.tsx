@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../app/lib/supabase';
 import { AlertTriangle, Maximize2, Loader2 } from 'lucide-react';
 
+
 interface FollowUpContentProps {
   studentId?: string;
 }
@@ -87,7 +88,8 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
         body: JSON.stringify({
           name: student.name,
           email: student.email,
-          courseName: student.course
+          courseName: student.course,
+          id: studentId,
         }),
       });
 
