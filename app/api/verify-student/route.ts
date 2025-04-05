@@ -13,7 +13,7 @@ export async function POST(request: Request) {
         name,
         email,
         course,
-        courses:course (
+        courses:course!inner (
           course_name,
           course_fees,
           reg_fees
@@ -23,6 +23,11 @@ export async function POST(request: Request) {
       .single();
 
     if (studentError) throw studentError;
+
+    // Ensure courses data exists and get the first course
+    if (!student.courses) {
+      throw new Error('No course information found for student');
+    }
 
     // Update student status
     const { error: updateError } = await supabase
@@ -36,9 +41,9 @@ export async function POST(request: Request) {
     await receipt_upload({
       name: student.name,
       email: student.email,
-      courseName: student.courses.course_name,
-      courseFees: student.courses.course_fees,
-      regFees: student.courses.reg_fees,
+      courseName: student.courses[0].course_name,
+      courseFees: student.courses[0].course_fees,
+      regFees: student.courses[0].reg_fees,
       studentId: studentId 
     });
 

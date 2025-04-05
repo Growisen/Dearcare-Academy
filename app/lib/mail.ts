@@ -21,6 +21,8 @@ interface MailDetailsReceipt{
     email: string;
     courseFees?: number;
     regFees?: number;
+    //courseName: string;
+
 }
 
 async function send_mail(details: MailDetails) {
