@@ -38,7 +38,8 @@ export async function POST(request: Request) {
       email: student.email,
       courseName: student.courses.course_name,
       courseFees: student.courses.course_fees,
-      regFees: student.courses.reg_fees
+      regFees: student.courses.reg_fees,
+      studentId: studentId 
     });
 
     return NextResponse.json({ 

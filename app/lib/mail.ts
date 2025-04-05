@@ -74,11 +74,11 @@ export async function enquiry_reply(details: MailDetailsEnquiry) {
   return await send_mail({ to: email, subject, text, html });
 }
 
-export async function receipt_upload(details: MailDetailsReceipt & { courseName: string }) {
-    const { name, email, courseFees, regFees, courseName } = details;
+export async function receipt_upload(details: MailDetailsReceipt & { courseName: string; studentId: string }) {
+    const { name, email, courseFees, regFees, courseName, studentId } = details;
   
     const subject = `Upload Your Fee Payment Receipt - ${courseName}`;
-    const uploadLink = `${DOMAIN}/receipt_upload`;
+    const uploadLink = `${DOMAIN}/receipt_upload/${studentId}`;
   
     const text = `Dear ${name},
 Your registration for ${courseName} has been verified and you can now proceed with the fee payment.
