@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { insertEnquiryData, getCourses, getCourseDetails } from '@/app/lib/supabase';
+import { insertEnquiryData, getCourses, getCourseDetails } from '@/lib/supabase';
 import { EnquiryFormData } from '@/types/enquiry.types';
-import { enquiry_reply } from '@/app/lib/mail';
+import { enquiry_reply } from '@/lib/mail';
 
 export async function POST(request: Request) {
   try {

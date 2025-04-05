@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { Search, Eye, CheckCircle, Book } from "lucide-react"
 import { Input } from "../../../../components/ui/input"
 import { SupervisorDetailsOverlay } from "../../../../components/supervisor/supervisor-details-overlay"
-import { supabase } from "../../../lib/supabase"
+import { supabase } from "../../../../lib/supabase"
 import type { DatabaseSupervisor } from "../../../../types/supervisors.types"
 
 interface Faculty {

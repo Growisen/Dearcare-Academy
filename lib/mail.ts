@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { DOMAIN } from '../../config/constants';
+import { DOMAIN } from '../config/constants';
 
 interface MailDetails {
     to: string;
