@@ -21,8 +21,12 @@ interface MailDetailsReceipt{
     email: string;
     courseFees?: number;
     regFees?: number;
-    //courseName: string;
+}
 
+interface MailDetailsConfirmation{
+  name: string;
+  email: string;
+  courseName: string;
 }
 
 async function send_mail(details: MailDetails) {
@@ -110,7 +114,7 @@ Thank you.`;
     return await send_mail({ to: email, subject, text, html });
 }
 
-export async function confirmation_mail(details: MailDetailsReceipt) {
+export async function confirmation_mail(details: MailDetailsConfirmation) {
     const { name, email } = details;
   
     const subject = `Registration Approved`;
