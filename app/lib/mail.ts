@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { DOMAIN } from '../../config/constants';
 
 interface MailDetails {
     to: string;
@@ -18,6 +19,14 @@ interface MailDetailsEnquiry{
 interface MailDetailsReceipt{
     name: string;
     email: string;
+    courseFees?: number;
+    regFees?: number;
+}
+
+interface MailDetailsConfirmation{
+  name: string;
+  email: string;
+  courseName: string;
 }
 
 async function send_mail(details: MailDetails) {
@@ -71,27 +80,48 @@ export async function enquiry_reply(details: MailDetailsEnquiry) {
   return await send_mail({ to: email, subject, text, html });
 }
 
-export async function receipt_upload(details: MailDetailsReceipt) {
+export async function receipt_upload(details: MailDetailsReceipt & { courseName: string; studentId: string }) {
+    const { name, email, courseFees, regFees, courseName, studentId } = details;
+  
+    const subject = `Upload Your Fee Payment Receipt - ${courseName}`;
+    const uploadLink = `${DOMAIN}/receipt_upload/${studentId}`;
+  
+    const text = `Dear ${name},
+Your registration for ${courseName} has been verified and you can now proceed with the fee payment.
 
-    const { name, email} = details;
-  
-    const subject = `Upload Your Fee Payment Receipt`;
-    const uploadLink = `https://yourwebsite.com/upload-receipt`; // Replace with the actual upload link
-  
-    const text = `Dear ${name},\nYour registration has been verified and you can now pay your fees.\nKindly upload your payment receipt in the url provided\nPlease upload your fee payment receipt using the following link:\n${uploadLink}\n\nThank you.`;
-    const html = `<p>Dear <strong>${name}</strong>,</p><p>Please upload your fee payment receipt using the following link:</p><p><a href="${uploadLink}">${uploadLink}</a></p><p>Thank you.</p>`;
+Fee Details:
+Registration Fee: ₹${regFees || 'N/A'}
+Course Fee: ₹${courseFees || 'N/A'}
+
+Kindly upload your payment receipt using the following link:
+${uploadLink}
+
+Thank you.`;
+
+    const html = `
+      <p>Dear <strong>${name}</strong>,</p>
+      <p>Your registration for <strong>${courseName}</strong> has been verified and you can now proceed with the fee payment.</p>
+      <p>Fee Details:</p>
+      <ul>
+        <li>Registration Fee: ₹${regFees || 'N/A'}</li>
+        <li>Course Fee: ₹${courseFees || 'N/A'}</li>
+      </ul>
+      <p>Kindly upload your payment receipt using the following link:</p>
+      <p><a href="${uploadLink}">${uploadLink}</a></p>
+      <p>Thank you.</p>
+    `;
   
     return await send_mail({ to: email, subject, text, html });
 }
 
-export async function confirmation_mail(details: MailDetailsReceipt) {
-    const { name, email } = details;
+export async function confirmation_mail(details: MailDetailsConfirmation) {
+    const { name, email, courseName } = details;
   
-    const subject = `Registration Approved`;
+    const subject = `Registration Approved - ${courseName}`;
   
-    const text = `Dear ${name},\n\nYour registration details have been successfully verified and approved. You can now proceed with the next steps.\n\nThank you.`;
+    const text = `Dear ${name},\n\nYour registration details for ${courseName} have been successfully verified and approved. You can now proceed with the next steps.\n\nThank you.`;
   
-    const html = `<p>Dear <strong>${name}</strong>,</p><p>Your registration details have been successfully verified and approved. You can now proceed with the next steps.</p><p>Thank you.</p>`;
+    const html = `<p>Dear <strong>${name}</strong>,</p><p>Your registration details for <strong>${courseName}</strong> have been successfully verified and approved. You can now proceed with the next steps.</p><p>Thank you.</p>`;
     return await send_mail({ to: email, subject, text, html });
 }
 

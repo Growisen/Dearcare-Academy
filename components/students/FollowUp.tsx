@@ -1,70 +1,173 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../../app/lib/supabase';
+import { AlertTriangle, Maximize2, Loader2 } from 'lucide-react';
 
-export function FollowUpContent() {
+interface FollowUpContentProps {
+  studentId?: string;
+}
+
+export function FollowUpContent({ studentId }: FollowUpContentProps) {
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [hasReceipt, setHasReceipt] = useState<boolean | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchReceiptStatus = async () => {
+      if (!studentId) return;
+
+      try {
+        // First check payment_receipt status from students table
+        const { data: student, error: studentError } = await supabase
+          .from('students')
+          .select('payment_receipt')
+          .eq('id', studentId)
+          .single();
+
+        if (studentError) throw studentError;
+        setHasReceipt(student.payment_receipt);
+
+        // Only fetch receipt URL if payment_receipt is true
+        if (student.payment_receipt) {
+          // Check if file exists
+          const { data: files, error: listError } = await supabase.storage
+            .from('DearCare')
+            .list(`Students/${studentId}`);
+
+          if (listError) throw listError;
+
+          const receiptFile = files?.find(file => file.name === 'payment_receipt.pdf');
+          if (!receiptFile) return;
+
+          // Get public URL for the receipt
+          const { data: { publicUrl } } = supabase.storage
+            .from('DearCare')
+            .getPublicUrl(`Students/${studentId}/payment_receipt.pdf`);
+
+          setReceiptUrl(publicUrl);
+        }
+      } catch (error) {
+        console.error('Error fetching receipt status:', error);
+      }
+    };
+
+    fetchReceiptStatus();
+  }, [studentId]);
+
+  const handleApprove = async () => {
+    if (!studentId || !hasReceipt) return;
+    
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // Fetch student details including course
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('name, email, course')
+        .eq('id', studentId)
+        .single();
+
+      if (studentError) throw studentError;
+
+      // Update status to confirmed
+      const { error: updateError } = await supabase
+        .from('student_source')
+        .update({ status: 'Confirmed' })
+        .eq('student_id', studentId);
+
+      if (updateError) throw updateError;
+
+      // Send confirmation email via API
+      const response = await fetch('/api/mail/confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: student.name,
+          email: student.email,
+          courseName: student.course
+        }),
+      });
+
+      const emailResult = await response.json();
+      if (!emailResult.success) {
+        throw new Error(emailResult.message);
+      }
+
+      // Reload the page or update UI state
+      window.location.reload();
+
+    } catch (err) {
+      console.error('Error during approval:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process approval');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/*
-      <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Review Checklist</h3>
-        <div className="space-y-2">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" className="rounded text-blue-600" />
-            <span className="text-sm text-gray-700">Verify medical documents</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" className="rounded text-blue-600" />
-            <span className="text-sm text-gray-700">Check care requirements</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" className="rounded text-blue-600" />
-            <span className="text-sm text-gray-700">Assess nurse availability</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" className="rounded text-blue-600" />
-            <span className="text-sm text-gray-700">Verify payment details</span>
-          </label>
-        </div>
-      </div>
-      
-
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Care Plan Draft</h3>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Recommended Nurse
-              </label>
-              <select className="w-full rounded-lg border-gray-200 py-2 px-3 text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Select nurse...</option>
-                <option value="mary">Mary Johnson</option>
-                <option value="john">John Smith</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Proposed Shift
-              </label>
-              <select className="w-full rounded-lg border-gray-200 py-2 px-3 text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Select shift...</option>
-                <option value="morning">Morning (8 AM - 4 PM)</option>
-                <option value="evening">Evening (4 PM - 12 AM)</option>
-              </select>
-            </div>
+      {hasReceipt === false && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-700">
+            <AlertTriangle className="h-5 w-5" />
+            <h3 className="font-medium">Payment Receipt Missing</h3>
           </div>
-          <textarea
-            placeholder="Add care notes..."
-            className="w-full rounded-lg border-gray-200 py-2 px-3 text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] placeholder:text-gray-500"
-          ></textarea>
+          <p className="mt-1 text-sm text-red-600">
+            The payment receipt has not been uploaded yet. Please ensure the receipt is uploaded before proceeding.
+          </p>
         </div>
-      </div>
-      */}
+      )}
+
+      {receiptUrl && (
+        <div className="max-w-2xl mx-auto">
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center">
+              <h3 className="text-sm font-medium text-gray-700">Payment Receipt</h3>
+              <button 
+                onClick={() => window.open(receiptUrl, '_blank')}
+                className="text-blue-600 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50 flex items-center gap-1 text-sm"
+              >
+                <Maximize2 className="h-4 w-4" />
+                Full View
+              </button>
+            </div>
+            <iframe
+              src={`${receiptUrl}#view=FitH`}
+              className="w-full h-[400px] border-0"
+              title="Payment Receipt"
+            />
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
 
       <div className="flex gap-3">
-        <button className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-          Approve & Assign
+        <button 
+          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          disabled={!hasReceipt || isProcessing}
+          onClick={handleApprove}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            'Approve'
+          )}
         </button>
-        <button className="px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+        <button 
+          className="px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isProcessing}
+        >
           Reject
         </button>
       </div>

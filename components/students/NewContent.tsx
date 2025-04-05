@@ -1,6 +1,30 @@
 import React from 'react';
 
-export function NewContent() {
+export function NewContent({ studentId }: { studentId: string }) {
+  const handleVerification = async () => {
+    try {
+      const response = await fetch('/api/verify-student', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ studentId }),
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+
+      // Optionally refresh the page or update UI
+      window.location.reload();
+    } catch (error) {
+      console.error('Error during verification:', error);
+      alert('Failed to verify details. Please try again.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -19,8 +43,11 @@ export function NewContent() {
               </button>
             </div>
           </div>
-          <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Start Review Process
+          <button 
+            onClick={handleVerification}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Verify Details
           </button>
         </div>
       </div>
