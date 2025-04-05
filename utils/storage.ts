@@ -1,4 +1,4 @@
-import { supabase } from '../app/lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export const getStudentFileUrl = async (studentId: number, fileType: 'photo' | 'documents' | 'noc') => {
   if (!studentId) {

@@ -1,4 +1,4 @@
-import { supabase } from '../app/lib/supabase';
+import { supabase } from '../lib/supabase';
 import { getStudentFileUrl } from './storage';
 
 export const fetchStudentData = async (studentId: string) => {

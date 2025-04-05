@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Check } from 'lucide-react';
 import { FacultyDetailsProps, UnassignedStudent, AssignedStudent } from '../../types/faculty.types';
-import { supabase } from '../../app/lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 type FacultyType = FacultyDetailsProps['faculty'];
 const FACULTY_FIELDS: Array<[string, ((s: FacultyType) => string) | keyof FacultyType]> = [

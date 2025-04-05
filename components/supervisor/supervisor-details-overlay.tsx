@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Check } from 'lucide-react';
 import { SupervisorDetailsProps, UnassignedStudent, AssignedStudent } from '../../types/supervisors.types';
-import { supabase } from '../../app/lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 type SupervisorType = SupervisorDetailsProps['supervisor'];
 const SUPERVISOR_FIELDS: Array<[string, ((s: SupervisorType) => string) | keyof SupervisorType]> = [

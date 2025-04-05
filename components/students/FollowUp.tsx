@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../app/lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { AlertTriangle, Maximize2, Loader2 } from 'lucide-react';
 
 

@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
-import {StudentFormData } from '../../types/student.types'
-import {EnquiryFormData } from '../../types/enquiry.types'
+import {StudentFormData } from '../types/student.types'
+import {EnquiryFormData } from '../types/enquiry.types'
 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { Search, Eye, CheckCircle, Book } from "lucide-react"
 import { Input } from "../../../../components/ui/input"
 import { FacultyDetailsOverlay } from "../../../../components/faculty/faculty-details-overlay"
-import { supabase } from "../../../lib/supabase"
+import { supabase } from "../../../../lib/supabase"
 import type { DatabaseFaculty } from "../../../../types/faculty.types"
 
 

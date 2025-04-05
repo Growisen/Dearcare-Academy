@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { confirmation_mail } from '../../../lib/mail';
-import {createAccount} from '../../../lib/createAccount';
+import { confirmation_mail } from '../../../../lib/mail';
+import {createAccount} from '../../../../lib/createAccount';
 
 export async function POST(req: Request) {
   try {

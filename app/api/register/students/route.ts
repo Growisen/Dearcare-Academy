@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { insertStudentData } from '../../../lib/supabase';
+import { insertStudentData } from '../../../../lib/supabase';
 import { StudentFormData } from '../../../../types/student.types';
 
 export async function POST(request: Request) {

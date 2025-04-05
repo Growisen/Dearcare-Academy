@@ -9,7 +9,7 @@ import {
   Building2
 } from "lucide-react"
 import { useEffect } from "react"
-import { supabase } from "../app/lib/supabase"
+import { supabase } from "../lib/supabase"
 
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const pathname = usePathname()
