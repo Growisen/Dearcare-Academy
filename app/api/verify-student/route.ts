@@ -13,7 +13,7 @@ export async function POST(request: Request) {
         name,
         email,
         course,
-        courses:course!inner (
+        course:academy_courses!inner (
           course_name,
           course_fees,
           reg_fees
@@ -24,8 +24,8 @@ export async function POST(request: Request) {
 
     if (studentError) throw studentError;
 
-    // Ensure courses data exists and get the first course
-    if (!student.courses) {
+    // Ensure course data exists
+    if (!student.course) {
       throw new Error('No course information found for student');
     }
 
@@ -41,9 +41,9 @@ export async function POST(request: Request) {
     await receipt_upload({
       name: student.name,
       email: student.email,
-      courseName: student.courses[0].course_name,
-      courseFees: student.courses[0].course_fees,
-      regFees: student.courses[0].reg_fees,
+      courseName: student.course.course_name,
+      courseFees: student.course.course_fees,
+      regFees: student.course.reg_fees,
       studentId: studentId 
     });
 
