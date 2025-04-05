@@ -252,3 +252,34 @@ export const getCourseDetails = async (courseName: string) => {
     return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
   }
 };
+
+export const getVisibleEnquiries = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('academy_enquiries')
+      .select('*')
+      .or('hide.is.null,hide.eq.false')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching enquiries:', error);
+    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};
+
+export const hideEnquiry = async (id: number) => {
+  try {
+    const { error } = await supabase
+      .from('academy_enquiries')
+      .update({ hide: true })
+      .eq('id', id);
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    console.error('Error hiding enquiry:', error);
+    return { error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};
