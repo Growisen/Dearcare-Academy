@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../app/lib/supabase';
-import { AlertTriangle, Maximize2 } from 'lucide-react';
+import { AlertTriangle, Maximize2, Loader2 } from 'lucide-react';
 
 interface FollowUpContentProps {
   studentId?: string;
@@ -9,6 +9,8 @@ interface FollowUpContentProps {
 export function FollowUpContent({ studentId }: FollowUpContentProps) {
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [hasReceipt, setHasReceipt] = useState<boolean | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReceiptStatus = async () => {
@@ -52,6 +54,59 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
     fetchReceiptStatus();
   }, [studentId]);
 
+  const handleApprove = async () => {
+    if (!studentId || !hasReceipt) return;
+    
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // Fetch student details including course
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('name, email, course')
+        .eq('id', studentId)
+        .single();
+
+      if (studentError) throw studentError;
+
+      // Update status to confirmed
+      const { error: updateError } = await supabase
+        .from('student_source')
+        .update({ status: 'Confirmed' })
+        .eq('student_id', studentId);
+
+      if (updateError) throw updateError;
+
+      // Send confirmation email via API
+      const response = await fetch('/api/mail/confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: student.name,
+          email: student.email,
+          courseName: student.course
+        }),
+      });
+
+      const emailResult = await response.json();
+      if (!emailResult.success) {
+        throw new Error(emailResult.message);
+      }
+
+      // Reload the page or update UI state
+      window.location.reload();
+
+    } catch (err) {
+      console.error('Error during approval:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process approval');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {hasReceipt === false && (
@@ -88,14 +143,31 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
         </div>
       )}
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
       <div className="flex gap-3">
         <button 
-          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400"
-          disabled={!hasReceipt}
+          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          disabled={!hasReceipt || isProcessing}
+          onClick={handleApprove}
         >
-          Approve & Assign
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            'Approve'
+          )}
         </button>
-        <button className="px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+        <button 
+          className="px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isProcessing}
+        >
           Reject
         </button>
       </div>

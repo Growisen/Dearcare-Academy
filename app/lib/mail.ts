@@ -115,13 +115,13 @@ Thank you.`;
 }
 
 export async function confirmation_mail(details: MailDetailsConfirmation) {
-    const { name, email } = details;
+    const { name, email, courseName } = details;
   
-    const subject = `Registration Approved`;
+    const subject = `Registration Approved - ${courseName}`;
   
-    const text = `Dear ${name},\n\nYour registration details have been successfully verified and approved. You can now proceed with the next steps.\n\nThank you.`;
+    const text = `Dear ${name},\n\nYour registration details for ${courseName} have been successfully verified and approved. You can now proceed with the next steps.\n\nThank you.`;
   
-    const html = `<p>Dear <strong>${name}</strong>,</p><p>Your registration details have been successfully verified and approved. You can now proceed with the next steps.</p><p>Thank you.</p>`;
+    const html = `<p>Dear <strong>${name}</strong>,</p><p>Your registration details for <strong>${courseName}</strong> have been successfully verified and approved. You can now proceed with the next steps.</p><p>Thank you.</p>`;
     return await send_mail({ to: email, subject, text, html });
 }
 
