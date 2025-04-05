@@ -197,7 +197,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
       case "follow-up":
         return <FollowUpContent />;
       case "new":
-        return <NewContent />;
+        return <NewContent studentId={student.id}/>;
       case "rejected":
         return <RejectedContent />;
       default:
