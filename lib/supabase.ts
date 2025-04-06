@@ -226,7 +226,7 @@ export const insertEnquiryData = async (formData: EnquiryFormData) => {
 export const getCourses = async () => {
   try {
     const { data, error } = await supabase
-      .from('courses')
+      .from('academy_courses')
       .select('course_name');
 
     if (error) throw error;
@@ -240,7 +240,7 @@ export const getCourses = async () => {
 export const getCourseDetails = async (courseName: string) => {
   try {
     const { data, error } = await supabase
-      .from('courses')
+      .from('academy_courses')
       .select('course_name, course_fees, reg_fees')
       .eq('course_name', courseName)
       .single();
