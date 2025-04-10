@@ -54,21 +54,22 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
 
       const assignedIds = assignments?.map(a => a.student_id) || [];
 
-      // Then get all students who aren't in the assigned list
+      // Then get all confirmed students who aren't in the assigned list
       const query = supabase
         .from('students')
         .select(`
           id,
           name,
           email,
-          student_source!left (
+          student_source!inner (
             status
           )
         `)
-        .filter('id', 'not.in', `(${assignedIds.join(',')})`);
+        .filter('id', 'not.in', `(${assignedIds.join(',')})`)
+        .filter('student_source.status', 'eq', 'Confirmed');  // Added filter for confirmed status
       
       if (!assignedIds.length) {
-        query.limit(100); // Apply limit only when there are no assigned IDs
+        query.limit(100);
       }
 
       const { data, error } = await query;
