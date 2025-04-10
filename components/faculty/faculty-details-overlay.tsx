@@ -29,11 +29,7 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
   const [assignedStudents, setAssignedStudents] = useState<AssignedStudent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
-  /*
-  const allStudents = supervisor.faculties.flatMap(f => 
-    f.students.map(name => ({ name, subject: f.subject }))
-  );
-*/
+
   useEffect(() => {
     if (showAssignList) {
       fetchUnassignedStudents();
@@ -47,40 +43,41 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
   const fetchUnassignedStudents = async () => {
     setIsLoading(true);
     try {
-      // First get the subquery as a string of IDs
       const { data: assignments } = await supabase
         .from('faculty_assignment')
         .select('student_id');
 
       const assignedIds = assignments?.map(a => a.student_id) || [];
 
-      // Then get all students who aren't in the assigned list
       const query = supabase
         .from('students')
         .select(`
           id,
           name,
           email,
-          student_source!left (
+          student_source!inner (
             status
           )
         `)
-        .filter('id', 'not.in', `(${assignedIds.join(',')})`);
+        .filter('id', 'not.in', `(${assignedIds.join(',')})`)
+        .eq('student_source.status', 'Confirmed');
       
       if (!assignedIds.length) {
-        query.limit(100); // Apply limit only when there are no assigned IDs
+        query.limit(100);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
 
-      setUnassignedStudents((data || []).map(student => ({
-        id: student.id,
-        name: student.name || 'Unnamed Student',
-        email: student.email || '',
-        course: student.student_source?.[0]?.status || 'Not specified'
-      })));
+      setUnassignedStudents((data || [])
+        .filter(student => student.student_source?.[0]?.status === 'Confirmed')
+        .map(student => ({
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          course: student.student_source?.[0]?.status
+        })));
 
     } catch (error) {
       console.error('Error fetching unassigned students:', error);
@@ -120,7 +117,6 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
 
   const handleAssignStudents = async () => {
     try {
-      // Insert supervisor assignments
       const assignments = selectedStudents.map(studentId => ({
         student_id: parseInt(studentId),
         faculty_id: parseInt(faculty.id),
@@ -134,7 +130,6 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
 
       if (error) throw error;
 
-      // Refresh both lists
       await Promise.all([
         fetchUnassignedStudents(),
         fetchAssignedStudents()
