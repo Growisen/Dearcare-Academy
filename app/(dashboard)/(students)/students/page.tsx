@@ -6,7 +6,7 @@ import { Search, CheckCircle, Clock, User, XCircle } from "lucide-react";
 import { Input } from "../../../../components/ui/input";
 import { AddStudentOverlay } from "../../../../components/students/add-student-overlay";
 import { StudentDetailsOverlay } from "../../../../components/students/student-details-overlay";
-import { StudentFormData, DatabaseStudent, Student} from "../../../../types/student.types";
+import { StudentFormData, DatabaseStudent, Student } from "../../../../types/student.types";
 
 export default function StudentsPage() {
   const router = useRouter();
@@ -17,6 +17,7 @@ export default function StudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAssignOverlay, setShowAssignOverlay] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [hasNewStudents, setHasNewStudents] = useState(false);
 
   const statusColors = {
     confirmed: "bg-green-100 text-green-700 border border-green-200",
@@ -81,7 +82,7 @@ export default function StudentsPage() {
             clinical_assist
           )
         `)
-        .order('created_at', { ascending: false });  // Add this line to sort by creation date
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setStudents(data || []);
@@ -92,6 +93,17 @@ export default function StudentsPage() {
     }
   };
 
+  useEffect(() => {
+    const checkForNewStudents = () => {
+      const newStudents = students.some(student => 
+        student.student_source?.[0]?.status?.toLowerCase() === 'new'
+      );
+      setHasNewStudents(newStudents);
+    };
+    
+    checkForNewStudents();
+  }, [students]);
+
   const filteredStudents = students.filter((student) => {
     const sourceStatus = student.student_source?.[0]?.status?.toLowerCase() || '';
     const matchesStatus = selectedStatus === "all" ? true : sourceStatus === selectedStatus;
@@ -99,7 +111,7 @@ export default function StudentsPage() {
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm) ||
       student.email.toLowerCase().includes(searchTerm) ||
-      student.mobile?.toLowerCase().includes(searchTerm);    // Added mobile search
+      student.mobile?.toLowerCase().includes(searchTerm);
     return matchesStatus && matchesSearch;
   });
 
@@ -123,9 +135,8 @@ export default function StudentsPage() {
   };
 
   const handleAssignStudent = (formData: StudentFormData) => {
-    // Handle the form data here
     console.log("New student data:", formData);
-    fetchStudents(); // Refresh the students list after adding new student
+    fetchStudents();
   };
 
   return (
@@ -136,9 +147,12 @@ export default function StudentsPage() {
         <div>
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                Students
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                  Students
+                </h1>
+                
+              </div>
               <button
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 onClick={() => setShowAssignOverlay(true)}
@@ -163,13 +177,16 @@ export default function StudentsPage() {
                     <button
                       key={status}
                       onClick={() => setSelectedStatus(status)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                         selectedStatus === status
                           ? "bg-blue-100 text-blue-800"
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {hasNewStudents && status === "new" && (
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      )}
                     </button>
                   )
                 )}
@@ -207,7 +224,6 @@ export default function StudentsPage() {
                       {filteredStudents.map((student) => {
                         const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
                         const StatusIcon = statusIcons[status as keyof typeof statusIcons];
-                        //const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
 
                         return (
                           <tr key={student.id} className="hover:bg-gray-50/50">
@@ -243,8 +259,6 @@ export default function StudentsPage() {
                                   status: status as "confirmed" | "follow-up" | "new" | "rejected",
                                   enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                                   location: getLocationString(student),
-                                  //assigningAgent: student.student_source?.[0]?.assigning_agent,
-                                  //priority: student.student_source?.[0]?.priority,
                                 })}
                               >
                                 View Details
@@ -258,7 +272,7 @@ export default function StudentsPage() {
                 </div>
               )}
 
-              {/* Mobile view */}
+{/* Mobile view */}
               <div className="sm:hidden divide-y divide-gray-200">
                 {filteredStudents.map((student) => {
                   const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
@@ -298,8 +312,6 @@ export default function StudentsPage() {
                           status: status as "confirmed" | "follow-up" | "new" | "rejected",
                           enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                           location: getLocationString(student),
-                          //assigningAgent: student.student_source?.[0]?.assigning_agent,
-                          //priority: student.student_source?.[0]?.priority,
                         })}
                       >
                         View Details
@@ -313,7 +325,7 @@ export default function StudentsPage() {
 
           {showAssignOverlay && (
             <AddStudentOverlay
-              supervisorId="1" // Pass actual supervisor ID if needed
+              supervisorId="1"
               onClose={() => setShowAssignOverlay(false)}
               onAssign={handleAssignStudent}
             />
@@ -331,9 +343,9 @@ export default function StudentsPage() {
                 requestDate: selectedStudent.enrollmentDate,
                 status: selectedStudent.status,
                 location: selectedStudent.location,
-                dateOfBirth: "Not specified", // Placeholder or actual value
-                age: "Not specified",         // Placeholder or actual value
-                gender: "Not specified",      // Placeholder or actual value
+                dateOfBirth: "Not specified",
+                age: "Not specified",
+                gender: "Not specified",
               }}
               onClose={() => setSelectedStudent(null)}
             />
