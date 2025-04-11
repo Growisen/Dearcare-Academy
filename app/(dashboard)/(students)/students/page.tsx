@@ -18,6 +18,8 @@ export default function StudentsPage() {
   const [showAssignOverlay, setShowAssignOverlay] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [hasNewStudents, setHasNewStudents] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const studentsPerPage = 10;
 
   const statusColors = {
     confirmed: "bg-green-100 text-green-700 border border-green-200",
@@ -115,6 +117,15 @@ export default function StudentsPage() {
     return matchesStatus && matchesSearch;
   });
 
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+  const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus, searchQuery]);
+
   const getPreferredCourse = (preferences: Record<string, string> = {}) => {
     const interestedService = Object.entries(preferences)
       .find(([, interest]) => interest === 'Interested')?.[0];
@@ -137,6 +148,59 @@ export default function StudentsPage() {
   const handleAssignStudent = (formData: StudentFormData) => {
     console.log("New student data:", formData);
     fetchStudents();
+  };
+
+  const renderPaginationControls = () => {
+    return (
+      <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+        <div className="flex flex-1 justify-between sm:hidden">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium">{indexOfFirstStudent + 1}</span> to{' '}
+              <span className="font-medium">
+                {Math.min(indexOfLastStudent, filteredStudents.length)}
+              </span>{' '}
+              of <span className="font-medium">{filteredStudents.length}</span> results
+            </p>
+          </div>
+          <div>
+            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                    page === currentPage
+                      ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                      : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+                  } ${page === 1 ? 'rounded-l-md' : ''} ${
+                    page === totalPages ? 'rounded-r-md' : ''
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -221,7 +285,7 @@ export default function StudentsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {filteredStudents.map((student) => {
+                      {currentStudents.map((student) => {
                         const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
                         const StatusIcon = statusIcons[status as keyof typeof statusIcons];
 
@@ -272,9 +336,10 @@ export default function StudentsPage() {
                 </div>
               )}
 
-{/* Mobile view */}
+              {!loading && filteredStudents.length > 0 && renderPaginationControls()}
+
               <div className="sm:hidden divide-y divide-gray-200">
-                {filteredStudents.map((student) => {
+                {currentStudents.map((student) => {
                   const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
                   const StatusIcon = statusIcons[status as keyof typeof statusIcons];
                   const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
