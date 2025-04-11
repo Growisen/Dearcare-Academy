@@ -109,6 +109,42 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
 
   const updateStudentStatus = async (newStatus: string) => {
     try {
+      if (newStatus.toLowerCase() === 'confirmed') {
+        // First, send verification email with receipt upload details
+        const verifyResponse = await fetch('/api/verify-student', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            studentId: student.id
+          }),
+        });
+
+        if (!verifyResponse.ok) {
+          throw new Error('Failed to send verification email');
+        }
+
+        // Then send confirmation email
+        const confirmResponse = await fetch('/api/mail/confirmation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: student.name,
+            email: student.email,
+            courseName: student.service,
+            id: parseInt(student.id)
+          }),
+        });
+
+        if (!confirmResponse.ok) {
+          throw new Error('Failed to send confirmation email');
+        }
+      }
+
+      // Update status in database
       const { error } = await supabase
         .from('student_source')
         .update({ status: newStatus })
@@ -116,7 +152,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
 
       if (error) throw error;
       
-      // Update local state with new status
+      // Update local state
       setCurrentStudent(prev => ({
         ...prev,
         status: newStatus.toLowerCase() as "confirmed" | "follow-up" | "new" | "rejected"

@@ -215,7 +215,7 @@ export default function StudentsPage() {
                               {student.name}
                             </td>
                             <td className="py-4 px-6 text-gray-700">
-                              {preferredCourse}
+                              {student.course}
                             </td>
                             <td className="py-4 px-6">
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${

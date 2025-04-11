@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail,  User,  Book, Briefcase, Users, Heart, FileText, File, Eye, Edit, Save, X, LucideIcon } from 'lucide-react';
+import { Mail,  User,  Book, Briefcase, Users, Heart, FileText, File, Eye,  LucideIcon } from 'lucide-react';
 import { fetchStudentData } from '../../utils/studentData';
 
 interface ClientInformationProps {
@@ -324,7 +324,7 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
   const [client, setClient] = useState<NonNullable<ClientInformationProps['initialData']> | undefined>(initialData || undefined);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing] = useState(false);
   const [files, setFiles] = useState({
     photo: null as File | null,
     documents: null as File | null,
@@ -444,17 +444,18 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
       };
     });
   };
-
+/*
   const handleSave = () => {
     // TODO: Implement save functionality
     setIsEditing(false);
   };
-
+*/
+/*
   const handleCancel = () => {
     setClient(initialData || undefined);
     setIsEditing(false);
   };
-
+*/
   const renderDocuments = () => {
     if (!isEditing) {
       return (

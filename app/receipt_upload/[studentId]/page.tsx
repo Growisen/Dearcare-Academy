@@ -5,7 +5,8 @@ import UploadForm from '../UploadForm';
 import { CircularProgress } from '@mui/material';
 
 export default function Page() {
-  const { studentId } = useParams();
+  const params = useParams();
+  const studentId = params?.studentId as string;
   const [student, setStudent] = useState<{ name?: string; email?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,7 @@ export default function Page() {
 
   return (
     <UploadForm
-      studentId={studentId as string}
+      studentId={studentId}
       studentName={student?.name}
       studentEmail={student?.email}
     />
