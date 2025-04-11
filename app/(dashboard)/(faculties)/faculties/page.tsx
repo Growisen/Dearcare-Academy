@@ -42,7 +42,8 @@ interface SupervisorAssignmentResponse {
 export default function FacultiesPage() {
   const router = useRouter()
   const [Faculties, setFaculties] = useState<Faculty[]>([])
-  //const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
   const [authChecked, setAuthChecked] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string>("active")
   const [searchQuery, setSearchQuery] = useState("")
@@ -76,7 +77,6 @@ export default function FacultiesPage() {
 
   async function fetchFaculties() {
     try {
-      //setLoading(true)
       const { data: dbFaculties, error } = await supabase
         .from('academy_faculties')
         .select('*')
@@ -128,8 +128,6 @@ export default function FacultiesPage() {
       setFaculties(formattedFaculties)
     } catch (error) {
       console.error('Error fetching supervisors:', error)
-    } finally {
-      //setLoading(false)
     }
   }
 
@@ -152,6 +150,12 @@ export default function FacultiesPage() {
     return matchesStatus && matchesSearch
   })
 
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentFaculties = filteredFaculties.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredFaculties.length / itemsPerPage)
+
   return (
     <>
       {!authChecked ? (
@@ -161,11 +165,6 @@ export default function FacultiesPage() {
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Supervisors</h1>
-              {/*
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Add Supervisor
-              </button>
-              */}
             </div>
 
             <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -209,7 +208,7 @@ export default function FacultiesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filteredFaculties.map((faculty) => {
+                    {currentFaculties.map((faculty) => {
                       const StatusIcon = statusIcons[faculty.status];
                       return (
                         <tr key={faculty.id} className="hover:bg-gray-50/50">
@@ -245,7 +244,7 @@ export default function FacultiesPage() {
 
               {/* Mobile view */}
               <div className="sm:hidden divide-y divide-gray-200">
-                {filteredFaculties.map((faculty) => {
+                {currentFaculties.map((faculty) => {
                   const StatusIcon = statusIcons[faculty.status];
                   return (
                     <div key={faculty.id} className="p-4 space-y-3">
@@ -273,6 +272,29 @@ export default function FacultiesPage() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredFaculties.length)} of {filteredFaculties.length} results
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           </div>
