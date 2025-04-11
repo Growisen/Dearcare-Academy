@@ -15,6 +15,8 @@ interface Enquiry {
 export default function EnquiryPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     loadEnquiries();
@@ -36,6 +38,11 @@ export default function EnquiryPage() {
     }
   };
 
+  const totalPages = Math.ceil(enquiries.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentEnquiries = enquiries.slice(startIndex, endIndex);
+
   if (error) {
     return <div className="p-4 text-red-500">Error loading enquiries: {error}</div>;
   }
@@ -56,7 +63,7 @@ export default function EnquiryPage() {
             </tr>
           </thead>
           <tbody>
-            {enquiries.map((enquiry) => (
+            {currentEnquiries.map((enquiry) => (
               <tr key={enquiry.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 border-b">
                   {new Date(enquiry.created_at).toLocaleDateString()}
@@ -77,6 +84,27 @@ export default function EnquiryPage() {
             ))}
           </tbody>
         </table>
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Showing {startIndex + 1} to {Math.min(endIndex, enquiries.length)} of {enquiries.length} entries
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
