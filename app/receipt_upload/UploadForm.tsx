@@ -79,8 +79,11 @@ export default function UploadForm({ studentId, studentName, studentEmail }: Upl
   };
 
   return (
+    <>
     <div className="p-6 max-w-md mx-auto bg-white min-h-screen">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Upload Payment Receipt</h1>
+    <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center bg-blue-300 py-4 px-8 rounded w-full">DearCare Academy</h2>
+
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">Upload Payment Receipt</h2>
       
       <div className="mb-6 p-4 bg-gray-50 rounded-lg">
         <p className="text-gray-600">Student ID: {studentId}</p>
@@ -137,5 +140,6 @@ export default function UploadForm({ studentId, studentName, studentEmail }: Upl
         </Button>
       </form>
     </div>
+    </>
   );
 }
