@@ -33,23 +33,11 @@ interface Supervisor {
   assignedStudents: AssignedStudent[]
 }
 
-/*
-interface SupervisorAssignmentResponse {
-  student: {
-    id: number;
-    name: string;
-    email: string;
-    student_source: Array<{
-      status: string;
-    }>;
-  };
-}
-  */
-
 export default function SupervisorsPage() {
   const router = useRouter()
   const [supervisors, setSupervisors] = useState<Supervisor[]>([])
-  //const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   const [authChecked, setAuthChecked] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string>("active")
   const [searchQuery, setSearchQuery] = useState("")
@@ -83,7 +71,6 @@ export default function SupervisorsPage() {
 
   async function fetchSupervisors() {
     try {
-      //setLoading(true)
       const { data: dbSupervisors, error } = await supabase
         .from('academy_supervisors')
         .select('*')
@@ -135,8 +122,6 @@ export default function SupervisorsPage() {
       setSupervisors(formattedSupervisors)
     } catch (error) {
       console.error('Error fetching supervisors:', error)
-    } finally {
-      //setLoading(false)
     }
   }
 
@@ -159,6 +144,12 @@ export default function SupervisorsPage() {
     return matchesStatus && matchesSearch
   })
 
+  const pageCount = Math.ceil(filteredSupervisors.length / itemsPerPage)
+  const paginatedSupervisors = filteredSupervisors.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
   return (
     <>
       {!authChecked ? (
@@ -168,11 +159,6 @@ export default function SupervisorsPage() {
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Supervisors</h1>
-              {/*
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Add Supervisor
-              </button>
-            */}
             </div>
 
             <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -216,7 +202,7 @@ export default function SupervisorsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filteredSupervisors.map((supervisor) => {
+                    {paginatedSupervisors.map((supervisor) => {
                       const StatusIcon = statusIcons[supervisor.status];
                       return (
                         <tr key={supervisor.id} className="hover:bg-gray-50/50">
@@ -250,9 +236,34 @@ export default function SupervisorsPage() {
                 </table>
               </div>
 
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="text-sm text-gray-700">
+                  Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredSupervisors.length)} to{' '}
+                  {Math.min(currentPage * itemsPerPage, filteredSupervisors.length)} of{' '}
+                  {filteredSupervisors.length} results
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))}
+                    disabled={currentPage === pageCount}
+                    className="px-3 py-1 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+
               {/* Mobile view */}
               <div className="sm:hidden divide-y divide-gray-200">
-                {filteredSupervisors.map((supervisor) => {
+                {paginatedSupervisors.map((supervisor) => {
                   const StatusIcon = statusIcons[supervisor.status];
                   return (
                     <div key={supervisor.id} className="p-4 space-y-3">
