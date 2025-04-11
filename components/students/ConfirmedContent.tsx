@@ -32,11 +32,13 @@ export function ConfirmedContent({ studentId }: ConfirmedContentProps) {
         setHasReceipt(receiptExists);
 
         if (receiptExists) {
-          const { data: { publicUrl }, error: urlError } = await supabase.storage
+          const { data: { publicUrl } } = supabase.storage
             .from('DearCare')
             .getPublicUrl(`Students/${studentId}/payment_receipt.pdf`);
 
-          if (urlError) throw urlError;
+          if (!publicUrl) {
+            throw new Error("Failed to generate public URL for receipt");
+          }
 
           //console.log("Public URL for receipt:", publicUrl); // Debug log
           setReceiptUrl(publicUrl);
