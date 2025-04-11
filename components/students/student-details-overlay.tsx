@@ -14,6 +14,7 @@ interface StudentDetailsProps {
     email: string;
     phone: string;
     service: string;
+    course: string; 
     requestDate: string;
     location: string;
     dateOfBirth: string;
@@ -60,6 +61,7 @@ interface StudentDetailsProps {
     photo?: string;
     documents?: string;
     nocCertificate?: string;
+
   };
   onClose: () => void;
 }
@@ -134,8 +136,8 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
           body: JSON.stringify({
             name: student.name,
             email: student.email,
-            courseName: student.service,
-            id: parseInt(student.id)
+            courseName: student.course,
+            id: student.id
           }),
         });
 
@@ -207,7 +209,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
     name: currentStudent.name,
     email: currentStudent.email,
     phone: currentStudent.phone,
-    service: currentStudent.service,
+    course: currentStudent.course,
     
     // Location info
     currentAddress: currentStudent.location,

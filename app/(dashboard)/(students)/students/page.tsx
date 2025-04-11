@@ -207,7 +207,7 @@ export default function StudentsPage() {
                       {filteredStudents.map((student) => {
                         const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
                         const StatusIcon = statusIcons[status as keyof typeof statusIcons];
-                        const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
+                        //const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
 
                         return (
                           <tr key={student.id} className="hover:bg-gray-50/50">
@@ -239,7 +239,7 @@ export default function StudentsPage() {
                                   fullName: student.name,
                                   email: student.email,
                                   phone: student.mobile,
-                                  course: preferredCourse,
+                                  course: student.course,
                                   status: status as "confirmed" | "follow-up" | "new" | "rejected",
                                   enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                                   location: getLocationString(student),
@@ -294,7 +294,7 @@ export default function StudentsPage() {
                           fullName: student.name,
                           email: student.email,
                           phone: student.mobile,
-                          course: preferredCourse,
+                          course: student.course,
                           status: status as "confirmed" | "follow-up" | "new" | "rejected",
                           enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                           location: getLocationString(student),
@@ -326,6 +326,7 @@ export default function StudentsPage() {
                 name: selectedStudent.fullName,
                 email: selectedStudent.email,
                 phone: selectedStudent.phone,
+                course: selectedStudent.course,
                 service: selectedStudent.course,
                 requestDate: selectedStudent.enrollmentDate,
                 status: selectedStudent.status,
