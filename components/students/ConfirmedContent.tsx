@@ -1,137 +1,105 @@
-import React from 'react';
-//import { X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertTriangle, Maximize2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
-/*
-interface Course {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-  instructor: string;
+interface ConfirmedContentProps {
+  studentId: string;
 }
-  */
-{/*
-const DUMMY_COURSES = [
-  {
-    id: "1",
-    name: "Basic Life Support (BLS) Certification",
-    startDate: "2024-01-15",
-    endDate: "2024-02-15",
-    description: "Essential life support techniques and emergency response for healthcare providers",
-    instructor: "Dr. Sarah Thompson, RN"
-  },
-  {
-    id: "2",
-    name: "Advanced Patient Care Techniques",
-    startDate: "2024-02-01",
-    endDate: "2024-04-01",
-    description: "Advanced nursing procedures and patient care methodologies",
-    instructor: "Prof. Michael Chen, DNP"
-  }
-];
-*/}
-{/*
-const CourseCard = ({ 
-  course, 
-  onUnenroll 
-}: { 
-  course: Course; 
-  onUnenroll: (courseId: string) => void;
-}) => {
-  const [showConfirm, setShowConfirm] = useState(false);
+
+export function ConfirmedContent({ studentId }: ConfirmedContentProps) {
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [hasReceipt, setHasReceipt] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const fetchReceiptStatus = async () => {
+      //console.log("fetchReceiptStatus called with studentId:", studentId); // Debug log
+      if (!studentId) {
+        console.warn("No studentId provided, skipping fetchReceiptStatus");
+        return;
+      }
+
+      try {
+        const { data: student, error: studentError } = await supabase
+          .from('students')
+          .select('payment_receipt')
+          .eq('id', studentId)
+          .single();
+
+        if (studentError) throw studentError;
+
+        const receiptExists = !!student?.payment_receipt;
+        //console.log("Receipt exists:", receiptExists, "Payment receipt value:", student.payment_receipt); // Debug log
+        setHasReceipt(receiptExists);
+
+        if (receiptExists) {
+          const { data: { publicUrl }, error: urlError } = await supabase.storage
+            .from('DearCare')
+            .getPublicUrl(`Students/${studentId}/payment_receipt.pdf`);
+
+          if (urlError) throw urlError;
+
+          //console.log("Public URL for receipt:", publicUrl); // Debug log
+          setReceiptUrl(publicUrl);
+        } else {
+          setReceiptUrl(null);
+        }
+      } catch (error) {
+        console.error("Error fetching receipt status:", error);
+        setHasReceipt(false);
+        setReceiptUrl(null);
+      }
+    };
+
+    fetchReceiptStatus();
+  }, [studentId]);
 
   return (
-    <div className="border rounded-lg p-4 bg-white shadow-sm">
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-medium text-gray-900">{course.name}</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            {course.startDate} - {course.endDate}
+    <div className="p-6 space-y-6">
+      {hasReceipt === false && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-700">
+            <AlertTriangle className="h-5 w-5" />
+            <h3 className="font-medium">Payment Receipt Missing</h3>
+          </div>
+          <p className="mt-1 text-sm text-red-600">
+            Warning: The payment receipt has not been uploaded yet.
           </p>
-          <p className="text-sm text-gray-600 mt-2">{course.description}</p>
-          <p className="text-sm text-gray-500 mt-1">Instructor: {course.instructor}</p>
         </div>
-        <button
-          onClick={() => setShowConfirm(true)}
-          className="text-red-600 hover:text-red-700 text-sm font-medium"
-        >
-          Unenroll
-        </button>
-      </div>
+      )}
 
-      {showConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-sm w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Confirm Unenrollment</h3>
-              <button onClick={() => setShowConfirm(false)} className="text-gray-400 hover:text-gray-600">
-                <X size={20} />
+      {receiptUrl ? (
+        <div className="max-w-2xl mx-auto">
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center">
+              <h3 className="text-sm font-medium text-gray-700">Payment Receipt</h3>
+              <button 
+                onClick={() => window.open(receiptUrl, '_blank')}
+                className="text-blue-600 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50 flex items-center gap-1 text-sm"
+              >
+                <Maximize2 className="h-4 w-4" />
+                Full View
               </button>
             </div>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to unenroll from {course.name}?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  onUnenroll(course.id);
-                  setShowConfirm(false);
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-              >
-                Confirm Unenroll
-              </button>
+            <iframe
+              src={`${receiptUrl}#view=FitH`}
+              className="w-full h-[400px] border-0"
+              title="Payment Receipt"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-2xl mx-auto">
+          <div className="border border-red-200 rounded-lg overflow-hidden bg-red-50">
+            <div className="px-4 py-6 flex flex-col items-center justify-center gap-2">
+              <AlertTriangle className="h-12 w-12 text-red-500" />
+              <h3 className="font-medium text-red-700">No Payment Receipt Available</h3>
+              <p className="text-sm text-red-600 text-center">
+                No payment receipt has been uploaded for this student yet.
+              </p>
             </div>
           </div>
         </div>
       )}
-    </div>
-  );
-};
-*/}
-
-export function ConfirmedContent() {
-  /*
-  const handleUnenroll = async (courseId: string) => {
-    console.log('Unenrolling from course:', courseId);
-  };
-  */
-
-  return (
-    <div className="p-6 space-y-6">
-      {/*
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Enrolled Courses</h2>
-      </div>
-
-      {DUMMY_COURSES.length > 0 ? (
-        <div className="space-y-4">
-          {DUMMY_COURSES.map(course => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              onUnenroll={handleUnenroll}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Registration Confirmed
-          </h3>
-          <p className="text-gray-600">
-            You&apos;re all set! Ready to enroll in courses.
-          </p>
-        </div>
-      )}
-        */}
     </div>
   );
 }

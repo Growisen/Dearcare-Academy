@@ -263,7 +263,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
   const renderStatusSpecificContent = () => {
     switch (currentStudent.status) {
       case "confirmed":
-        return <ConfirmedContent />;
+        return <ConfirmedContent studentId={currentStudent.id}/>;
       case "follow-up":
         return <FollowUpContent studentId={currentStudent.id} />;
       case "new":
