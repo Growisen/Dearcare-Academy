@@ -33,8 +33,8 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
               <User className="w-4 h-4" />
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-medium text-slate-700">Dr. Smith</p>
-              <p className="text-xs text-slate-500">Principal</p>
+              <p className="text-sm font-medium text-slate-500">Admin</p>
+              {/* <p className="text-xs text-slate-500">Principal</p> */}
             </div>
           </button>
         </div>
