@@ -131,7 +131,7 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
           </div>
           <p className="mt-1 text-sm text-red-600">
             Warning: The payment receipt has not been uploaded. You can still proceed with verification, 
-            but it's recommended to have the receipt uploaded first.
+            but it&apos;s recommended to have the receipt uploaded first.
           </p>
         </div>
       )}
