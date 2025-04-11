@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { DOMAIN } from '../config/constants';
+import { DOMAIN,student_reg_link } from '../config/constants';
 
 interface MailDetails {
     to: string;
@@ -62,7 +62,7 @@ export async function enquiry_reply(details: MailDetailsEnquiry) {
   const { name, email, courseFees, regFees } = details;
 
   const subject = `Course Enquiry - ${details.courseName}`;
-  const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nCourse Details:\nRegistration Fee: ₹${regFees}\nCourse Fee: ₹${courseFees}\n\nPlease find the brochure attached and use the link below to register:\n\n[Registration Link]\n`;
+  const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nCourse Details:\nRegistration Fee: ₹${regFees}\nCourse Fee: ₹${courseFees}\n\nPlease find the brochure attached and use the link below to register:\n\n${student_reg_link}\n`;
 /*
   const html = `
     <p>Hi <strong>${name}</strong>,</p>
@@ -115,7 +115,7 @@ export async function enquiry_reply(details: MailDetailsEnquiry) {
                     You can apply for the course using the following link:
                   </p>
                   <p style="text-align: center; margin: 20px 0;">
-                    <a href="https://localhost.com/register?course=agda" style="background-color: #0056b3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Apply now</a>
+                    <a href="${student_reg_link}" style="background-color: #0056b3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Apply now</a>
                   </p>
                 </div>
                 
