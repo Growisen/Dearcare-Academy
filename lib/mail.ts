@@ -63,7 +63,7 @@ export async function enquiry_reply(details: MailDetailsEnquiry) {
 
   const subject = `Course Enquiry - ${details.courseName}`;
   const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nCourse Details:\nRegistration Fee: ₹${regFees}\nCourse Fee: ₹${courseFees}\n\nPlease find the brochure attached and use the link below to register:\n\n[Registration Link]\n`;
-
+/*
   const html = `
     <p>Hi <strong>${name}</strong>,</p>
     <p>Thank you for your interest in <strong>${details.courseName}</strong>.</p>
@@ -77,6 +77,67 @@ export async function enquiry_reply(details: MailDetailsEnquiry) {
     <hr />
   
   `;
+  */
+
+  const html=`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>DearCare Academy</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333333; background-color: #f7f7f7;">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!-- Header -->
+            <tr>
+              <td style="background-color: #0056b3; padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-weight: 600;">DearCare Academy</h1>
+              </td>
+            </tr>
+            
+            <!-- Main Content -->
+            <tr>
+              <td style="padding: 30px 25px;">
+                <p style="margin-top: 0; font-size: 16px; line-height: 1.5;">Dear ${name},</p>
+                
+                <p style="font-size: 16px; line-height: 1.5;">Thank you for your interest in <strong>${details.courseName}</strong>.</p>
+                
+                <div style="background-color: #f8f9fa; border-left: 4px solid #0056b3; padding: 15px; margin: 25px 0;">
+                  <h3 style="margin-top: 0; color: #0056b3; font-size: 18px;">Fee Details:</h3>
+                  <p style="margin-bottom: 5px; font-size: 16px;">
+                    <ul>
+                      <li>Registration Fee: ₹${regFees}</li>
+                      <li>Course Fee: ₹${courseFees}</li>
+                    </ul>
+                  </p>
+                  <p style="margin-bottom: 5px; font-size: 16px;">
+                    You can apply for the course using the following link:
+                  </p>
+                  <p style="text-align: center; margin: 20px 0;">
+                    <a href="https://localhost.com/register?course=agda" style="background-color: #0056b3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Apply now</a>
+                  </p>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.5;">Thank you for your cooperation.</p>
+                
+                <p style="font-size: 16px; line-height: 1.5;">Sincerely,</p>
+                <p style="font-size: 16px; line-height: 1.5; margin-bottom: 0;"><strong>The DearCare Team</strong></p>
+              </td>
+            </tr>
+            
+            <!-- Footer -->
+            <tr>
+              <td style="background-color: #f2f2f2; padding: 20px 25px; border-top: 1px solid #dddddd;">
+                <p style="font-size: 12px; color: #666666; margin-top: 0; margin-bottom: 10px;">This is a confidential communication with information intended only for the named recipient. If you have received this communication in error, please notify the sender immediately.</p>
+                <p style="font-size: 12px; color: #666666; margin-bottom: 0;">&copy; DearCare Health Services. All rights reserved.</p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `;
+
   return await send_mail({ to: email, subject, text, html });
 }
 
@@ -114,7 +175,7 @@ Thank you.`;
   */
 
 
-    const html=`
+    const html = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
