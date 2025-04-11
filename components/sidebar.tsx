@@ -4,8 +4,8 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 //import { signOut } from "next-auth/react"
 import { 
-  Users, Book, Settings, ClipboardList, 
-  Home, LogOut, ArrowLeftCircle, GraduationCap, DollarSign,
+  Users,  
+  Home, LogOut, ArrowLeftCircle, GraduationCap, 
   Building2, MessageCircle
 } from "lucide-react"
 import { useEffect } from "react"
@@ -60,11 +60,11 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
               { icon: Users, label: "Supervisors", href: "/supervisors" },
               { icon: GraduationCap, label: "Faculties", href: "/faculties" },
               { icon: Building2, label: "Students", href: "/students" },
-              { icon: Book, label: "Academics", href: "/academics" },
-              { icon: DollarSign, label: "Finance", href: "/finance" },
-              { icon: ClipboardList, label: "Attendance", href: "/attendance" },
+             // { icon: Book, label: "Academics", href: "/academics" },
+             // { icon: DollarSign, label: "Finance", href: "/finance" },
+             // { icon: ClipboardList, label: "Attendance", href: "/attendance" },
               { icon: MessageCircle, label: "Enquiry", href: "/enquiry" },
-              { icon: Settings, label: "Settings", href: "/settings" },
+             // { icon: Settings, label: "Settings", href: "/settings" },
             ].map((item) => {
               const isActive = pathname === item.href
               return (

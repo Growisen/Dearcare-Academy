@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { X, CheckCircle, XCircle } from 'lucide-react';
 import { ClientInformation } from './studentInformation';
 import { ConfirmedContent } from './ConfirmedContent';
 import { FollowUpContent } from './FollowUp';
