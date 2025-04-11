@@ -5,6 +5,7 @@ import { ConfirmedContent } from './ConfirmedContent';
 import { FollowUpContent } from './FollowUp';
 import { NewContent } from './NewContent';
 import { RejectedContent } from './RejectedContent';
+import { supabase } from '@/lib/supabase';
 
 interface StudentDetailsProps {
   student: {
@@ -102,8 +103,29 @@ const STATUS_STYLES = {
 };
 
 export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps) {
-  const [activeDialog, setActiveDialog] = useState<'delete' | 'proceed' | 'reject' | null>(null);
-  const status = student.status || 'new'; // Provide default value if needed, though type makes it unnecessary
+  const [activeDialog, setActiveDialog] = useState<'delete' | 'proceed' | 'reject' | 'confirm-warning' | null>(null);
+  const [currentStudent, setCurrentStudent] = useState(student);
+  const status = currentStudent.status || 'new';
+
+  const updateStudentStatus = async (newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('student_source')
+        .update({ status: newStatus })
+        .eq('student_id', student.id);
+
+      if (error) throw error;
+      
+      // Update local state with new status
+      setCurrentStudent(prev => ({
+        ...prev,
+        status: newStatus.toLowerCase() as "confirmed" | "follow-up" | "new" | "rejected"
+      }));
+      
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
 
   const dialogConfigs: Record<NonNullable<typeof activeDialog>, DialogConfig> = {
     delete: {
@@ -120,84 +142,94 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
       message: `Are you sure you want to proceed with ${student.name}'s application?`,
       confirmLabel: 'Proceed',
       confirmStyle: 'bg-green-600 hover:bg-green-700',
-      onConfirm: () => setActiveDialog(null)
+      onConfirm: () => setActiveDialog('confirm-warning')
     },
     reject: {
       title: 'Confirm Rejection',
       message: `Are you sure you want to reject ${student.name}'s application?`,
       confirmLabel: 'Reject',
       onConfirm: () => setActiveDialog(null)
+    },
+    'confirm-warning': {
+      title: 'Warning: Irregular Confirmation',
+      message: 'You are confirming this student without following the regular verification procedures. Are you sure you want to continue?',
+      confirmLabel: 'Yes, Confirm Student',
+      confirmStyle: 'bg-yellow-600 hover:bg-yellow-700',
+      onConfirm: async () => {
+        await updateStudentStatus('Confirmed');
+        setActiveDialog(null);
+      }
     }
   };
 
   // Extract state and city from location string
-  const [city, state] = student.location?.split(', ') || [null, null];
+  const [city, state] = currentStudent.location?.split(', ') || [null, null];
 
   const transformedClientData = {
-    ...student,
+    ...currentStudent,
     // Basic info
-    name: student.name,
-    email: student.email,
-    phone: student.phone,
-    service: student.service,
+    name: currentStudent.name,
+    email: currentStudent.email,
+    phone: currentStudent.phone,
+    service: currentStudent.service,
     
     // Location info
-    currentAddress: student.location,
+    currentAddress: currentStudent.location,
     state: state || '',
     city: city || '',
     
     // Status and descriptions
-    status: student.status,
+    status: currentStudent.status,
     
     // Service preferences
     servicePreferences: {
-      [student.service]: 'Interested'
+      [currentStudent.service]: 'Interested'
     },
 
     // Required string fields with default values
-    dateOfBirth: student.dateOfBirth || '',
-    age: student.age || '',
-    gender: student.gender || '',
-    location: student.location || '',
+    dateOfBirth: currentStudent.dateOfBirth || '',
+    age: currentStudent.age || '',
+    gender: currentStudent.gender || '',
+    location: currentStudent.location || '',
 
     // Optional fields can be null or undefined
-    maritalStatus: student.maritalStatus,
-    nationality: student.nationality,
-    taluk: student.taluk,
-    motherTongue: student.motherTongue,
-    knownLanguages: student.knownLanguages,
-    religion: student.religion,
-    category: student.category,
-    academics: student.academics,
-    organization: student.organization,
-    role: student.role,
-    duration: student.duration,
-    responsibilities: student.responsibilities,
-    guardianName: student.guardianName,
-    guardianRelation: student.guardianRelation,
-    guardianContact: student.guardianContact,
-    guardianAddress: student.guardianAddress,
-    guardianAadhar: student.guardianAadhar,
-    disability: student.disability,
-    nocStatus: student.nocStatus,
-    sourceOfInformation: student.sourceOfInformation,
-    assigningAgent: student.assigningAgent,
-    priority: student.priority,
-    sourceCategory: student.sourceCategory,
-    sourceSubCategory: student.sourceSubCategory,
-    photo: student.photo,
-    documents: student.documents,
-    nocCertificate: student.nocCertificate
+    maritalStatus: currentStudent.maritalStatus,
+    nationality: currentStudent.nationality,
+    taluk: currentStudent.taluk,
+    motherTongue: currentStudent.motherTongue,
+    knownLanguages: currentStudent.knownLanguages,
+    religion: currentStudent.religion,
+    category: currentStudent.category,
+    academics: currentStudent.academics,
+    organization: currentStudent.organization,
+    role: currentStudent.role,
+    duration: currentStudent.duration,
+    responsibilities: currentStudent.responsibilities,
+    guardianName: currentStudent.guardianName,
+    guardianRelation: currentStudent.guardianRelation,
+    guardianContact: currentStudent.guardianContact,
+    guardianAddress: currentStudent.guardianAddress,
+    guardianAadhar: currentStudent.guardianAadhar,
+    disability: currentStudent.disability,
+    nocStatus: currentStudent.nocStatus,
+    sourceOfInformation: currentStudent.sourceOfInformation,
+    assigningAgent: currentStudent.assigningAgent,
+    priority: currentStudent.priority,
+    sourceCategory: currentStudent.sourceCategory,
+    sourceSubCategory: currentStudent.sourceSubCategory,
+    photo: currentStudent.photo,
+    documents: currentStudent.documents,
+    nocCertificate: currentStudent.nocCertificate
   };
 
   const renderStatusSpecificContent = () => {
-    switch (student.status) {
+    switch (currentStudent.status) {
       case "confirmed":
         return <ConfirmedContent />;
       case "follow-up":
-        return <FollowUpContent studentId={student.id} />;
+        return <FollowUpContent studentId={currentStudent.id} />;
       case "new":
-        return <NewContent studentId={student.id}/>;
+        return <NewContent studentId={currentStudent.id}/>;
       case "rejected":
         return <RejectedContent />;
       default:
@@ -212,7 +244,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Request Details</h2>
-              <p className="text-sm text-gray-500">ID: {student.id}</p>
+              <p className="text-sm text-gray-500">ID: {currentStudent.id}</p>
             </div>
             <div className="flex items-center gap-3">
               {!['confirmed', 'rejected'].includes(status) && ( // Use the status variable with default value
@@ -248,7 +280,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
 
         <div className="px-6 py-4 space-y-6">
           <ClientInformation 
-            studentId={student.id} 
+            studentId={currentStudent.id} 
             initialData={transformedClientData}
           />
           {renderStatusSpecificContent()}
