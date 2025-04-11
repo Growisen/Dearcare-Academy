@@ -229,9 +229,19 @@ const Fields = {
             setFileError("Please select a JPG or PNG image file");
             return;
           }
+          // Check photo size (500KB = 512000 bytes)
+          if (file.size > 512000) {
+            setFileError("Photo size should be less than 500KB");
+            return;
+          }
         } else if (fileType === "document") {
           if (fileExtension !== 'pdf') {
             setFileError("Please select a PDF document");
+            return;
+          }
+          // Check document size (1MB = 1048576 bytes)
+          if (file.size > 1048576) {
+            setFileError("Document size should be less than 1MB");
             return;
           }
         }
@@ -264,8 +274,8 @@ const Fields = {
             </p>
           )}
           <p className="text-xs text-gray-500">
-            {fileType === "photo" ? "Accepted formats: JPG, PNG" : 
-             fileType === "document" ? "Accepted format: PDF" : 
+            {fileType === "photo" ? "Accepted formats: JPG (Max size: 500KB)" : 
+             fileType === "document" ? "Accepted format: PDF (Max size: 1MB)" : 
              ""}
           </p>
         </div>
