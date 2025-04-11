@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+//import { X } from 'lucide-react';
 
+/*
 interface Course {
   id: string;
   name: string;
@@ -9,7 +10,8 @@ interface Course {
   description: string;
   instructor: string;
 }
-
+  */
+{/*
 const DUMMY_COURSES = [
   {
     id: "1",
@@ -28,7 +30,8 @@ const DUMMY_COURSES = [
     instructor: "Prof. Michael Chen, DNP"
   }
 ];
-
+*/}
+{/*
 const CourseCard = ({ 
   course, 
   onUnenroll 
@@ -92,14 +95,18 @@ const CourseCard = ({
     </div>
   );
 };
+*/}
 
 export function ConfirmedContent() {
+  /*
   const handleUnenroll = async (courseId: string) => {
     console.log('Unenrolling from course:', courseId);
   };
+  */
 
   return (
     <div className="p-6 space-y-6">
+      {/*
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-900">Enrolled Courses</h2>
       </div>
@@ -124,6 +131,7 @@ export function ConfirmedContent() {
           </p>
         </div>
       )}
+        */}
     </div>
   );
 }
