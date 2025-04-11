@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { 
   Users, Book, Settings, ClipboardList, 
   Home, LogOut, ArrowLeftCircle, GraduationCap, DollarSign,
-  Building2
+  Building2, MessageCircle
 } from "lucide-react"
 import { useEffect } from "react"
 import { supabase } from "../lib/supabase"
@@ -38,9 +38,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
       flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="h-16 border-b border-slate-700/50 flex items-center gap-2 px-4 bg-slate-800/50 backdrop-blur-sm">
+        <div className="h-16 border-b border-slate-700/50 flex items-center gap-2 p-3 bg-slate-800/50 backdrop-blur-sm">
           <div className="flex-1 min-w-0">
-            <Image src="/Academy menue bar.png" alt="Logo" width={130} height={45} className="mx-auto object-contain" />
+            <Image src="/Academy menue bar.png" alt="Logo" width={130} height={35} className="mx-auto object-contain" />
           </div>
           <button 
             onClick={onClose}
@@ -63,6 +63,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
               { icon: Book, label: "Academics", href: "/academics" },
               { icon: DollarSign, label: "Finance", href: "/finance" },
               { icon: ClipboardList, label: "Attendance", href: "/attendance" },
+              { icon: MessageCircle, label: "Enquiry", href: "/enquiry" },
               { icon: Settings, label: "Settings", href: "/settings" },
             ].map((item) => {
               const isActive = pathname === item.href
@@ -70,7 +71,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group relative
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 group relative
                     ${isActive 
                       ? 'bg-indigo-500/10 text-indigo-400' 
                       : 'text-slate-300 hover:bg-slate-700/50 hover:text-slate-100'

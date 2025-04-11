@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { Input } from '../ui/input';
 import { StudentFormData, StepContentProps, AddStudentOverlayProps } from '../../types/student.types';
 import { insertStudentData } from '../../lib/supabase';
@@ -21,6 +21,20 @@ const calculateAge = (dob: string): number => {
   return today.getMonth() < birthDate.getMonth() || 
          (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) 
          ? age - 1 : age;
+};
+
+// Add validation utility functions
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePhone = (phone: string): boolean => {
+  return /^\d{10}$/.test(phone);
+};
+
+const validateAadhar = (aadhar: string): boolean => {
+  return /^\d{12}$/.test(aadhar);
 };
 
 const FORM_CONFIG = {
@@ -99,18 +113,54 @@ const FORM_CONFIG = {
     input: "w-full rounded-lg border border-gray-200 py-2 px-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200",
     label: "block text-sm font-medium text-gray-700 mb-1",
     layout: "grid grid-cols-1 sm:grid-cols-2 gap-4"
+  },
+  // Add validation messages and required fields
+  validationMessages: {
+    required: 'This field is required',
+    email: 'Please enter a valid email address',
+    phone: 'Phone number must be 10 digits',
+    aadhar: 'Aadhar number must be 12 digits'
+  },
+  requiredFields: {
+    personal: ['fullName', 'course'],
+    contact: ['mobileNumber', 'email'],
+    guardian: ['guardianAadhar']
   }
 };
 
-const FormField = ({ label, children }: { label: string, children: React.ReactNode }) => (
+interface FieldError {
+  error: boolean;
+  message: string;
+}
+
+interface FieldErrors {
+  [key: string]: FieldError;
+}
+
+const FormField = ({ label, children, required, error }: { 
+  label: string, 
+  children: React.ReactNode,
+  required?: boolean,
+  error?: FieldError
+}) => (
   <div>
-    <label className={FORM_CONFIG.styles.label}>{label}</label>
+    <label className={FORM_CONFIG.styles.label}>
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
     {children}
+    {error?.error && (
+      <p className="text-xs text-red-500 mt-1 flex items-start gap-1">
+        <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+        <span>{error.message}</span>
+      </p>
+    )}
   </div>
 );
 
 interface FormFieldInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  required?: boolean;
+  error?: FieldError;
 }
 
 interface TextAreaProps {
@@ -123,15 +173,21 @@ interface TextAreaProps {
 }
 
 const Fields = {
-  Input: ({ label, ...props }: FormFieldInputProps) => (
-    <FormField label={label}>
-      <Input {...props} className={FORM_CONFIG.styles.input} />
+  Input: ({ label, required, error, ...props }: FormFieldInputProps) => (
+    <FormField label={label} required={required} error={error}>
+      <Input 
+        {...props} 
+        className={`${FORM_CONFIG.styles.input} ${error?.error ? 'border-red-500 focus:ring-red-500' : ''}`} 
+      />
     </FormField>
   ),
 
-  Select: ({ label, options, ...props }: SelectProps) => (
-    <FormField label={label}>
-      <select className={FORM_CONFIG.styles.input} {...props}>
+  Select: ({ label, options, required, error, ...props }: SelectProps & { required?: boolean, error?: FieldError }) => (
+    <FormField label={label} required={required} error={error}>
+      <select 
+        className={`${FORM_CONFIG.styles.input} ${error?.error ? 'border-red-500 focus:ring-red-500' : ''}`} 
+        {...props}
+      >
         <option value="">Select {label.toLowerCase()}</option>
         {options.map((opt: string) => (
           <option key={opt} value={opt}>{opt}</option>
@@ -146,16 +202,47 @@ const Fields = {
     </FormField>
   ),
 
-  File: ({ label, value, onChange }: { 
+  File: ({ label, value, onChange, acceptTypes = ".pdf,.jpg,.jpeg,.png", fileType = "" }: { 
     label: string; 
     value?: File | null;
-    onChange?: (file: File | null) => void 
+    onChange?: (file: File | null) => void;
+    acceptTypes?: string;
+    fileType?: string;
   }) => {
     const [fileName, setFileName] = useState<string>(value?.name || '');
+    const [fileError, setFileError] = useState<string>("");
     
     useEffect(() => {
       setFileName(value?.name || '');
     }, [value]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0] || null;
+      setFileError("");
+      
+      if (file) {
+        // Validate file type
+        const fileExtension = file.name.split('.').pop()?.toLowerCase();
+        
+        if (fileType === "photo") {
+          if (!['jpg', 'jpeg', 'png'].includes(fileExtension || '')) {
+            setFileError("Please select a JPG or PNG image file");
+            return;
+          }
+        } else if (fileType === "document") {
+          if (fileExtension !== 'pdf') {
+            setFileError("Please select a PDF document");
+            return;
+          }
+        }
+        
+        setFileName(file.name);
+        onChange?.(file);
+      } else {
+        setFileName('');
+        onChange?.(null);
+      }
+    };
 
     return (
       <div>
@@ -164,28 +251,83 @@ const Fields = {
           <input 
             type="file" 
             className="text-sm" 
-            accept=".pdf,.jpg,.jpeg,.png"
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null;
-              setFileName(file?.name || '');
-              onChange?.(file);
-            }} 
+            accept={acceptTypes}
+            onChange={handleFileChange} 
           />
-          {fileName && (
+          {fileName && !fileError && (
             <p className="text-sm text-gray-500">Selected file: {fileName}</p>
           )}
+          {fileError && (
+            <p className="text-xs text-red-500 mt-1 flex items-start gap-1">
+              <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+              <span>{fileError}</span>
+            </p>
+          )}
+          <p className="text-xs text-gray-500">
+            {fileType === "photo" ? "Accepted formats: JPG, PNG" : 
+             fileType === "document" ? "Accepted format: PDF" : 
+             ""}
+          </p>
         </div>
       </div>
     );
   }
 };
 
-const handleFormChange = (field: keyof StudentFormData, setFormData: React.Dispatch<React.SetStateAction<StudentFormData>>) => (e: FormChangeEvent) => {
-  setFormData(prev => ({ ...prev, [field]: e.target.value }));
+const validateField = (field: string, value: string): FieldError => {
+  if (field === 'email' && value) {
+    return {
+      error: !validateEmail(value),
+      message: FORM_CONFIG.validationMessages.email
+    };
+  }
+  
+  if (field === 'mobileNumber' && value) {
+    return {
+      error: !validatePhone(value),
+      message: FORM_CONFIG.validationMessages.phone
+    };
+  }
+  
+  if (field === 'guardianAadhar' && value) {
+    return {
+      error: !validateAadhar(value),
+      message: FORM_CONFIG.validationMessages.aadhar
+    };
+  }
+  
+  return { error: false, message: '' };
+};
+
+const handleFormChange = (
+  field: keyof StudentFormData, 
+  setFormData: React.Dispatch<React.SetStateAction<StudentFormData>>,
+  errors: FieldErrors, 
+  setErrors: React.Dispatch<React.SetStateAction<FieldErrors>>,
+  requiredList?: string[]
+) => (e: FormChangeEvent) => {
+  const value = e.target.value;
+  setFormData(prev => ({ ...prev, [field]: value }));
+  
+  // Update validation errors
+  let error: FieldError = { error: false, message: '' };
+  
+  // Check if field is required
+  if (requiredList?.includes(field as string) && !value) {
+    error = { error: true, message: FORM_CONFIG.validationMessages.required };
+  } else {
+    // Check field format
+    error = validateField(field as string, value);
+  }
+  
+  setErrors(prev => ({ ...prev, [field]: error }));
 };
 
 const StepContent = {
-  Personal: ({ formData, setFormData }: StepContentProps) => {
+  Personal: ({ formData, setFormData, errors, setErrors }: StepContentProps & { 
+    errors: FieldErrors, 
+    setErrors: React.Dispatch<React.SetStateAction<FieldErrors>> 
+  }) => {
     const handleDateChange = (e: FormChangeEvent) => {
       const dob = e.target.value;
       if (dob) {
@@ -214,13 +356,17 @@ const StepContent = {
           label="Full Name" 
           placeholder="Enter full name"
           value={formData.fullName}
-          onChange={handleFormChange('fullName', setFormData)}
+          onChange={handleFormChange('fullName', setFormData, errors, setErrors, FORM_CONFIG.requiredFields.personal)}
+          required
+          error={errors.fullName}
         />
         <Fields.Select 
           label="Course" 
           options={FORM_CONFIG.options.courses}
           value={formData.course}
-          onChange={handleFormChange('course', setFormData)}
+          onChange={handleFormChange('course', setFormData, errors, setErrors, FORM_CONFIG.requiredFields.personal)}
+          required
+          error={errors.course}
         />
         <Fields.Input 
           label="Date of Birth" 
@@ -238,43 +384,43 @@ const StepContent = {
           label="Gender" 
           options={FORM_CONFIG.options.gender}
           value={formData.gender}
-          onChange={handleFormChange('gender', setFormData)}
+          onChange={handleFormChange('gender', setFormData, errors, setErrors)}
         />
         <Fields.Select 
           label="Marital Status" 
           options={FORM_CONFIG.options.maritalStatus}
           value={formData.maritalStatus}
-          onChange={handleFormChange('maritalStatus', setFormData)}
+          onChange={handleFormChange('maritalStatus', setFormData, errors, setErrors)}
         />
         <Fields.Input 
           label="Nationality" 
           placeholder="Enter nationality"
           value={formData.nationality}
-          onChange={handleFormChange('nationality', setFormData)}
+          onChange={handleFormChange('nationality', setFormData, errors, setErrors)}
         />
         <Fields.Input 
           label="State" 
           placeholder="Enter state"
           value={formData.state}
-          onChange={handleFormChange('state', setFormData)}
+          onChange={handleFormChange('state', setFormData, errors, setErrors)}
         />
         <Fields.Input 
           label="City" 
           placeholder="Enter city"
           value={formData.city}
-          onChange={handleFormChange('city', setFormData)}
+          onChange={handleFormChange('city', setFormData, errors, setErrors)}
         />
         <Fields.Input 
           label="Taluk" 
           placeholder="Enter taluk"
           value={formData.taluk}
-          onChange={handleFormChange('taluk', setFormData)}
+          onChange={handleFormChange('taluk', setFormData, errors, setErrors)}
         />
         <Fields.Select
           label="Mother Tongue"
           options={FORM_CONFIG.options.motherTongue}
           value={formData.motherTongue}
-          onChange={handleFormChange('motherTongue', setFormData)}
+          onChange={handleFormChange('motherTongue', setFormData, errors, setErrors)}
         />
         <div>
           <label className={FORM_CONFIG.styles.label}>Known Languages</label>
@@ -298,19 +444,22 @@ const StepContent = {
           label="Religion" 
           placeholder="Enter religion"
           value={formData.religion}
-          onChange={handleFormChange('religion', setFormData)}
+          onChange={handleFormChange('religion', setFormData, errors, setErrors)}
         />
         <Fields.Select 
           label="Category" 
           options={FORM_CONFIG.options.category}
           value={formData.category}
-          onChange={handleFormChange('category', setFormData)}
+          onChange={handleFormChange('category', setFormData, errors, setErrors)}
         />
       </div>
     );
   },
 
-  Contact: ({ formData, setFormData }: StepContentProps) => {
+  Contact: ({ formData, setFormData, errors, setErrors }: StepContentProps & { 
+    errors: FieldErrors, 
+    setErrors: React.Dispatch<React.SetStateAction<FieldErrors>> 
+  }) => {
     const handleSameAddress = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.checked) {
         setFormData({
@@ -338,14 +487,18 @@ const StepContent = {
               type="email" 
               placeholder="Enter email address"
               value={formData.email}
-              onChange={handleFormChange('email', setFormData)}
+              onChange={handleFormChange('email', setFormData, errors, setErrors, FORM_CONFIG.requiredFields.contact)}
+              required
+              error={errors.email}
             />
             <Fields.Input 
               label="Mobile Number" 
               type="tel" 
               placeholder="Enter mobile number"
               value={formData.mobileNumber}
-              onChange={handleFormChange('mobileNumber', setFormData)}
+              onChange={handleFormChange('mobileNumber', setFormData, errors, setErrors, FORM_CONFIG.requiredFields.contact)}
+              required
+              error={errors.mobileNumber}
             />
           </div>
         </div>
@@ -357,14 +510,14 @@ const StepContent = {
             label="Address" 
             placeholder="Enter current address"
             value={formData.currentAddress}
-            onChange={handleFormChange('currentAddress', setFormData)}
+            onChange={handleFormChange('currentAddress', setFormData, errors, setErrors)}
           />
           <div className={FORM_CONFIG.styles.layout}>
             <Fields.Input 
               label="PIN Code" 
               placeholder="Enter PIN code"
               value={formData.currentPinCode}
-              onChange={handleFormChange('currentPinCode', setFormData)}
+              onChange={handleFormChange('currentPinCode', setFormData, errors, setErrors)}
             />
           </div>
         </div>
@@ -386,14 +539,14 @@ const StepContent = {
             label="Address" 
             placeholder="Enter permanent address"
             value={formData.permanentAddress}
-            onChange={handleFormChange('permanentAddress', setFormData)}
+            onChange={handleFormChange('permanentAddress', setFormData, errors, setErrors)}
           />
           <div className={FORM_CONFIG.styles.layout}>
             <Fields.Input 
               label="PIN Code" 
               placeholder="Enter PIN code"
               value={formData.permanentPinCode}
-              onChange={handleFormChange('permanentPinCode', setFormData)}
+              onChange={handleFormChange('permanentPinCode', setFormData, errors, setErrors)}
             />
           </div>
         </div>
@@ -502,61 +655,66 @@ const StepContent = {
         label="Organization Name" 
         placeholder="Enter organization name"
         value={formData.organization}
-        onChange={handleFormChange('organization', setFormData)}
+        onChange={handleFormChange('organization', setFormData, {}, () => {})}
       />
       <Fields.Input 
         label="Role/Designation" 
         placeholder="Enter role/designation"
         value={formData.role}
-        onChange={handleFormChange('role', setFormData)}
+        onChange={handleFormChange('role', setFormData, {}, () => {})}
       />
       <Fields.Input 
         label="Duration" 
         placeholder="Enter duration"
         value={formData.duration}
-        onChange={handleFormChange('duration', setFormData)}
+        onChange={handleFormChange('duration', setFormData, {}, () => {})}
       />
       <Fields.TextArea 
         label="Responsibilities" 
         placeholder="Enter responsibilities"
         value={formData.responsibilities}
-        onChange={handleFormChange('responsibilities', setFormData)}
+        onChange={handleFormChange('responsibilities', setFormData, {}, () => {})}
       />
     </div>
   ),
 
-  Guardian: ({ formData, setFormData }: StepContentProps) => (
+  Guardian: ({ formData, setFormData, errors, setErrors }: StepContentProps & { 
+    errors: FieldErrors, 
+    setErrors: React.Dispatch<React.SetStateAction<FieldErrors>> 
+  }) => (
     <div className={FORM_CONFIG.styles.layout}>
       <Fields.Input 
         label="Name" 
         placeholder="Enter guardian name"
         value={formData.guardianName}
-        onChange={handleFormChange('guardianName', setFormData)}
+        onChange={handleFormChange('guardianName', setFormData, errors, setErrors, FORM_CONFIG.requiredFields.guardian)}
       />
       <Fields.Input 
         label="Relationship" 
         placeholder="Enter relationship"
         value={formData.guardianRelation}
-        onChange={handleFormChange('guardianRelation', setFormData)}
+        onChange={handleFormChange('guardianRelation', setFormData, errors, setErrors, FORM_CONFIG.requiredFields.guardian)}
       />
       <Fields.Input 
         label="Contact Number" 
         type="tel" 
         placeholder="Enter contact number"
         value={formData.guardianContact}
-        onChange={handleFormChange('guardianContact', setFormData)}
+        onChange={handleFormChange('guardianContact', setFormData, errors, setErrors, FORM_CONFIG.requiredFields.guardian)}
       />
       <Fields.TextArea 
         label="Address" 
         placeholder="Enter guardian address"
         value={formData.guardianAddress}
-        onChange={handleFormChange('guardianAddress', setFormData)}
+        onChange={handleFormChange('guardianAddress', setFormData, errors, setErrors, FORM_CONFIG.requiredFields.guardian)}
       />
       <Fields.Input 
         label="Aadhar Number" 
         placeholder="Enter aadhar number"
         value={formData.guardianAadhar}
-        onChange={handleFormChange('guardianAadhar', setFormData)}
+        onChange={handleFormChange('guardianAadhar', setFormData, errors, setErrors, FORM_CONFIG.requiredFields.guardian)}
+        required
+        error={errors.guardianAadhar}
       />
     </div>
   ),
@@ -567,13 +725,13 @@ const StepContent = {
         label="Current Health Status" 
         placeholder="Enter current health status"
         value={formData.healthStatus}
-        onChange={handleFormChange('healthStatus', setFormData)}
+        onChange={handleFormChange('healthStatus', setFormData, {}, () => {})}
       />
       <Fields.TextArea 
         label="Disability Details" 
         placeholder="Enter disability details if any"
         value={formData.disability}
-        onChange={handleFormChange('disability', setFormData)}
+        onChange={handleFormChange('disability', setFormData, {}, () => {})}
       />
     </div>
   ),
@@ -584,37 +742,37 @@ const StepContent = {
         label="Source of Information" 
         options={FORM_CONFIG.options.sourceOfInformation}
         value={formData.sourceOfInformation}
-        onChange={handleFormChange('sourceOfInformation', setFormData)}
+        onChange={handleFormChange('sourceOfInformation', setFormData, {}, () => {})}
       />
       <Fields.Input 
         label="Assigning Agent" 
         placeholder="Enter assigning agent"
         value={formData.assigningAgent}
-        onChange={handleFormChange('assigningAgent', setFormData)}
+        onChange={handleFormChange('assigningAgent', setFormData, {}, () => {})}
       />
       <Fields.Select 
         label="Priority" 
         options={FORM_CONFIG.options.priority}
         value={formData.priority}
-        onChange={handleFormChange('priority', setFormData)}
+        onChange={handleFormChange('priority', setFormData, {}, () => {})}
       />
       <Fields.Select 
         label="Status" 
         options={FORM_CONFIG.options.status}
         value={formData.status}
-        onChange={handleFormChange('status', setFormData)}
+        onChange={handleFormChange('status', setFormData, {}, () => {})}
       />
       <Fields.Input 
         label="Category" 
         placeholder="Enter category"
         value={formData.sourceCategory}
-        onChange={handleFormChange('sourceCategory', setFormData)}
+        onChange={handleFormChange('sourceCategory', setFormData, {}, () => {})}
       />
       <Fields.Input 
         label="Sub Category" 
         placeholder="Enter sub category"
         value={formData.sourceSubCategory}
-        onChange={handleFormChange('sourceSubCategory', setFormData)}
+        onChange={handleFormChange('sourceSubCategory', setFormData, {}, () => {})}
       />
     </div>
   ),
@@ -660,6 +818,7 @@ export function AddStudentOverlay({ onClose, onAssign }: AddStudentOverlayProps)
     assigningAgent: '', priority: '', status: '', sourceCategory: '',
     sourceSubCategory: '', servicePreferences: {}
   });
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   const resetForm = () => {
     setFormData({
@@ -682,14 +841,72 @@ export function AddStudentOverlay({ onClose, onAssign }: AddStudentOverlayProps)
       sourceSubCategory: '', servicePreferences: {}
     });
     setCurrentSection(0);
+    setErrors({});
+  };
+
+  const validateCurrentSection = (): boolean => {
+    let isValid = true;
+    const newErrors: FieldErrors = {};
+    
+    let fieldsToValidate: string[] = [];
+    
+    // Determine which fields to validate based on current section
+    if (currentSection === 0) {
+      fieldsToValidate = FORM_CONFIG.requiredFields.personal;
+    } else if (currentSection === 1) {
+      fieldsToValidate = FORM_CONFIG.requiredFields.contact;
+    } else if (currentSection === 4) {
+      fieldsToValidate = FORM_CONFIG.requiredFields.guardian;
+    }
+    
+    // Check required fields and their format
+    fieldsToValidate.forEach(field => {
+      const value = formData[field as keyof StudentFormData] as string || '';
+      
+      if (!value) {
+        newErrors[field] = { error: true, message: FORM_CONFIG.validationMessages.required };
+        isValid = false;
+      } else {
+        const validationResult = validateField(field, value);
+        if (validationResult.error) {
+          newErrors[field] = validationResult;
+          isValid = false;
+        }
+      }
+    });
+    
+    setErrors(prev => ({ ...prev, ...newErrors }));
+    return isValid;
   };
 
   const handleNext = async () => {
     if (currentSection === FORM_CONFIG.steps.length - 1) {
       try {
-        const isValid = validateFormData(formData);
-        if (!isValid) {
-          toast.error('Please fill in all required fields');
+        // Validate all required fields before submitting
+        let allValid = true;
+        const newErrors: FieldErrors = {};
+        
+        [...FORM_CONFIG.requiredFields.personal, 
+          ...FORM_CONFIG.requiredFields.contact, 
+          ...FORM_CONFIG.requiredFields.guardian].forEach(field => {
+          const value = formData[field as keyof StudentFormData] as string || '';
+          
+          if (!value) {
+            newErrors[field] = { error: true, message: FORM_CONFIG.validationMessages.required };
+            allValid = false;
+          } else {
+            const validationResult = validateField(field, value);
+            if (validationResult.error) {
+              newErrors[field] = validationResult;
+              allValid = false;
+            }
+          }
+        });
+        
+        setErrors(prev => ({ ...prev, ...newErrors }));
+        
+        if (!allValid) {
+          toast.error('Please fix all errors before submitting');
           return;
         }
         
@@ -713,45 +930,52 @@ export function AddStudentOverlay({ onClose, onAssign }: AddStudentOverlayProps)
         toast.error('Error submitting form: ' + errorMessage);
       }
     } else {
-      setCurrentSection(Math.min(FORM_CONFIG.steps.length - 1, currentSection + 1));
+      // Validate current section before moving to next
+      const isSectionValid = validateCurrentSection();
+      if (isSectionValid) {
+        setCurrentSection(Math.min(FORM_CONFIG.steps.length - 1, currentSection + 1));
+      }
     }
   };
 
-  const validateFormData = (data: StudentFormData): boolean => {
-    const required = ['fullName', 'dateOfBirth', 'email', 'mobileNumber'];
-    return required.every(field => Boolean(data[field as keyof StudentFormData]));
-  };
-
   const renderStep = () => {
+    const commonProps = { formData, setFormData, errors, setErrors };
+    
     const stepComponents = {
-      0: <StepContent.Personal formData={formData} setFormData={setFormData} />,
-      1: <StepContent.Contact formData={formData} setFormData={setFormData} />,
+      0: <StepContent.Personal {...commonProps} />,
+      1: <StepContent.Contact {...commonProps} />,
       2: <StepContent.Academic formData={formData} setFormData={setFormData} />,
       3: <StepContent.Work formData={formData} setFormData={setFormData} />,
-      4: <StepContent.Guardian formData={formData} setFormData={setFormData} />,
+      4: <StepContent.Guardian {...commonProps} />,
       5: <StepContent.Health formData={formData} setFormData={setFormData} />,
       6: <div className="space-y-6">
            <Fields.File 
              label="Upload Photo" 
              value={formData.photo}
              onChange={(file) => setFormData({ ...formData, photo: file })}
+             acceptTypes=".jpg,.jpeg,.png"
+             fileType="photo"
            />
            <Fields.File 
              label="Upload Documents" 
              value={formData.documents}
              onChange={(file) => setFormData({ ...formData, documents: file })}
+             acceptTypes=".pdf"
+             fileType="document"
            />
            <Fields.Select 
              label="NOC Certificate Status" 
              options={FORM_CONFIG.options.nocStatus}
              value={formData.nocStatus}
-             onChange={handleFormChange('nocStatus', setFormData)}
+             onChange={handleFormChange('nocStatus', setFormData, errors, setErrors)}
            />
            {formData.nocStatus === 'Yes' && (
              <Fields.File 
                label="Upload NOC Certificate" 
                value={formData.nocCertificate}
                onChange={(file) => setFormData({ ...formData, nocCertificate: file })}
+               acceptTypes=".pdf"
+               fileType="document"
              />
            )}
          </div>,
