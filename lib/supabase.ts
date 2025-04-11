@@ -283,3 +283,28 @@ export const hideEnquiry = async (id: number) => {
     return { error: error instanceof Error ? error : new Error('Unknown error') };
   }
 };
+
+export const getDashboardStats = async () => {
+  try {
+    const [facultyCount, studentCount, courseCount] = await Promise.all([
+      supabase.from('academy_faculties').select('*', { count: 'exact' }),
+      supabase.from('students').select('*', { count: 'exact' }),
+      supabase.from('academy_courses').select('*', { count: 'exact' })
+    ]);
+
+    return {
+      data: {
+        facultyCount: facultyCount.count || 0,
+        studentCount: studentCount.count || 0,
+        courseCount: courseCount.count || 0,
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
+};
