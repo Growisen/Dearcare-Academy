@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { AlertTriangle, Maximize2, Loader2 } from 'lucide-react';
 
-
 interface FollowUpContentProps {
   studentId?: string;
 }
@@ -12,6 +11,8 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
   const [hasReceipt, setHasReceipt] = useState<boolean | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [overrideReceipt, setOverrideReceipt] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
     const fetchReceiptStatus = async () => {
@@ -56,8 +57,13 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
   }, [studentId]);
 
   const handleApprove = async () => {
-    if (!studentId || !hasReceipt) return;
-    
+    if (!studentId) return;
+
+    if (!hasReceipt && !overrideReceipt) {
+      setShowWarning(true);
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
 
@@ -109,6 +115,12 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
     }
   };
 
+  const handleConfirmApprove = () => {
+    setOverrideReceipt(true);
+    setShowWarning(false);
+    handleApprove();
+  };
+
   return (
     <div className="space-y-6">
       {hasReceipt === false && (
@@ -118,12 +130,39 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
             <h3 className="font-medium">Payment Receipt Missing</h3>
           </div>
           <p className="mt-1 text-sm text-red-600">
-            The payment receipt has not been uploaded yet. Please ensure the receipt is uploaded before proceeding.
+            Warning: The payment receipt has not been uploaded. You can still proceed with verification, 
+            but it&apos;s recommended to have the receipt uploaded first.
           </p>
         </div>
       )}
 
-      {receiptUrl && (
+      {showWarning && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+          <div className="flex items-center gap-2 text-red-700 mb-3">
+            <AlertTriangle className="h-5 w-5" />
+            <h3 className="font-medium">Confirm Verification Without Receipt</h3>
+          </div>
+          <p className="text-sm text-red-600 mb-4">
+            Are you sure you want to proceed with verification without a payment receipt?
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleConfirmApprove}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Yes, Proceed
+            </button>
+            <button
+              onClick={() => setShowWarning(false)}
+              className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {receiptUrl ? (
         <div className="max-w-2xl mx-auto">
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center">
@@ -143,6 +182,20 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
             />
           </div>
         </div>
+      ) : (
+        <div className="max-w-2xl mx-auto">
+          <div className="border border-red-200 rounded-lg overflow-hidden bg-red-50">
+            <div className="px-4 py-6 flex flex-col items-center justify-center gap-2">
+              <AlertTriangle className="h-12 w-12 text-red-500" />
+              <h3 className="font-medium text-red-700">No Payment Receipt Available</h3>
+              <p className="text-sm text-red-600 text-center">
+                No payment receipt has been uploaded for this student yet.
+                <br />
+                Please ensure the receipt is uploaded before proceeding with the verification.
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       {error && (
@@ -154,7 +207,7 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
       <div className="flex gap-3">
         <button 
           className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          disabled={!hasReceipt || isProcessing}
+          disabled={isProcessing}
           onClick={handleApprove}
         >
           {isProcessing ? (

@@ -6,7 +6,7 @@ import { Search, CheckCircle, Clock, User, XCircle } from "lucide-react";
 import { Input } from "../../../../components/ui/input";
 import { AddStudentOverlay } from "../../../../components/students/add-student-overlay";
 import { StudentDetailsOverlay } from "../../../../components/students/student-details-overlay";
-import { StudentFormData, DatabaseStudent, Student} from "../../../../types/student.types";
+import { StudentFormData, DatabaseStudent, Student } from "../../../../types/student.types";
 
 export default function StudentsPage() {
   const router = useRouter();
@@ -17,6 +17,9 @@ export default function StudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAssignOverlay, setShowAssignOverlay] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [hasNewStudents, setHasNewStudents] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const studentsPerPage = 10;
 
   const statusColors = {
     confirmed: "bg-green-100 text-green-700 border border-green-200",
@@ -80,7 +83,8 @@ export default function StudentsPage() {
             companionship,
             clinical_assist
           )
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setStudents(data || []);
@@ -91,14 +95,36 @@ export default function StudentsPage() {
     }
   };
 
+  useEffect(() => {
+    const checkForNewStudents = () => {
+      const newStudents = students.some(student => 
+        student.student_source?.[0]?.status?.toLowerCase() === 'new'
+      );
+      setHasNewStudents(newStudents);
+    };
+    
+    checkForNewStudents();
+  }, [students]);
+
   const filteredStudents = students.filter((student) => {
     const sourceStatus = student.student_source?.[0]?.status?.toLowerCase() || '';
     const matchesStatus = selectedStatus === "all" ? true : sourceStatus === selectedStatus;
+    const searchTerm = searchQuery.toLowerCase();
     const matchesSearch =
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchQuery.toLowerCase());
+      student.name.toLowerCase().includes(searchTerm) ||
+      student.email.toLowerCase().includes(searchTerm) ||
+      student.mobile?.toLowerCase().includes(searchTerm);
     return matchesStatus && matchesSearch;
   });
+
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+  const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus, searchQuery]);
 
   const getPreferredCourse = (preferences: Record<string, string> = {}) => {
     const interestedService = Object.entries(preferences)
@@ -120,9 +146,61 @@ export default function StudentsPage() {
   };
 
   const handleAssignStudent = (formData: StudentFormData) => {
-    // Handle the form data here
     console.log("New student data:", formData);
-    fetchStudents(); // Refresh the students list after adding new student
+    fetchStudents();
+  };
+
+  const renderPaginationControls = () => {
+    return (
+      <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+        <div className="flex flex-1 justify-between sm:hidden">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium">{indexOfFirstStudent + 1}</span> to{' '}
+              <span className="font-medium">
+                {Math.min(indexOfLastStudent, filteredStudents.length)}
+              </span>{' '}
+              of <span className="font-medium">{filteredStudents.length}</span> results
+            </p>
+          </div>
+          <div>
+            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                    page === currentPage
+                      ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                      : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+                  } ${page === 1 ? 'rounded-l-md' : ''} ${
+                    page === totalPages ? 'rounded-r-md' : ''
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -133,9 +211,12 @@ export default function StudentsPage() {
         <div>
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                Students
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                  Students
+                </h1>
+                
+              </div>
               <button
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 onClick={() => setShowAssignOverlay(true)}
@@ -160,13 +241,16 @@ export default function StudentsPage() {
                     <button
                       key={status}
                       onClick={() => setSelectedStatus(status)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                         selectedStatus === status
                           ? "bg-blue-100 text-blue-800"
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {hasNewStudents && status === "new" && (
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      )}
                     </button>
                   )
                 )}
@@ -201,10 +285,9 @@ export default function StudentsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {filteredStudents.map((student) => {
+                      {currentStudents.map((student) => {
                         const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
                         const StatusIcon = statusIcons[status as keyof typeof statusIcons];
-                        const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
 
                         return (
                           <tr key={student.id} className="hover:bg-gray-50/50">
@@ -212,7 +295,7 @@ export default function StudentsPage() {
                               {student.name}
                             </td>
                             <td className="py-4 px-6 text-gray-700">
-                              {preferredCourse}
+                              {student.course}
                             </td>
                             <td className="py-4 px-6">
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
@@ -236,12 +319,10 @@ export default function StudentsPage() {
                                   fullName: student.name,
                                   email: student.email,
                                   phone: student.mobile,
-                                  course: preferredCourse,
+                                  course: student.course,
                                   status: status as "confirmed" | "follow-up" | "new" | "rejected",
                                   enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                                   location: getLocationString(student),
-                                  //assigningAgent: student.student_source?.[0]?.assigning_agent,
-                                  //priority: student.student_source?.[0]?.priority,
                                 })}
                               >
                                 View Details
@@ -255,9 +336,10 @@ export default function StudentsPage() {
                 </div>
               )}
 
-              {/* Mobile view */}
+              {!loading && filteredStudents.length > 0 && renderPaginationControls()}
+
               <div className="sm:hidden divide-y divide-gray-200">
-                {filteredStudents.map((student) => {
+                {currentStudents.map((student) => {
                   const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
                   const StatusIcon = statusIcons[status as keyof typeof statusIcons];
                   const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
@@ -291,12 +373,10 @@ export default function StudentsPage() {
                           fullName: student.name,
                           email: student.email,
                           phone: student.mobile,
-                          course: preferredCourse,
+                          course: student.course,
                           status: status as "confirmed" | "follow-up" | "new" | "rejected",
                           enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                           location: getLocationString(student),
-                          //assigningAgent: student.student_source?.[0]?.assigning_agent,
-                          //priority: student.student_source?.[0]?.priority,
                         })}
                       >
                         View Details
@@ -310,7 +390,7 @@ export default function StudentsPage() {
 
           {showAssignOverlay && (
             <AddStudentOverlay
-              supervisorId="1" // Pass actual supervisor ID if needed
+              supervisorId="1"
               onClose={() => setShowAssignOverlay(false)}
               onAssign={handleAssignStudent}
             />
@@ -323,13 +403,14 @@ export default function StudentsPage() {
                 name: selectedStudent.fullName,
                 email: selectedStudent.email,
                 phone: selectedStudent.phone,
+                course: selectedStudent.course,
                 service: selectedStudent.course,
                 requestDate: selectedStudent.enrollmentDate,
                 status: selectedStudent.status,
                 location: selectedStudent.location,
-                dateOfBirth: "Not specified", // Placeholder or actual value
-                age: "Not specified",         // Placeholder or actual value
-                gender: "Not specified",      // Placeholder or actual value
+                dateOfBirth: "Not specified",
+                age: "Not specified",
+                gender: "Not specified",
               }}
               onClose={() => setSelectedStudent(null)}
             />

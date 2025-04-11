@@ -28,8 +28,11 @@ export function NewContent({ studentId }: { studentId: string }) {
   return (
     <div className="space-y-6">
       <div>
+        {/*
         <h3 className="text-lg font-medium text-gray-900 mb-4">Initial Assessment</h3>
+        */}
         <div className="space-y-4">
+          {/*}
           <div className="bg-gray-50 p-4 rounded-lg">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Quick Actions
@@ -43,6 +46,7 @@ export function NewContent({ studentId }: { studentId: string }) {
               </button>
             </div>
           </div>
+            */}
           <button 
             onClick={handleVerification}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

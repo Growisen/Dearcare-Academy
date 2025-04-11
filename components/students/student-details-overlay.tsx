@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { X, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { X, CheckCircle, XCircle } from 'lucide-react';
 import { ClientInformation } from './studentInformation';
 import { ConfirmedContent } from './ConfirmedContent';
 import { FollowUpContent } from './FollowUp';
 import { NewContent } from './NewContent';
 import { RejectedContent } from './RejectedContent';
+import { supabase } from '@/lib/supabase';
 
 interface StudentDetailsProps {
   student: {
@@ -13,6 +14,7 @@ interface StudentDetailsProps {
     email: string;
     phone: string;
     service: string;
+    course: string; 
     requestDate: string;
     location: string;
     dateOfBirth: string;
@@ -59,6 +61,7 @@ interface StudentDetailsProps {
     photo?: string;
     documents?: string;
     nocCertificate?: string;
+
   };
   onClose: () => void;
 }
@@ -102,8 +105,65 @@ const STATUS_STYLES = {
 };
 
 export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps) {
-  const [activeDialog, setActiveDialog] = useState<'delete' | 'proceed' | 'reject' | null>(null);
-  const status = student.status || 'new'; // Provide default value if needed, though type makes it unnecessary
+  const [activeDialog, setActiveDialog] = useState<'delete' | 'proceed' | 'reject' | 'confirm-warning' | 'reject-warning' | null>(null);
+  const [currentStudent, setCurrentStudent] = useState(student);
+  const status = currentStudent.status || 'new';
+
+  const updateStudentStatus = async (newStatus: string) => {
+    try {
+      if (newStatus.toLowerCase() === 'confirmed') {
+        // First, send verification email with receipt upload details
+        const verifyResponse = await fetch('/api/verify-student', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            studentId: student.id
+          }),
+        });
+
+        if (!verifyResponse.ok) {
+          throw new Error('Failed to send verification email');
+        }
+
+        // Then send confirmation email
+        const confirmResponse = await fetch('/api/mail/confirmation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: student.name,
+            email: student.email,
+            courseName: student.course,
+            id: student.id
+          }),
+        });
+
+        if (!confirmResponse.ok) {
+          throw new Error('Failed to send confirmation email');
+        }
+      }
+
+      // Update status in database
+      const { error } = await supabase
+        .from('student_source')
+        .update({ status: newStatus })
+        .eq('student_id', student.id);
+
+      if (error) throw error;
+      
+      // Update local state
+      setCurrentStudent(prev => ({
+        ...prev,
+        status: newStatus.toLowerCase() as "confirmed" | "follow-up" | "new" | "rejected"
+      }));
+      
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
 
   const dialogConfigs: Record<NonNullable<typeof activeDialog>, DialogConfig> = {
     delete: {
@@ -120,84 +180,105 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
       message: `Are you sure you want to proceed with ${student.name}'s application?`,
       confirmLabel: 'Proceed',
       confirmStyle: 'bg-green-600 hover:bg-green-700',
-      onConfirm: () => setActiveDialog(null)
+      onConfirm: () => setActiveDialog('confirm-warning')
     },
     reject: {
       title: 'Confirm Rejection',
       message: `Are you sure you want to reject ${student.name}'s application?`,
-      confirmLabel: 'Reject',
-      onConfirm: () => setActiveDialog(null)
+      confirmLabel: 'Proceed with Rejection',
+      confirmStyle: 'bg-red-600 hover:bg-red-700',
+      onConfirm: () => setActiveDialog('reject-warning')
+    },
+    'reject-warning': {
+      title: 'Final Rejection Warning',
+      message: 'This action will permanently reject the student application. Are you sure you want to continue?',
+      confirmLabel: 'Yes, Reject Application',
+      confirmStyle: 'bg-red-600 hover:bg-red-700',
+      onConfirm: async () => {
+        await updateStudentStatus('rejected');
+        setActiveDialog(null);
+      }
+    },
+    'confirm-warning': {
+      title: 'Warning: Irregular Confirmation',
+      message: 'You are confirming this student without following the regular verification procedures. Are you sure you want to continue?',
+      confirmLabel: 'Yes, Confirm Student',
+      confirmStyle: 'bg-yellow-600 hover:bg-yellow-700',
+      onConfirm: async () => {
+        await updateStudentStatus('Confirmed');
+        setActiveDialog(null);
+      }
     }
   };
 
   // Extract state and city from location string
-  const [city, state] = student.location?.split(', ') || [null, null];
+  const [city, state] = currentStudent.location?.split(', ') || [null, null];
 
   const transformedClientData = {
-    ...student,
+    ...currentStudent,
     // Basic info
-    name: student.name,
-    email: student.email,
-    phone: student.phone,
-    service: student.service,
+    name: currentStudent.name,
+    email: currentStudent.email,
+    phone: currentStudent.phone,
+    course: currentStudent.course,
     
     // Location info
-    currentAddress: student.location,
+    currentAddress: currentStudent.location,
     state: state || '',
     city: city || '',
     
     // Status and descriptions
-    status: student.status,
+    status: currentStudent.status,
     
     // Service preferences
     servicePreferences: {
-      [student.service]: 'Interested'
+      [currentStudent.service]: 'Interested'
     },
 
     // Required string fields with default values
-    dateOfBirth: student.dateOfBirth || '',
-    age: student.age || '',
-    gender: student.gender || '',
-    location: student.location || '',
+    dateOfBirth: currentStudent.dateOfBirth || '',
+    age: currentStudent.age || '',
+    gender: currentStudent.gender || '',
+    location: currentStudent.location || '',
 
     // Optional fields can be null or undefined
-    maritalStatus: student.maritalStatus,
-    nationality: student.nationality,
-    taluk: student.taluk,
-    motherTongue: student.motherTongue,
-    knownLanguages: student.knownLanguages,
-    religion: student.religion,
-    category: student.category,
-    academics: student.academics,
-    organization: student.organization,
-    role: student.role,
-    duration: student.duration,
-    responsibilities: student.responsibilities,
-    guardianName: student.guardianName,
-    guardianRelation: student.guardianRelation,
-    guardianContact: student.guardianContact,
-    guardianAddress: student.guardianAddress,
-    guardianAadhar: student.guardianAadhar,
-    disability: student.disability,
-    nocStatus: student.nocStatus,
-    sourceOfInformation: student.sourceOfInformation,
-    assigningAgent: student.assigningAgent,
-    priority: student.priority,
-    sourceCategory: student.sourceCategory,
-    sourceSubCategory: student.sourceSubCategory,
-    photo: student.photo,
-    documents: student.documents,
-    nocCertificate: student.nocCertificate
+    maritalStatus: currentStudent.maritalStatus,
+    nationality: currentStudent.nationality,
+    taluk: currentStudent.taluk,
+    motherTongue: currentStudent.motherTongue,
+    knownLanguages: currentStudent.knownLanguages,
+    religion: currentStudent.religion,
+    category: currentStudent.category,
+    academics: currentStudent.academics,
+    organization: currentStudent.organization,
+    role: currentStudent.role,
+    duration: currentStudent.duration,
+    responsibilities: currentStudent.responsibilities,
+    guardianName: currentStudent.guardianName,
+    guardianRelation: currentStudent.guardianRelation,
+    guardianContact: currentStudent.guardianContact,
+    guardianAddress: currentStudent.guardianAddress,
+    guardianAadhar: currentStudent.guardianAadhar,
+    disability: currentStudent.disability,
+    nocStatus: currentStudent.nocStatus,
+    sourceOfInformation: currentStudent.sourceOfInformation,
+    assigningAgent: currentStudent.assigningAgent,
+    priority: currentStudent.priority,
+    sourceCategory: currentStudent.sourceCategory,
+    sourceSubCategory: currentStudent.sourceSubCategory,
+    photo: currentStudent.photo,
+    documents: currentStudent.documents,
+    nocCertificate: currentStudent.nocCertificate
   };
 
   const renderStatusSpecificContent = () => {
-    switch (student.status) {
+    switch (currentStudent.status) {
       case "confirmed":
-        return <ConfirmedContent />;
+        return <ConfirmedContent studentId={currentStudent.id}/>;
       case "follow-up":
-        return <FollowUpContent studentId={student.id} />;
+        return <FollowUpContent studentId={currentStudent.id} />;
       case "new":
-        return <NewContent studentId={student.id}/>;
+        return <NewContent studentId={currentStudent.id}/>;
       case "rejected":
         return <RejectedContent />;
       default:
@@ -212,7 +293,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Request Details</h2>
-              <p className="text-sm text-gray-500">ID: {student.id}</p>
+              <p className="text-sm text-gray-500">ID: {currentStudent.id}</p>
             </div>
             <div className="flex items-center gap-3">
               {!['confirmed', 'rejected'].includes(status) && ( // Use the status variable with default value
@@ -232,9 +313,11 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
                 </>
               )}
               <div className="flex items-center gap-2 ml-4 border-l pl-4">
+                {/*
                 <button onClick={() => setActiveDialog('delete')} className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600" title="Delete">
                   <Trash2 className="h-5 w-5" />
                 </button>
+                */}
                 <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Close">
                   <X className="h-5 w-5 text-gray-500" />
                 </button>
@@ -248,7 +331,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
 
         <div className="px-6 py-4 space-y-6">
           <ClientInformation 
-            studentId={student.id} 
+            studentId={currentStudent.id} 
             initialData={transformedClientData}
           />
           {renderStatusSpecificContent()}

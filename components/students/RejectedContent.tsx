@@ -3,6 +3,7 @@ import React from 'react';
 export function RejectedContent() {
   return (
     <div className="space-y-6">
+      {/*}
       <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Rejection Record</h3>
         <div className="space-y-4">
@@ -27,6 +28,7 @@ export function RejectedContent() {
           </button>
         </div>
       </div>
+      */}
     </div>
   );
 }

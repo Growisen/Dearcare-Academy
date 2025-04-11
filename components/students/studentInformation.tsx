@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail,  User,  Book, Briefcase, Users, Heart, FileText, File, Eye, Edit, Save, X, LucideIcon } from 'lucide-react';
+import { Mail,  User,  Book, Briefcase, Users, Heart, FileText, File, Eye,  LucideIcon } from 'lucide-react';
 import { fetchStudentData } from '../../utils/studentData';
 
 interface ClientInformationProps {
@@ -324,7 +324,7 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
   const [client, setClient] = useState<NonNullable<ClientInformationProps['initialData']> | undefined>(initialData || undefined);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing] = useState(false);
   const [files, setFiles] = useState({
     photo: null as File | null,
     documents: null as File | null,
@@ -444,17 +444,18 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
       };
     });
   };
-
+/*
   const handleSave = () => {
     // TODO: Implement save functionality
     setIsEditing(false);
   };
-
+*/
+/*
   const handleCancel = () => {
     setClient(initialData || undefined);
     setIsEditing(false);
   };
-
+*/
   const renderDocuments = () => {
     if (!isEditing) {
       return (
@@ -598,6 +599,7 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
         <div className="py-4 px-6 bg-gradient-to-r from-gray-50 to-white border-b">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 className="text-2xl font-semibold text-gray-800">Profile</h2>
+            {/*
             <div className="flex items-center gap-3">
               {isEditing ? (
                 <>
@@ -623,6 +625,7 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
                 </button>
               )}
             </div>
+            */}
           </div>
         </div>
         <div className="p-6">

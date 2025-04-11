@@ -161,9 +161,11 @@ export default function FacultiesPage() {
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Supervisors</h1>
+              {/*
               <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 Add Supervisor
               </button>
+              */}
             </div>
 
             <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">

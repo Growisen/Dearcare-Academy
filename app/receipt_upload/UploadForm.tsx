@@ -15,7 +15,30 @@ export default function UploadForm({ studentId, studentName, studentEmail }: Upl
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      
+      // Validate file type
+      if (selectedFile.type !== 'application/pdf') {
+        setStatus({
+          message: 'Only PDF files are allowed',
+          error: true
+        });
+        setFile(null);
+        return;
+      }
+
+      // Validate file size (1MB = 1024 * 1024 bytes)
+      if (selectedFile.size > 1024 * 1024) {
+        setStatus({
+          message: 'File size must be less than 1MB',
+          error: true
+        });
+        setFile(null);
+        return;
+      }
+
+      setFile(selectedFile);
+      setStatus(null);
     } else {
       setFile(null);
     }
@@ -80,7 +103,10 @@ export default function UploadForm({ studentId, studentName, studentEmail }: Upl
           <Input
             type="file"
             onChange={handleFileChange}
-            inputProps={{ accept: '.pdf' }}
+            inputProps={{ 
+              accept: 'application/pdf',
+              title: 'Only PDF files up to 1MB are allowed'
+            }}
             fullWidth
             required
             sx={{ 

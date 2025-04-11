@@ -1,32 +1,51 @@
 import { Card } from "../ui/card"
 import { CountUp } from "use-count-up"
-import { Users, GraduationCap, BookOpen, Trophy, TrendingUp } from "lucide-react"
+import { Users, GraduationCap, BookOpen, Trophy } from "lucide-react"
+import { useEffect, useState } from "react"
+import { getDashboardStats } from "@/lib/supabase"
 
 interface Stat {
   title: string;
   value: number;
   icon: LucideIcon;
-  trend: string;
-  trendUp: boolean;
+  trend?: string;
+  trendUp?: boolean;
   bgColor: string;
   iconColor: string;
 }
 
 import { LucideIcon } from "lucide-react";
 
-const stats: Stat[] = [
+export default function Stats() {
+  const [statsData, setStatsData] = useState({
+    facultyCount: 0,
+    studentCount: 0,
+    courseCount: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const { data, error } = await getDashboardStats();
+      if (!error && data) {
+        setStatsData(data);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const stats: Stat[] = [
     { 
       title: "Active Faculty", 
-      value: 45, 
+      value: statsData.facultyCount, 
       icon: Users, 
-      trend: "+5%", 
-      trendUp: true, 
+      //trend: "+0%", 
+      //trendUp: true, 
       bgColor: "bg-[#2C3E50]/10", 
       iconColor: "text-[#2C3E50]" 
     },
     { 
       title: "Total Students", 
-      value: 850, 
+      value: statsData.studentCount, 
       icon: GraduationCap, 
       trend: "+12%", 
       trendUp: true, 
@@ -35,7 +54,7 @@ const stats: Stat[] = [
     },
     { 
       title: "Active Courses", 
-      value: 24, 
+      value: statsData.courseCount, 
       icon: BookOpen, 
       trend: "+2%", 
       trendUp: true, 
@@ -51,9 +70,8 @@ const stats: Stat[] = [
       bgColor: "bg-[#F39C12]/10", 
       iconColor: "text-[#F39C12]" 
     },
-]
+  ]
 
-export default function Stats() {
   return (
     <>
       {stats.map((stat) => (
@@ -68,10 +86,12 @@ export default function Stats() {
                 <span className="text-xl font-bold text-gray-900">
                   <CountUp isCounting end={stat.value} duration={2} />
                 </span>
+                {/*
                 <span className={`text-xs flex items-center gap-0.5 ${stat.trendUp ? 'text-emerald-500' : 'text-rose-500'}`}>
                   <TrendingUp className={`w-3 h-3 ${!stat.trendUp && 'rotate-180'}`} />
                   {stat.trend}
                 </span>
+                */}
               </div>
             </div>
           </div>
