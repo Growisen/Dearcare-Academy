@@ -105,7 +105,7 @@ const STATUS_STYLES = {
 };
 
 export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps) {
-  const [activeDialog, setActiveDialog] = useState<'delete' | 'proceed' | 'reject' | 'confirm-warning' | null>(null);
+  const [activeDialog, setActiveDialog] = useState<'delete' | 'proceed' | 'reject' | 'confirm-warning' | 'reject-warning' | null>(null);
   const [currentStudent, setCurrentStudent] = useState(student);
   const status = currentStudent.status || 'new';
 
@@ -185,8 +185,19 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
     reject: {
       title: 'Confirm Rejection',
       message: `Are you sure you want to reject ${student.name}'s application?`,
-      confirmLabel: 'Reject',
-      onConfirm: () => setActiveDialog(null)
+      confirmLabel: 'Proceed with Rejection',
+      confirmStyle: 'bg-red-600 hover:bg-red-700',
+      onConfirm: () => setActiveDialog('reject-warning')
+    },
+    'reject-warning': {
+      title: 'Final Rejection Warning',
+      message: 'This action will permanently reject the student application. Are you sure you want to continue?',
+      confirmLabel: 'Yes, Reject Application',
+      confirmStyle: 'bg-red-600 hover:bg-red-700',
+      onConfirm: async () => {
+        await updateStudentStatus('rejected');
+        setActiveDialog(null);
+      }
     },
     'confirm-warning': {
       title: 'Warning: Irregular Confirmation',
@@ -302,9 +313,11 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
                 </>
               )}
               <div className="flex items-center gap-2 ml-4 border-l pl-4">
+                {/*
                 <button onClick={() => setActiveDialog('delete')} className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600" title="Delete">
                   <Trash2 className="h-5 w-5" />
                 </button>
+                */}
                 <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Close">
                   <X className="h-5 w-5 text-gray-500" />
                 </button>
