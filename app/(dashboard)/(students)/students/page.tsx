@@ -80,7 +80,8 @@ export default function StudentsPage() {
             companionship,
             clinical_assist
           )
-        `);
+        `)
+        .order('created_at', { ascending: false });  // Add this line to sort by creation date
 
       if (error) throw error;
       setStudents(data || []);
@@ -94,9 +95,11 @@ export default function StudentsPage() {
   const filteredStudents = students.filter((student) => {
     const sourceStatus = student.student_source?.[0]?.status?.toLowerCase() || '';
     const matchesStatus = selectedStatus === "all" ? true : sourceStatus === selectedStatus;
+    const searchTerm = searchQuery.toLowerCase();
     const matchesSearch =
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchQuery.toLowerCase());
+      student.name.toLowerCase().includes(searchTerm) ||
+      student.email.toLowerCase().includes(searchTerm) ||
+      student.mobile?.toLowerCase().includes(searchTerm);    // Added mobile search
     return matchesStatus && matchesSearch;
   });
 
