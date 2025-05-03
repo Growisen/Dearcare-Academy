@@ -68,7 +68,7 @@ interface StudentDetailsProps {
 
 interface DialogConfig {
   title: string;
-  message: string;
+  message: React.ReactNode;
   confirmLabel: string;
   onConfirm: () => void;
   confirmStyle?: string;
@@ -78,7 +78,7 @@ const ConfirmDialog = ({ title, message, confirmLabel, onConfirm, confirmStyle =
   <div className="fixed inset-0 bg-black/50 z-60 flex items-center justify-center p-4">
     <div className="bg-white rounded-lg p-6 max-w-md w-full">
       <h3 className="text-lg font-semibold mb-4">{title}</h3>
-      <p className="text-gray-600 mb-6">{message}</p>
+      <div className="text-gray-600 mb-6">{message}</div>
       <div className="flex justify-end gap-3">
         <button
           onClick={onClose}
@@ -107,10 +107,13 @@ const STATUS_STYLES = {
 export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps) {
   const [activeDialog, setActiveDialog] = useState<'delete' | 'proceed' | 'reject' | 'confirm-warning' | 'reject-warning' | null>(null);
   const [currentStudent, setCurrentStudent] = useState(student);
+  const [rejectionReason, setRejectionReason] = useState(''); // State for rejection reason
   const status = currentStudent.status || 'new';
 
   const updateStudentStatus = async (newStatus: string) => {
     try {
+
+      //confirmed part
       if (newStatus.toLowerCase() === 'confirmed') {
         // First, send verification email with receipt upload details
         const verifyResponse = await fetch('/api/verify-student', {
@@ -146,22 +149,44 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
         }
       }
 
-      // Update status in database
-      const { error } = await supabase
+
+
+
+      if (newStatus.toLowerCase() === 'rejected') {
+        console.log('Inserting rejection reason into "academy_rejects" table...');
+        const { error: rejectionError } = await supabase
+          .from('academy_rejects')
+          .insert({
+            student_id: student.id,
+            reason: rejectionReason.trim(),
+          });
+
+        if (rejectionError) {
+          console.error('Error inserting rejection reason:', rejectionError);
+          throw rejectionError;
+        }
+      }
+
+      console.log('Updating status in "student_source" table...');
+      const { error: updateError } = await supabase
         .from('student_source')
         .update({ status: newStatus })
         .eq('student_id', student.id);
 
-      if (error) throw error;
-      
-      // Update local state
-      setCurrentStudent(prev => ({
+      if (updateError) {
+        console.error('Error updating status in "student_source":', updateError);
+        throw updateError;
+      }
+
+      console.log('Successfully updated status. Updating local state...');
+      setCurrentStudent((prev) => ({
         ...prev,
-        status: newStatus.toLowerCase() as "confirmed" | "follow-up" | "new" | "rejected"
+        status: newStatus.toLowerCase() as 'confirmed' | 'follow-up' | 'new' | 'rejected',
       }));
       
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error('Unhandled error in updateStudentStatus:', error);
+      alert('An error occurred while updating the student status. Please try again.');
     }
   };
 
@@ -184,10 +209,26 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
     },
     reject: {
       title: 'Confirm Rejection',
-      message: `Are you sure you want to reject ${student.name}'s application?`,
+      message: (
+        <div>
+          <p>Please provide a reason for rejecting {student.name}&apos;s application:</p>
+          <textarea
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            placeholder="Enter rejection reason here..."
+            className="w-full mt-2 p-2 border rounded-lg"
+          />
+        </div>
+      ),
       confirmLabel: 'Proceed with Rejection',
       confirmStyle: 'bg-red-600 hover:bg-red-700',
-      onConfirm: () => setActiveDialog('reject-warning')
+      onConfirm: () => {
+        if (!rejectionReason.trim()) {
+          alert('Rejection reason cannot be empty.');
+          return;
+        }
+        setActiveDialog('reject-warning');
+      },
     },
     'reject-warning': {
       title: 'Final Rejection Warning',
@@ -205,7 +246,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
       confirmLabel: 'Yes, Confirm Student',
       confirmStyle: 'bg-yellow-600 hover:bg-yellow-700',
       onConfirm: async () => {
-        await updateStudentStatus('Confirmed');
+        await updateStudentStatus('confirmed');
         setActiveDialog(null);
       }
     }
@@ -280,7 +321,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
       case "new":
         return <NewContent studentId={currentStudent.id}/>;
       case "rejected":
-        return <RejectedContent />;
+        return <RejectedContent studentId={currentStudent.id}/>;
       default:
         return null;
     }
