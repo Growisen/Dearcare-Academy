@@ -342,11 +342,22 @@ const StepContent = {
       const dob = e.target.value;
       if (dob) {
         const calculatedAge = calculateAge(dob);
-        setFormData({
-          ...formData,
-          dateOfBirth: dob,
-          age: calculatedAge.toString()
-        });
+        if (calculatedAge < 10) {
+          setErrors(prev => ({
+            ...prev,
+            dateOfBirth: { error: true, message: "Invalid date of birth" }
+          }));
+        } else {
+          setErrors(prev => ({
+            ...prev,
+            dateOfBirth: { error: false, message: "" }
+          }));
+          setFormData({
+            ...formData,
+            dateOfBirth: dob,
+            age: calculatedAge.toString()
+          });
+        }
       }
     };
 
@@ -383,6 +394,7 @@ const StepContent = {
           type="date"
           value={formData.dateOfBirth}
           onChange={handleDateChange}
+          error={errors.dateOfBirth}
         />
         <Fields.Input 
           label="Age" 
