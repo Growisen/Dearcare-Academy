@@ -6,7 +6,8 @@ import { Input } from "../../../../components/ui/input"
 import { FacultyDetailsOverlay } from "../../../../components/faculty/faculty-details-overlay"
 import { supabase } from "../../../../lib/supabase"
 import type { DatabaseFaculty } from "../../../../types/faculty.types"
-
+import React from 'react';
+import { AddFacultyOverlay } from '../../../../components/faculty/add-faculty-overlay';
 
 interface AssignedStudent {
   id: number;
@@ -48,6 +49,7 @@ export default function FacultiesPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("active")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFaculty, setSelectedFaculty] = useState<Faculty | null>(null)
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -165,6 +167,12 @@ export default function FacultiesPage() {
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Supervisors</h1>
+              <button
+                onClick={() => setIsOverlayOpen(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Add Faculty
+              </button>
             </div>
 
             <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -305,6 +313,8 @@ export default function FacultiesPage() {
               onClose={() => setSelectedFaculty(null)} 
             />
           )}
+
+          {isOverlayOpen && <AddFacultyOverlay onClose={() => setIsOverlayOpen(false)} />}
         </div>
       )}
     </>
