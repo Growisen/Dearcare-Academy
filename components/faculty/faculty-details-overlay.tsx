@@ -1,34 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Check } from 'lucide-react';
-import { FacultyDetailsProps, UnassignedStudent, AssignedStudent } from '../../types/faculty.types';
 import { supabase } from '../../lib/supabase';
 
-type FacultyType = FacultyDetailsProps['faculty'];
-const FACULTY_FIELDS: Array<[string, ((s: FacultyType) => string) | keyof FacultyType]> = [
-  ['Name', 'name'],
-  ['Email', 'email'],
-  ['Phone', 'phone'],
-  ['Department', 'department'],
-  ['Join Date', 'joinDate'],
-  ['Status', (s: FacultyType) => s.status.replace('_', ' ')]
-];
+interface FacultyDetailsProps {
+  faculty: { id: string };
+  onClose: () => void;
+}
+
+interface DocumentData {
+  photo: string | null;
+  certificates: string[];
+}
+
+interface WorkExperience {
+  organization: string;
+  posted_role: string;
+  duration: string;
+  responsibilities: string;
+}
+
+interface Student {
+  id: string;
+  name: string;
+  email: string;
+  student_source?: { status: string }[];
+}
 
 const InfoField = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="space-y-1.5">
     <label className="block text-sm font-medium text-gray-700">{label}</label>
     <div className="w-full rounded-lg border border-gray-200 py-2 px-3 text-sm text-gray-900 bg-gray-50">
-      {value}
+      {value || 'N/A'}
     </div>
   </div>
 );
 
 export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps) {
-  const [showAssignList, setShowAssignList] = useState(false);
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
-  const [unassignedStudents, setUnassignedStudents] = useState<UnassignedStudent[]>([]);
-  const [assignedStudents, setAssignedStudents] = useState<AssignedStudent[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [facultyData, setFacultyData] = useState<{
+    name: string;
+    dob: string;
+    gender: string;
+    martialstatus: string;
+    email: string;
+    phone_no: string;
+    address: string;
+    join_date: string;
+    department: string;
+    role: string;
+  } | null>(null);
+
+  const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([]);
+  const [documents, setDocuments] = useState<DocumentData>({
+    photo: null,
+    certificates: [],
+  });
+  const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
   const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
+  const [showAssignList, setShowAssignList] = useState(false);
+  const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
+
+  useEffect(() => {
+    fetchFacultyDetails();
+    fetchWorkExperiences();
+    fetchDocuments();
+    fetchAssignedStudents();
+    fetchUnassignedStudents();
+  }, [faculty.id]);
 
   useEffect(() => {
     if (showAssignList) {
@@ -36,53 +73,50 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     }
   }, [showAssignList]);
 
-  useEffect(() => {
-    fetchAssignedStudents();
-  }, [faculty.id]);
+  const fetchFacultyDetails = async () => {
+    const { data, error } = await supabase
+      .from('academy_faculties')
+      .select('*')
+      .eq('id', faculty.id)
+      .single();
 
-  const fetchUnassignedStudents = async () => {
-    setIsLoading(true);
+    if (error) {
+      console.error('Error fetching faculty details:', error);
+    } else {
+      setFacultyData(data);
+    }
+  };
+
+  const fetchWorkExperiences = async () => {
+    const { data, error } = await supabase
+      .from('faculty_experiences')
+      .select('*')
+      .eq('faculty_id', faculty.id);
+
+    if (error) {
+      console.error('Error fetching work experiences:', error);
+    } else {
+      setWorkExperiences(data || []);
+    }
+  };
+
+  const fetchDocuments = async () => {
     try {
-      const { data: assignments } = await supabase
-        .from('faculty_assignment')
-        .select('student_id');
+      const folderPath = `Faculties/${faculty.id}`;
+      const { data: photoData } = await supabase.storage
+        .from('DearCare')
+        .list(folderPath, { limit: 1, search: 'photo.jpg' });
 
-      const assignedIds = assignments?.map(a => a.student_id) || [];
+      const { data: certificateData } = await supabase.storage
+        .from('DearCare')
+        .list(`${folderPath}/certificate`);
 
-      const query = supabase
-        .from('students')
-        .select(`
-          id,
-          name,
-          email,
-          student_source!inner (
-            status
-          )
-        `)
-        .filter('id', 'not.in', `(${assignedIds.join(',')})`)
-        .eq('student_source.status', 'Confirmed');
-      
-      if (!assignedIds.length) {
-        query.limit(100);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      setUnassignedStudents((data || [])
-        .filter(student => student.student_source?.[0]?.status === 'Confirmed')
-        .map(student => ({
-          id: student.id,
-          name: student.name,
-          email: student.email,
-          course: student.student_source?.[0]?.status
-        })));
-
+      setDocuments({
+        photo: photoData?.[0]?.name ? `${folderPath}/${photoData[0].name}` : null,
+        certificates: certificateData?.map((file) => `${folderPath}/certificate/${file.name}`) || [],
+      });
     } catch (error) {
-      console.error('Error fetching unassigned students:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error fetching documents:', error);
     }
   };
 
@@ -106,7 +140,7 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
 
       if (error) throw error;
 
-      const students = data?.map(item => item.students).flat() || [];
+      const students = data?.map((item) => item.students).flat() || [];
       setAssignedStudents(students);
     } catch (error) {
       console.error('Error fetching assigned students:', error);
@@ -115,162 +149,256 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     }
   };
 
-  const handleAssignStudents = async () => {
+  const fetchUnassignedStudents = async () => {
     try {
-      const assignments = selectedStudents.map(studentId => ({
-        student_id: parseInt(studentId),
-        faculty_id: parseInt(faculty.id),
-        created_at: new Date().toISOString()
-      }));
-
-      const { error } = await supabase
+      const { data: assignedData } = await supabase
         .from('faculty_assignment')
-        .insert(assignments)
-        .select();
+        .select('student_id');
 
-      if (error) throw error;
+      const assignedIds = assignedData?.map((item) => item.student_id) || [];
 
-      await Promise.all([
-        fetchUnassignedStudents(),
-        fetchAssignedStudents()
-      ]);
-      
-      setShowAssignList(false);
-      setSelectedStudents([]);
+      const { data, error } = await supabase
+        .from('students')
+        .select(`
+          id,
+          name,
+          email,
+          student_source (
+            status
+          )
+        `)
+        .not('id', 'in', `(${assignedIds.join(',')})`);
 
+      if (error) {
+        console.error('Error fetching unassigned students:', error);
+      } else {
+        setUnassignedStudents(data || []);
+      }
     } catch (error) {
-      console.error('Error assigning students:', error);
+      console.error('Error fetching unassigned students:', error);
     }
   };
 
-  const toggleStudent = (studentId: string) => {
-    setSelectedStudents(prev => 
-      prev.includes(studentId) 
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    );
+  const handleAssignStudent = async (studentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('faculty_assignment')
+        .insert({
+          faculty_id: faculty.id,
+          student_id: studentId,
+        });
+
+      if (error) {
+        console.error('Error assigning student:', error);
+      } else {
+        // Update the assigned and unassigned students lists
+        fetchAssignedStudents();
+        fetchUnassignedStudents();
+      }
+    } catch (error) {
+      console.error('Error assigning student:', error);
+    }
   };
+
+  if (!facultyData) {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full text-center">
+          <p>Loading faculty details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
-      {showAssignList ? (
-        <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-xl">
-          <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Assign Students</h2>
-              <p className="text-sm text-gray-500">{selectedStudents.length} students selected</p>
-            </div>
-            <button onClick={() => setShowAssignList(false)} className="p-2 hover:bg-gray-50 rounded-full">
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
-          </div>
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl">
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">Profile</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full">
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
+        </div>
 
-          <div className="p-6">
-            {isLoading ? (
-              <div className="text-center py-4">Loading students...</div>
+        <div className="px-6 py-4 space-y-6">
+          {/* Personal Information */}
+          <section>
+            <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InfoField label="Full Name" value={facultyData.name} />
+              <InfoField label="Date of Birth" value={facultyData.dob} />
+              <InfoField label="Gender" value={facultyData.gender} />
+              <InfoField label="Marital Status" value={facultyData.martialstatus} />
+            </div>
+          </section>
+
+          {/* Contact Information */}
+          <section>
+            <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InfoField label="Email" value={facultyData.email} />
+              <InfoField label="Phone" value={facultyData.phone_no} />
+              <InfoField label="Address" value={facultyData.address} />
+            </div>
+          </section>
+
+          {/* Current Information */}
+          <section>
+            <h3 className="text-lg font-semibold text-gray-900">Current Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InfoField label="Join Date" value={facultyData.join_date} />
+              <InfoField label="Department" value={facultyData.department} />
+              <InfoField label="Role" value={facultyData.role} />
+            </div>
+          </section>
+
+          {/* Work Experience */}
+          <section>
+            <h3 className="text-lg font-semibold text-gray-900">Work Experience</h3>
+            {workExperiences.length > 0 ? (
+              workExperiences.map((experience, index) => (
+                <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <InfoField label="Organization" value={experience.organization} />
+                  <InfoField label="Posted Role" value={experience.posted_role} />
+                  <InfoField label="Duration" value={experience.duration} />
+                  <InfoField label="Responsibilities" value={experience.responsibilities} />
+                </div>
+              ))
             ) : (
-              <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                {unassignedStudents.map((student) => (
+              <p className="text-gray-500">No work experience available.</p>
+            )}
+          </section>
+
+          {/* Document Upload */}
+          <section>
+            <h3 className="text-lg font-semibold text-gray-900">Document Upload</h3>
+            <div className="space-y-4">
+              {/* Photo */}
+              {documents.photo && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700">Photo</h4>
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/DearCare/${documents.photo}`}
+                    alt="Faculty Photo"
+                    className="w-32 h-32 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+
+              {/* Certificates */}
+              {documents.certificates.length > 0 ? (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700">Certificates</h4>
+                  <div className="space-y-4">
+                    {documents.certificates.map((cert, index) => (
+                      <div
+                        key={index}
+                        className="border rounded-lg overflow-hidden mx-auto" // Center the preview
+                        style={{ maxWidth: '600px' }} // Set a maximum width for the container
+                      >
+                        <h5 className="text-sm font-medium text-gray-700 px-4 py-2 bg-gray-100">
+                          Certificate {index + 1}
+                        </h5>
+                        <iframe
+                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/DearCare/${cert}`}
+                          title={`Certificate ${index + 1}`}
+                          className="w-full h-[50vh]" // Full width within the reduced container
+                          style={{
+                            border: 'none', // Remove iframe border
+                            margin: 0, // Remove any margin
+                            padding: 0, // Remove any padding
+                            display: 'block', // Ensure it behaves like a block element
+                          }}
+                        ></iframe>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500">No certificates uploaded.</p>
+              )}
+            </div>
+          </section>
+
+          {/* Assigned Students */}
+          <section>
+            <div className="flex justify-between items-center border-b border-gray-200 pb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Assigned Students</h3>
+                <p className="text-sm text-gray-500">Total {assignedStudents.length} students</p>
+              </div>
+              <button
+                onClick={() => setShowAssignList(true)} // Opens the "Assign Students" overlay
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                <UserPlus className="h-4 w-4" /> Assign Student
+              </button>
+            </div>
+
+            <div className="grid gap-2 max-h-[40vh] overflow-y-auto pr-2">
+              {isLoadingAssigned ? (
+                <div className="text-center py-4">Loading assigned students...</div>
+              ) : assignedStudents.length > 0 ? (
+                assignedStudents.map((student) => (
                   <div
                     key={student.id}
-                    onClick={() => toggleStudent(student.id.toString())}
-                    className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors
-                      ${selectedStudents.includes(student.id.toString())
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-200'
-                      }`}
+                    className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-200 transition-colors"
                   >
-                    <div className="space-y-1">
-                      <h3 className="text-sm font-medium text-gray-900">{student.name}</h3>
-                      <p className="text-xs text-gray-500">{student.email || 'No email'}</p>
-                      {student.course && (
-                        <p className="text-xs text-gray-400">{student.course}</p>
-                      )}
+                    <div className="space-y-0.5">
+                      <h4 className="text-sm font-medium text-gray-900">{student.name}</h4>
+                      <p className="text-xs text-gray-500">{student.email}</p>
                     </div>
-                    {selectedStudents.includes(student.id.toString()) && (
-                      <Check className="h-5 w-5 text-blue-500" />
-                    )}
+                    <span className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100">
+                      {student.student_source?.[0]?.status || 'Active'}
+                    </span>
                   </div>
-                ))}
-                {unassignedStudents.length === 0 && !isLoading && (
-                  <div className="text-center py-4 text-gray-500">
-                    No unassigned students found
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
-            <button
-              onClick={handleAssignStudents}
-              disabled={selectedStudents.length === 0}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-            >
-              Assign Selected Students
-            </button>
-          </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">No students assigned yet</div>
+              )}
+            </div>
+          </section>
         </div>
-      ) : (
-        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
-          <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Faculty Details</h2>
-              <p className="text-sm text-gray-500">ID: {faculty.id}</p>
-            </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full transition-colors duration-200">
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
-          </div>
+      </div>
 
-          <div className="px-6 py-4 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {FACULTY_FIELDS.map(([label, key]) => (
-                <InfoField 
-                  key={label} 
-                  label={label} 
-                  value={typeof key === 'function' 
-                    ? key(faculty) 
-                    : String(faculty[key])} 
-                />
-              ))}
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex justify-between items-center border-b border-gray-200 pb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Assigned Students</h3>
-                  <p className="text-sm text-gray-500">Total {assignedStudents.length} students</p>
-                </div>
-                <button 
-                  onClick={() => setShowAssignList(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                >
-                  <UserPlus className="h-4 w-4" />Assign Student
-                </button>
+      {showAssignList && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-xl">
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Assign Students</h2>
+                <p className="text-sm text-gray-500">Select students to assign</p>
               </div>
+              <button
+                onClick={() => setShowAssignList(false)} // Closes the overlay
+                className="p-2 hover:bg-gray-50 rounded-full"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
 
-              <div className="grid gap-2 max-h-[40vh] overflow-y-auto pr-2">
-                {isLoadingAssigned ? (
-                  <div className="text-center py-4">Loading assigned students...</div>
-                ) : assignedStudents.length > 0 ? (
-                  assignedStudents.map((student) => (
-                    <div key={student.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-200 transition-colors">
-                      <div className="space-y-0.5">
-                        <h4 className="text-sm font-medium text-gray-900">{student.name}</h4>
-                        <p className="text-xs text-gray-500">{student.email}</p>
+            <div className="p-6">
+              {isLoadingAssigned ? (
+                <div className="text-center py-4">Loading students...</div>
+              ) : unassignedStudents.length > 0 ? (
+                <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                  {unassignedStudents.map((student) => (
+                    <div
+                      key={student.id}
+                      onClick={() => handleAssignStudent(student.id)} // Assign student on click
+                      className="flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors hover:border-blue-200"
+                    >
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-medium text-gray-900">{student.name}</h3>
+                        <p className="text-xs text-gray-500">{student.email || 'No email'}</p>
                       </div>
-                      <span className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                        {student.student_source?.[0]?.status || 'Active'}
-                      </span>
+                      <Check className="h-5 w-5 text-blue-500" />
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-gray-500">
-                    No students assigned yet
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">No unassigned students available</div>
+              )}
             </div>
           </div>
         </div>
