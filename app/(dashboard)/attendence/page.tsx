@@ -34,19 +34,24 @@ export default function AttendancePage() {
     const fetchStudents = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from<StudentSource>("student_source") // Specify the row type
+        .from("student_source")
         .select(`
           student_id,
           students (id, name)
         `)
-        .eq("status", "Confirmed");
+        .eq("status", "confirmed");
+
+      //console.log("Fetched Data:", data);
+      //console.log("Error:", error);
 
       if (error) {
         console.error("Error fetching students:", error);
       } else if (data) {
         // Ensure students is not null and map correctly
-        const mappedStudents = data
-          .filter((entry) => entry.students !== null) // Filter out null students
+        const studentData = data as unknown as StudentSource[];
+        //const mappedStudents = data
+        const mappedStudents = studentData
+          .filter((entry) => entry.students !== null) // Exclude rows where students is null
           .map((entry) => ({
             id: entry.students!.id, // Use non-null assertion
             name: entry.students!.name,

@@ -27,7 +27,7 @@ const uploadStudentFile = async (studentId: number, file: File, type: 'photo' | 
       const filePath = `Students/${studentId}/${type}.jpg`;
       
       const { error } = await supabase.storage
-        .from('DearCare')
+        .from('dearcare')
         .upload(filePath, imageBlob, {
           contentType: 'image/jpeg'
         });
@@ -44,7 +44,7 @@ const uploadStudentFile = async (studentId: number, file: File, type: 'photo' | 
     const filePath = `Students/${studentId}/${type}.${fileExt}`;
     
     const { error } = await supabase.storage
-      .from('DearCare')
+      .from('dearcare')
       .upload(filePath, file);
 
     if (error) throw error;

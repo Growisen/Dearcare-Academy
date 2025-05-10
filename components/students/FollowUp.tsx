@@ -33,7 +33,7 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
         if (student.payment_receipt) {
           // Check if file exists
           const { data: files, error: listError } = await supabase.storage
-            .from('DearCare')
+            .from('dearcare')
             .list(`Students/${studentId}`);
 
           if (listError) throw listError;
@@ -43,7 +43,7 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
 
           // Get public URL for the receipt
           const { data: { publicUrl } } = supabase.storage
-            .from('DearCare')
+            .from('dearcare')
             .getPublicUrl(`Students/${studentId}/payment_receipt.pdf`);
 
           setReceiptUrl(publicUrl);

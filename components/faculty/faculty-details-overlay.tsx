@@ -104,11 +104,11 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     try {
       const folderPath = `Faculties/${faculty.id}`;
       const { data: photoData } = await supabase.storage
-        .from('DearCare')
+        .from('dearcare')
         .list(folderPath, { limit: 1, search: 'photo.jpg' });
 
       const { data: certificateData } = await supabase.storage
-        .from('DearCare')
+        .from('dearcare')
         .list(`${folderPath}/certificate`);
 
       setDocuments({
@@ -278,7 +278,7 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
                 <div>
                   <h4 className="text-sm font-medium text-gray-700">Photo</h4>
                   <img
-                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/DearCare/${documents.photo}`}
+                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/dearcare/${documents.photo}`}
                     alt="Faculty Photo"
                     className="w-32 h-32 object-cover rounded-lg border"
                   />
@@ -300,7 +300,7 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
                           Certificate {index + 1}
                         </h5>
                         <iframe
-                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/DearCare/${cert}`}
+                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/dearcare/${cert}`}
                           title={`Certificate ${index + 1}`}
                           className="w-full h-[50vh]" // Full width within the reduced container
                           style={{
