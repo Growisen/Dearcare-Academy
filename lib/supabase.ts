@@ -284,6 +284,7 @@ export const hideEnquiry = async (id: number) => {
   }
 };
 
+// Helper function to get dashboard stats
 export const getDashboardStats = async () => {
   try {
     const [facultyCount, studentCount, courseCount] = await Promise.all([
@@ -304,6 +305,74 @@ export const getDashboardStats = async () => {
     console.error('Error fetching dashboard stats:', error);
     return { 
       data: null, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
+};
+
+// Helper function to check if a faculty is already a supervisor
+export const checkFacultyIsSupervisor = async (facultyId: string | number) => {
+  try {
+    const { data, error } = await supabase
+      .from('academy_supervisors')
+      .select('id')
+      .eq('id', facultyId)
+      .maybeSingle();
+    
+    if (error) throw error;
+    
+    return { isSupervisor: !!data, error: null };
+  } catch (error) {
+    console.error('Error checking supervisor status:', error);
+    return { 
+      isSupervisor: false, 
+      error: error instanceof Error ? error : new Error('Unknown error') 
+    };
+  }
+};
+
+// Helper function to upgrade faculty to supervisor
+export const upgradeFacultyToSupervisor = async (facultyId: string | number) => {
+  try {
+    // First get the faculty data
+    const { data: facultyData, error: fetchError } = await supabase
+      .from('academy_faculties')
+      .select('*')
+      .eq('id', facultyId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    if (!facultyData) throw new Error('Faculty not found');
+    
+    // Ensure numeric ID
+    const numericId = typeof facultyData.id === 'string' 
+      ? parseInt(facultyData.id, 10) 
+      : facultyData.id;
+    
+    // Insert into supervisors table
+    const { error: insertError } = await supabase
+      .from('academy_supervisors')
+      .insert({
+        id: numericId,
+        name: facultyData.name || '',
+        dob: facultyData.dob || null,
+        gender: facultyData.gender || '',
+        martialstatus: facultyData.martialstatus || '',
+        email: facultyData.email || '',
+        phone_no: facultyData.phone_no || '',
+        address: facultyData.address || '',
+        join_date: facultyData.join_date || null,
+        department: facultyData.department || '',
+        role: facultyData.role || ''
+      });
+    
+    if (insertError) throw insertError;
+    
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error upgrading faculty to supervisor:', error);
+    return { 
+      success: false, 
       error: error instanceof Error ? error : new Error('Unknown error') 
     };
   }

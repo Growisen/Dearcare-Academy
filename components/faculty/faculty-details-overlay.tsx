@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Check } from 'lucide-react';
+import { X, UserPlus, Check, ShieldCheck, UserMinus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { toast } from 'react-hot-toast';
 
 interface FacultyDetailsProps {
   faculty: { id: string };
@@ -58,6 +59,8 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
   const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
   const [showAssignList, setShowAssignList] = useState(false);
   const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
+  const [isSupervisor, setIsSupervisor] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     fetchFacultyDetails();
@@ -65,6 +68,7 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     fetchDocuments();
     fetchAssignedStudents();
     fetchUnassignedStudents();
+    checkSupervisorStatus();
   }, [faculty.id]);
 
   useEffect(() => {
@@ -200,6 +204,161 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     }
   };
 
+  // Check if faculty is already a supervisor
+  const checkSupervisorStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('academy_supervisors')
+        .select('id')
+        .eq('id', faculty.id);
+      
+      if (error) throw error;
+      setIsSupervisor(data && data.length > 0);
+    } catch (error) {
+      console.error('Error checking supervisor status:', error);
+    }
+  };
+
+  // Function to upgrade faculty to supervisor
+  const handleUpgradeToSupervisor = async () => {
+    try {
+      setIsProcessing(true);
+      
+      // First check if this faculty already exists as a supervisor
+      const { data: existingSupervisor, error: checkError } = await supabase
+        .from('academy_supervisors')
+        .select('id')
+        .eq('id', faculty.id)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error('Error checking supervisor status:', checkError);
+        toast.error(`Check error: ${checkError.message || JSON.stringify(checkError)}`);
+        return;
+      }
+      
+      // If already a supervisor, don't try to insert again
+      if (existingSupervisor) {
+        setIsSupervisor(true);
+        toast.success('Already a supervisor');
+        return;
+      }
+      
+      // Get faculty data first
+      const { data: facultyData, error: fetchError } = await supabase
+        .from('academy_faculties')
+        .select('*')
+        .eq('id', faculty.id)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching faculty data:', fetchError);
+        toast.error(`Fetch error: ${fetchError.message || JSON.stringify(fetchError)}`);
+        return;
+      }
+      
+      if (!facultyData) {
+        toast.error('Faculty data not found');
+        return;
+      }
+      
+      // Important: Don't convert ID - use it as is from the database
+      const supervisorData = {
+        id: facultyData.id, // Keep original ID format
+        name: facultyData.name || '',
+        dob: facultyData.dob || null,
+        gender: facultyData.gender || '',
+        martialstatus: facultyData.martialstatus || '',
+        email: facultyData.email || '',
+        phone_no: facultyData.phone_no || '',
+        address: facultyData.address || '',
+        join_date: facultyData.join_date || null,
+        department: facultyData.department || '',
+        role: facultyData.role || ''
+      };
+      
+      console.log('Inserting supervisor with data:', supervisorData);
+      
+      // Insert into academy_supervisors table
+      const { error: insertError } = await supabase
+        .from('academy_supervisors')
+        .insert(supervisorData);
+      
+      if (insertError) {
+        console.error('Error inserting supervisor:', insertError);
+        toast.error(`Insert error: ${insertError.message || JSON.stringify(insertError)}`);
+        return;
+      }
+      
+      setIsSupervisor(true);
+      toast.success('Successfully upgraded to supervisor');
+    } catch (error) {
+      console.error('Error upgrading to supervisor:', error);
+      // Improved error reporting with fallback
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : (typeof error === 'object' && error !== null)
+          ? JSON.stringify(error)
+          : 'Unknown error';
+      
+      toast.error(`Failed to upgrade to supervisor: ${errorMessage}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Function to set supervisor back to faculty only
+  const handleSetAsFaculty = async () => {
+    try {
+      setIsProcessing(true);
+      
+      // Check if supervisor has assigned students
+      const { data: assignmentData, error: checkError } = await supabase
+        .from('supervisor_assignment')
+        .select('student_id')
+        .eq('supervisor_id', faculty.id);
+      
+      if (checkError) {
+        console.error('Error checking assignments:', checkError);
+        toast.error(`Check error: ${checkError.message || JSON.stringify(checkError)}`);
+        return;
+      }
+      
+      // If supervisor has assignments, show warning
+      if (assignmentData && assignmentData.length > 0) {
+        toast.error('Cannot remove supervisor role: has assigned students');
+        return;
+      }
+      
+      // Delete from academy_supervisors table
+      const { error: deleteError } = await supabase
+        .from('academy_supervisors')
+        .delete()
+        .eq('id', faculty.id);
+      
+      if (deleteError) {
+        console.error('Error removing supervisor:', deleteError);
+        toast.error(`Delete error: ${deleteError.message || JSON.stringify(deleteError)}`);
+        return;
+      }
+      
+      setIsSupervisor(false);
+      toast.success('Successfully set as faculty only');
+    } catch (error) {
+      console.error('Error setting as faculty:', error);
+      // Improved error reporting
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : (typeof error === 'object' && error !== null)
+          ? JSON.stringify(error)
+          : 'Unknown error';
+      
+      toast.error(`Failed to change role: ${errorMessage}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (!facultyData) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -214,13 +373,48 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Profile</h2>
+          <div className="flex items-center space-x-2">
+            <h2 className="text-xl font-semibold text-gray-900">Profile</h2>
+            {isSupervisor && (
+              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                <ShieldCheck className="mr-1 h-3 w-3" />
+                Supervisor
+              </span>
+            )}
+          </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full">
             <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
         <div className="px-6 py-4 space-y-6">
+          {/* Supervisor Status Button */}
+          <div className="flex justify-end">
+            <button
+              onClick={isSupervisor ? handleSetAsFaculty : handleUpgradeToSupervisor}
+              disabled={isProcessing}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white ${
+                isSupervisor 
+                ? 'bg-amber-600 hover:bg-amber-700' 
+                : 'bg-blue-600 hover:bg-blue-700'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isProcessing ? (
+                <span>Processing...</span>
+              ) : isSupervisor ? (
+                <>
+                  <UserMinus className="h-4 w-4" />
+                  Set as Faculty Only
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4" />
+                  Upgrade to Supervisor
+                </>
+              )}
+            </button>
+          </div>
+
           {/* Personal Information */}
           <section>
             <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>

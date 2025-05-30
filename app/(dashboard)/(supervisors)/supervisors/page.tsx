@@ -82,8 +82,9 @@ export default function SupervisorsPage() {
 
       const formattedSupervisors: Supervisor[] = await Promise.all(
         (dbSupervisors as DatabaseSupervisor[]).map(async (sup) => {
+          // Fetch assigned students using supervisor_assignment table
           const { data: assignedStudents } = await supabase
-            .from('supervisor_assignments')
+            .from('supervisor_assignment')
             .select(`
               student:students (
                 id,
@@ -110,10 +111,10 @@ export default function SupervisorsPage() {
             name: sup.name || '',
             joinDate: sup.join_date || '',
             department: sup.department || '',
-            status: 'active',
+            status: 'active', // Default status
             email: sup.email || '',
             phone: sup.phone_no || '',
-            faculties: [],
+            faculties: [], // Empty array since we're not managing faculties here
             assignedStudents: students
           }
         })

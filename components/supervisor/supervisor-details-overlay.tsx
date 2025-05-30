@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Check } from 'lucide-react';
+import { X, UserPlus, Check, ShieldCheck } from 'lucide-react';
 import { SupervisorDetailsProps, UnassignedStudent, AssignedStudent } from '../../types/supervisors.types';
 import { supabase } from '../../lib/supabase';
+import { toast } from 'react-hot-toast';
 
 type SupervisorType = SupervisorDetailsProps['supervisor'];
 const SUPERVISOR_FIELDS: Array<[string, ((s: SupervisorType) => string) | keyof SupervisorType]> = [
@@ -47,15 +48,15 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
   const fetchUnassignedStudents = async () => {
     setIsLoading(true);
     try {
-      // First get the subquery as a string of IDs
+      // First get all the students that are already assigned to supervisors
       const { data: assignments } = await supabase
         .from('supervisor_assignment')
         .select('student_id');
 
       const assignedIds = assignments?.map(a => a.student_id) || [];
 
-      // Then get all confirmed students who aren't in the assigned list
-      const query = supabase
+      // Build the query for unassigned students
+      let query = supabase
         .from('students')
         .select(`
           id,
@@ -65,11 +66,11 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
             status
           )
         `)
-        .filter('id', 'not.in', `(${assignedIds.join(',')})`)
-        .filter('student_source.status', 'eq', 'Confirmed');  // Added filter for confirmed status
+        .filter('student_source.status', 'eq', 'Confirmed');  // Only show confirmed students
       
-      if (!assignedIds.length) {
-        query.limit(100);
+      // Only add the filter if there are assigned students
+      if (assignedIds.length > 0) {
+        query = query.filter('id', 'not.in', `(${assignedIds.join(',')})`);
       }
 
       const { data, error } = await query;
@@ -85,6 +86,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
 
     } catch (error) {
       console.error('Error fetching unassigned students:', error);
+      toast.error('Failed to load unassigned students');
     } finally {
       setIsLoading(false);
     }
@@ -121,6 +123,11 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
 
   const handleAssignStudents = async () => {
     try {
+      if (selectedStudents.length === 0) {
+        toast.error('No students selected');
+        return;
+      }
+
       // Insert supervisor assignments
       const assignments = selectedStudents.map(studentId => ({
         student_id: parseInt(studentId),
@@ -130,8 +137,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
 
       const { error } = await supabase
         .from('supervisor_assignment')
-        .insert(assignments)
-        .select();
+        .insert(assignments);
 
       if (error) throw error;
 
@@ -143,9 +149,11 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
       
       setShowAssignList(false);
       setSelectedStudents([]);
+      toast.success(`${selectedStudents.length} student(s) assigned successfully`);
 
     } catch (error) {
       console.error('Error assigning students:', error);
+      toast.error('Failed to assign students');
     }
   };
 
