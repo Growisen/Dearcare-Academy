@@ -112,7 +112,6 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
 
   const updateStudentStatus = async (newStatus: string) => {
     try {
-
       //confirmed part
       if (newStatus.toLowerCase() === 'confirmed') {
         // First, send verification email with receipt upload details
@@ -167,15 +166,38 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
         }
       }
 
-      console.log('Updating status in "student_source" table...');
-      const { error: updateError } = await supabase
+      // 1. Check if a row exists for this student_id
+      const { data: existingRows, error: selectError } = await supabase
         .from('student_source')
-        .update({ status: newStatus })
-        .eq('student_id', student.id);
+        .select('student_id')
+        .eq('student_id', Number(student.id));
 
-      if (updateError) {
-        console.error('Error updating status in "student_source":', updateError);
-        throw updateError;
+      if (selectError) {
+        console.error('Error checking for existing student_source row:', selectError);
+        throw selectError;
+      }
+
+      if (existingRows && existingRows.length > 0) {
+        // 2. Row exists: update status
+        const { error: updateError } = await supabase
+          .from('student_source')
+          .update({ status: newStatus })
+          .eq('student_id', Number(student.id));
+
+        if (updateError) {
+          console.error('Error updating status in "student_source":', updateError);
+          throw updateError;
+        }
+      } else {
+        // 3. Row does not exist: insert new row
+        const { error: insertError } = await supabase
+          .from('student_source')
+          .insert([{ student_id: Number(student.id), status: newStatus }]);
+
+        if (insertError) {
+          console.error('Error inserting new row in "student_source":', insertError);
+          throw insertError;
+        }
       }
 
       console.log('Successfully updated status. Updating local state...');
@@ -183,7 +205,9 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
         ...prev,
         status: newStatus.toLowerCase() as 'confirmed' | 'follow-up' | 'new' | 'rejected',
       }));
-      
+
+      //new addition upto catch
+
     } catch (error) {
       console.error('Unhandled error in updateStudentStatus:', error);
       alert('An error occurred while updating the student status. Please try again.');
