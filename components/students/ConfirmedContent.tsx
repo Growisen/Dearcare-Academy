@@ -33,7 +33,7 @@ export function ConfirmedContent({ studentId }: ConfirmedContentProps) {
 
         if (receiptExists) {
           const { data: { publicUrl } } = supabase.storage
-            .from('DearCare')
+            .from('dearcare')
             .getPublicUrl(`Students/${studentId}/payment_receipt.pdf`);
 
           if (!publicUrl) {

@@ -159,7 +159,7 @@ export function AddFacultyOverlay({ onClose }: { onClose: () => void }) {
       // Upload the photo
       if (formData.photo) {
         const { error: photoError } = await supabase.storage
-          .from('DearCare')
+          .from('dearcare')
           .upload(photoPath, formData.photo);
 
         if (photoError) {
@@ -175,7 +175,7 @@ export function AddFacultyOverlay({ onClose }: { onClose: () => void }) {
           if (document) {
             const documentPath = `${certificateFolder}/${index + 1}.pdf`; // Name documents as 1.pdf, 2.pdf, etc.
             const { error: documentError } = await supabase.storage
-              .from('DearCare')
+              .from('dearcare')
               .upload(documentPath, document);
 
             if (documentError) {

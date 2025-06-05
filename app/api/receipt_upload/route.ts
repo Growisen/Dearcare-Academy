@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const filePath = `Students/${studentId}/payment_receipt.pdf`;
     
     const { error } = await supabase.storage
-      .from('DearCare')
+      .from('dearcare')
       .upload(filePath, file, {
         contentType: 'application/pdf',
         upsert: true

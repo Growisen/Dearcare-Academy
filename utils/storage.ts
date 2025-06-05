@@ -10,7 +10,7 @@ export const getStudentFileUrl = async (studentId: number, fileType: 'photo' | '
     console.log(`Fetching ${fileType} for student ${studentId}`);
     
     const { data, error } = await supabase.storage
-      .from('DearCare')
+      .from('dearcare')
       .list(`Students/${studentId}`);
 
     if (error) {
@@ -35,7 +35,7 @@ export const getStudentFileUrl = async (studentId: number, fileType: 'photo' | '
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('DearCare')
+      .from('dearcare')
       .getPublicUrl(`Students/${studentId}/${file.name}`);
 
     return publicUrl;
@@ -54,7 +54,7 @@ export const getStudentFileUrl = async (studentId: number, fileType: 'photo' | '
 export const verifyStorageAccess = async () => {
   try {
     const { data, error } = await supabase.storage
-      .from('DearCare')
+      .from('dearcare')
       .list('');
 
     if (error) {
