@@ -225,6 +225,7 @@ export function FollowUpContent({ studentId }: FollowUpContentProps) {
         >
           Reject
         </button> */}
+        {/* DearCare Academy */}
       </div>
     </div>
   );
