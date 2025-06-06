@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Check } from 'lucide-react';
+import { X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface FacultyDetailsProps {
@@ -19,12 +19,12 @@ interface WorkExperience {
   responsibilities: string;
 }
 
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  student_source?: { status: string }[];
-}
+// interface Student {
+//   id: string;
+//   name: string;
+//   email: string;
+//   student_source?: { status: string }[];
+// }
 
 const InfoField = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="space-y-1.5">
@@ -54,24 +54,24 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     photo: null,
     certificates: [],
   });
-  const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
-  const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
-  const [showAssignList, setShowAssignList] = useState(false);
-  const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
+  // const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
+  // const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
+  // const [showAssignList, setShowAssignList] = useState(false);
+  // const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
 
   useEffect(() => {
     fetchFacultyDetails();
     fetchWorkExperiences();
     fetchDocuments();
-    fetchAssignedStudents();
-    fetchUnassignedStudents();
+    // fetchAssignedStudents();
+    // fetchUnassignedStudents();
   }, [faculty.id]);
 
-  useEffect(() => {
-    if (showAssignList) {
-      fetchUnassignedStudents();
-    }
-  }, [showAssignList]);
+  // useEffect(() => {
+  //   if (showAssignList) {
+  //     fetchUnassignedStudents();
+  //   }
+  // }, [showAssignList]);
 
   const fetchFacultyDetails = async () => {
     const { data, error } = await supabase
@@ -120,85 +120,85 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     }
   };
 
-  const fetchAssignedStudents = async () => {
-    setIsLoadingAssigned(true);
-    try {
-      const { data, error } = await supabase
-        .from('faculty_assignment')
-        .select(`
-          student_id,
-          students (
-            id,
-            name,
-            email,
-            student_source (
-              status
-            )
-          )
-        `)
-        .eq('faculty_id', faculty.id);
+  // const fetchAssignedStudents = async () => {
+  //   setIsLoadingAssigned(true);
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from('faculty_assignment')
+  //       .select(`
+  //         student_id,
+  //         students (
+  //           id,
+  //           name,
+  //           email,
+  //           student_source (
+  //             status
+  //           )
+  //         )
+  //       `)
+  //       .eq('faculty_id', faculty.id);
 
-      if (error) throw error;
+  //     if (error) throw error;
 
-      const students = data?.map((item) => item.students).flat() || [];
-      setAssignedStudents(students);
-    } catch (error) {
-      console.error('Error fetching assigned students:', error);
-    } finally {
-      setIsLoadingAssigned(false);
-    }
-  };
+  //     const students = data?.map((item) => item.students).flat() || [];
+  //     setAssignedStudents(students);
+  //   } catch (error) {
+  //     console.error('Error fetching assigned students:', error);
+  //   } finally {
+  //     setIsLoadingAssigned(false);
+  //   }
+  // };
 
-  const fetchUnassignedStudents = async () => {
-    try {
-      const { data: assignedData } = await supabase
-        .from('faculty_assignment')
-        .select('student_id');
+  // const fetchUnassignedStudents = async () => {
+  //   try {
+  //     const { data: assignedData } = await supabase
+  //       .from('faculty_assignment')
+  //       .select('student_id');
 
-      const assignedIds = assignedData?.map((item) => item.student_id) || [];
+  //     const assignedIds = assignedData?.map((item) => item.student_id) || [];
 
-      const { data, error } = await supabase
-        .from('students')
-        .select(`
-          id,
-          name,
-          email,
-          student_source (
-            status
-          )
-        `)
-        .not('id', 'in', `(${assignedIds.join(',')})`);
+  //     const { data, error } = await supabase
+  //       .from('students')
+  //       .select(`
+  //         id,
+  //         name,
+  //         email,
+  //         student_source (
+  //           status
+  //         )
+  //       `)
+  //       .not('id', 'in', `(${assignedIds.join(',')})`);
 
-      if (error) {
-        console.error('Error fetching unassigned students:', error);
-      } else {
-        setUnassignedStudents(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching unassigned students:', error);
-    }
-  };
+  //     if (error) {
+  //       console.error('Error fetching unassigned students:', error);
+  //     } else {
+  //       setUnassignedStudents(data || []);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching unassigned students:', error);
+  //   }
+  // };
 
-  const handleAssignStudent = async (studentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('faculty_assignment')
-        .insert({
-          faculty_id: faculty.id,
-          student_id: studentId,
-        });
+  // const handleAssignStudent = async (studentId: string) => {
+  //   try {
+  //     const { error } = await supabase
+  //       .from('faculty_assignment')
+  //       .insert({
+  //         faculty_id: faculty.id,
+  //         student_id: studentId,
+  //       });
 
-      if (error) {
-        console.error('Error assigning student:', error);
-      } else {
-        // Update the assigned and unassigned students lists
-        fetchAssignedStudents();
-        fetchUnassignedStudents();
-      }
-    } catch (error) {
-      console.error('Error assigning student:', error);
-    }
-  };
+  //     if (error) {
+  //       console.error('Error assigning student:', error);
+  //     } else {
+  //       // Update the assigned and unassigned students lists
+  //       fetchAssignedStudents();
+  //       fetchUnassignedStudents();
+  //     }
+  //   } catch (error) {
+  //     console.error('Error assigning student:', error);
+  //   }
+  // };
 
   if (!facultyData) {
     return (
@@ -321,18 +321,16 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
           </section>
 
           {/* Assigned Students */}
+          {/* 
           <section>
             <div className="flex justify-between items-center border-b border-gray-200 pb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Assigned Students</h3>
                 <p className="text-sm text-gray-500">Total {assignedStudents.length} students</p>
               </div>
-              <button
-                onClick={() => setShowAssignList(true)} // Opens the "Assign Students" overlay
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                <UserPlus className="h-4 w-4" /> Assign Student
-              </button>
+              { 
+              // <button> ...Assign Student... </button>
+              }
             </div>
 
             <div className="grid gap-2 max-h-[40vh] overflow-y-auto pr-2">
@@ -358,9 +356,11 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
               )}
             </div>
           </section>
+          */}
         </div>
       </div>
 
+      {/* 
       {showAssignList && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-xl">
@@ -403,6 +403,7 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
           </div>
         </div>
       )}
+      */}
     </div>
   );
 }
