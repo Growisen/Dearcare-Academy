@@ -18,7 +18,7 @@ export const fetchStudentData = async (studentId: string) => {
         student_experience (*),
         student_guardian (*),
         student_preferences (*),
-        student_source (*)
+        student_source!student_source_student_id_fkey (*)
       `)
       .eq('id', studentId)
       .single();
