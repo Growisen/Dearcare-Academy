@@ -89,7 +89,7 @@ export default function SupervisorsPage() {
                 id,
                 name,
                 email,
-                student_source (
+                student_source!student_source_student_id_fkey (
                   status
                 )
               )

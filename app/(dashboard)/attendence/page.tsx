@@ -37,7 +37,7 @@ export default function AttendancePage() {
         .from("student_source")
         .select(`
           student_id,
-          students (id, name)
+          students!student_source_student_id_fkey (id, name)
         `)
         .eq("status", "confirmed");
 
