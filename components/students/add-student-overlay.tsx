@@ -3,6 +3,7 @@ import { X, AlertCircle } from 'lucide-react';
 import { Input } from '../ui/input';
 import { StudentFormData, StepContentProps, AddStudentOverlayProps } from '../../types/student.types';
 import { insertStudentData } from '../../lib/supabase';
+// import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
 
 type FormChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
@@ -841,6 +842,8 @@ export function AddStudentOverlay({ onClose, onAssign }: AddStudentOverlayProps)
     sourceSubCategory: '', servicePreferences: {}
   });
   const [errors, setErrors] = useState<FieldErrors>({});
+  // const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  // const [documentUrl, setDocumentUrl] = useState<string | null>(null);
 
   const resetForm = () => {
     setFormData({
@@ -939,6 +942,13 @@ export function AddStudentOverlay({ onClose, onAssign }: AddStudentOverlayProps)
           return;
         }
 
+        // Get the new student ID
+        
+
+        
+        
+        
+        
         await toast.success('Student added successfully!', {
           duration: 3000
         });
