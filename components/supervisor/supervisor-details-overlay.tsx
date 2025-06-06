@@ -61,7 +61,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
           id,
           name,
           email,
-          student_source!inner (
+          student_source!student_source_student_id_fkey (
             status
           )
         `)
