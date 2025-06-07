@@ -7,6 +7,7 @@ export interface Student {
   phone: string;
   enrollmentDate: string;
   location: string;
+  register_no?: string;
 }
 
 export interface DatabaseStudent {

@@ -217,12 +217,11 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
             </button>
           </div>
         </div>
-      ) : (
-        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+      ) : (        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
           <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Supervisor Details</h2>
-              <p className="text-sm text-gray-500">ID: {supervisor.id}</p>
+              <p className="text-sm text-gray-500">Register No: {supervisor.register_no || supervisor.id}</p>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full transition-colors duration-200">
               <X className="h-5 w-5 text-gray-500" />
