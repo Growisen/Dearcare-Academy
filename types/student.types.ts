@@ -17,6 +17,7 @@ export interface DatabaseStudent {
   course: string;
   payment_receipt: boolean;
   created_at: string;
+  register_no?: string;
   status?: string;
   city?: string;
   state?: string;

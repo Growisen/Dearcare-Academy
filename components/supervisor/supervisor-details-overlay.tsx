@@ -50,9 +50,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
       // First get the subquery as a string of IDs
       const { data: assignments } = await supabase
         .from('supervisor_assignment')
-        .select('student_id');
-
-      const assignedIds = assignments?.map(a => a.student_id) || [];
+        .select('student_id');      const assignedIds = assignments?.map(a => a.student_id) || [];
 
       // Then get all confirmed students who aren't in the assigned list
       const query = supabase
@@ -61,12 +59,13 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
           id,
           name,
           email,
+          register_no,
           student_source!student_source_student_id_fkey!inner (
             status
           )
         `)
         .filter('id', 'not.in', `(${assignedIds.join(',')})`)
-        .filter('student_source.status', 'eq', 'Confirmed');  // Added filter for confirmed status
+        .filter('student_source.status', 'eq', 'Confirmed');
       
       if (!assignedIds.length) {
         query.limit(100);
@@ -74,12 +73,11 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
 
       const { data, error } = await query;
 
-      if (error) throw error;
-
-      setUnassignedStudents((data || []).map(student => ({
+      if (error) throw error;      setUnassignedStudents((data || []).map(student => ({
         id: student.id,
         name: student.name || 'Unnamed Student',
         email: student.email || '',
+        register_no: student.register_no || '',
         course: student.student_source?.[0]?.status || 'Not specified'
       })));
 
@@ -92,8 +90,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
 
   const fetchAssignedStudents = async () => {
     setIsLoadingAssigned(true);
-    try {
-      const { data, error } = await supabase
+    try {      const { data, error } = await supabase
         .from('supervisor_assignment')
         .select(`
           student_id,
@@ -101,6 +98,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
             id,
             name,
             email,
+            register_no,
             student_source!student_source_student_id_fkey (
               status
             )
@@ -185,9 +183,11 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-blue-200'
                       }`}
-                  >
-                    <div className="space-y-1">
+                  >                    <div className="space-y-1">
                       <h3 className="text-sm font-medium text-gray-900">{student.name}</h3>
+                      {student.register_no && (
+                        <p className="text-sm text-gray-500">({student.register_no})</p>
+                      )}
                       <p className="text-xs text-gray-500">{student.email || 'No email'}</p>
                       {student.course && (
                         <p className="text-xs text-gray-400">{student.course}</p>
@@ -259,11 +259,13 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
               <div className="grid gap-2 max-h-[40vh] overflow-y-auto pr-2">
                 {isLoadingAssigned ? (
                   <div className="text-center py-4">Loading assigned students...</div>
-                ) : assignedStudents.length > 0 ? (
-                  assignedStudents.map((student) => (
+                ) : assignedStudents.length > 0 ? (                  assignedStudents.map((student) => (
                     <div key={student.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-200 transition-colors">
                       <div className="space-y-0.5">
                         <h4 className="text-sm font-medium text-gray-900">{student.name}</h4>
+                        {student.register_no && (
+                          <p className="text-sm text-gray-500">({student.register_no})</p>
+                        )}
                         <p className="text-xs text-gray-500">{student.email}</p>
                       </div>
                       <span className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100">

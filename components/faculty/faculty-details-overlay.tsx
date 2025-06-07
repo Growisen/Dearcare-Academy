@@ -35,8 +35,7 @@ const InfoField = ({ label, value }: { label: string; value: React.ReactNode }) 
   </div>
 );
 
-export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps) {
-  const [facultyData, setFacultyData] = useState<{
+export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps) {  const [facultyData, setFacultyData] = useState<{
     name: string;
     dob: string;
     gender: string;
@@ -47,6 +46,7 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     join_date: string;
     department: string;
     role: string;
+    register_no: string;
   } | null>(null);
 
   const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([]);
@@ -223,9 +223,18 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
         <div className="px-6 py-4 space-y-6">
           {/* Personal Information */}
           <section>
-            <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoField label="Full Name" value={facultyData.name} />
+            <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InfoField 
+                label="Full Name" 
+                value={
+                  <div>
+                    <div>{facultyData.name}</div>
+                    {facultyData.register_no && (
+                      <div className="text-sm text-gray-500">({facultyData.register_no})</div>
+                    )}
+                  </div>
+                } 
+              />
               <InfoField label="Date of Birth" value={facultyData.dob} />
               <InfoField label="Gender" value={facultyData.gender} />
               <InfoField label="Marital Status" value={facultyData.martialstatus} />

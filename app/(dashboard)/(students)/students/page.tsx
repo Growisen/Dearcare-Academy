@@ -289,10 +289,12 @@ export default function StudentsPage() {
                         const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
                         const StatusIcon = statusIcons[status as keyof typeof statusIcons];
 
-                        return (
-                          <tr key={student.id} className="hover:bg-gray-50/50">
-                            <td className="py-4 px-6 text-gray-900 font-medium">
-                              {student.name}
+                        return (                          <tr key={student.id} className="hover:bg-gray-50/50">
+                            <td className="py-4 px-6 text-gray-900">
+                              <div className="font-medium">{student.name}</div>
+                              {student.register_no && (
+                                <div className="text-sm text-gray-500">({student.register_no})</div>
+                              )}
                             </td>
                             <td className="py-4 px-6 text-gray-700">
                               {student.course}
@@ -345,12 +347,14 @@ export default function StudentsPage() {
                   const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
 
                   return (
-                    <div key={student.id} className="p-4 space-y-3">
-                      <div className="flex justify-between items-start">
+                    <div key={student.id} className="p-4 space-y-3">                      <div className="flex justify-between items-start">
                         <div>
                           <h3 className="font-medium text-gray-900">
                             {student.name}
                           </h3>
+                          {student.register_no && (
+                            <p className="text-sm text-gray-500">({student.register_no})</p>
+                          )}
                           <p className="text-sm text-gray-600">{preferredCourse}</p>
                         </div>
                         <span

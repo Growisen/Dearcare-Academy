@@ -14,7 +14,8 @@ interface StudentDetailsProps {
     email: string;
     phone: string;
     service: string;
-    course: string; 
+    course: string;
+    register_no?: string;
     requestDate: string;
     location: string;
     dateOfBirth: string;
@@ -306,7 +307,6 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
 
   // Extract state and city from location string
   const [city, state] = currentStudent.location?.split(', ') || [null, null];
-
   const transformedClientData = {
     ...currentStudent,
     // Basic info
@@ -314,6 +314,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
     email: currentStudent.email,
     phone: currentStudent.phone,
     course: currentStudent.course,
+    register_no: currentStudent.register_no,
     
     // Location info
     currentAddress: currentStudent.location,
