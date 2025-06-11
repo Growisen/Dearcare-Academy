@@ -1,5 +1,5 @@
  import React, { useState } from 'react';
-import { X, CheckCircle, XCircle } from 'lucide-react';
+import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { ClientInformation } from './studentInformation';
 import { ConfirmedContent } from './ConfirmedContent';
 import { FollowUpContent } from './FollowUp';
@@ -76,7 +76,7 @@ interface DialogConfig {
   confirmStyle?: string;
 }
 
-const ConfirmDialog = ({ title, message, confirmLabel, onConfirm, confirmStyle = 'bg-red-600 hover:bg-red-700', onClose }: DialogConfig & { onClose: () => void }) => (
+const ConfirmDialog = ({ title, message, confirmLabel, onConfirm, confirmStyle = 'bg-red-600 hover:bg-red-700', onClose, isProcessing = false }: DialogConfig & { onClose: () => void; isProcessing?: boolean }) => (
   <div className="fixed inset-0 bg-black/50 z-60 flex items-center justify-center p-4">
     <div className="bg-white rounded-lg p-6 max-w-md w-full">
       <h3 className="text-lg font-semibold mb-4">{title}</h3>
@@ -84,15 +84,24 @@ const ConfirmDialog = ({ title, message, confirmLabel, onConfirm, confirmStyle =
       <div className="flex justify-end gap-3">
         <button
           onClick={onClose}
-          className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          disabled={isProcessing}
+          className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
           onClick={onConfirm}
-          className={`px-4 py-2 text-white rounded-lg ${confirmStyle}`}
+          disabled={isProcessing}
+          className={`px-4 py-2 text-white rounded-lg ${confirmStyle} disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
         >
-          {confirmLabel}
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            confirmLabel
+          )}
         </button>
       </div>
     </div>
@@ -110,6 +119,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
   const [activeDialog, setActiveDialog] = useState<'delete' | 'proceed' | 'reject' | 'confirm-warning' | 'reject-warning' | null>(null);
   const [currentStudent, setCurrentStudent] = useState(student);
   const [rejectionReason, setRejectionReason] = useState(''); // State for rejection reason
+  const [isProcessing, setIsProcessing] = useState(false); // State for processing status updates
   // const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   // const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   // const [nocUrl, setNocUrl] = useState<string | null>(null);
@@ -139,8 +149,8 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
   //     .getPublicUrl(`Students/${student.id}/noc.pdf`);
   //   setNocUrl(nocData?.publicUrl || null);
   // }, [student.id]);
-
   const updateStudentStatus = async (newStatus: string) => {
+    setIsProcessing(true);
     try {
       //confirmed part
       if (newStatus.toLowerCase() === 'confirmed') {
@@ -234,9 +244,13 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
         status: newStatus.toLowerCase() as 'confirmed' | 'follow-up' | 'new' | 'rejected',
       }));
 
+      toast.success(`Student status updated to ${newStatus.toLowerCase()} successfully!`);
+
     } catch (error) {
       console.error('Unhandled error in updateStudentStatus:', error);
       toast.error('An error occurred while updating the student status. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -278,8 +292,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
         }
         setActiveDialog('reject-warning');
       },
-    },
-    'reject-warning': {
+    },    'reject-warning': {
       title: 'Final Rejection Warning',
       message: 'This action will permanently reject the student application. Are you sure you want to continue?',
       confirmLabel: 'Yes, Reject Application',
@@ -375,27 +388,38 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
         return null;
     }
   };
-
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-[80%] max-h-[95vh] overflow-y-auto rounded-lg shadow-xl">
+        {/* Loading overlay */}
+        {isProcessing && (
+          <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-lg">
+            <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <p className="text-gray-700 font-medium">Updating student status...</p>
+              <p className="text-sm text-gray-500">Please wait while we process your request</p>
+            </div>
+          </div>
+        )}
+        
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">          <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Request Details</h2>
               <p className="text-sm text-gray-500">Register No: {currentStudent.register_no || currentStudent.id}</p>
-            </div>
-            <div className="flex items-center gap-3">
+            </div>            <div className="flex items-center gap-3">
               {!['confirmed', 'rejected'].includes(status) && ( // Use the status variable with default value
                 <>
                   <button
                     onClick={() => setActiveDialog('reject')}
-                    className="inline-flex items-center px-4 py-2 bg-white border border-red-600 text-red-600 hover:bg-red-50 rounded-lg transition-colors gap-2"
+                    disabled={isProcessing}
+                    className="inline-flex items-center px-4 py-2 bg-white border border-red-600 text-red-600 hover:bg-red-50 rounded-lg transition-colors gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <XCircle className="h-4 w-4" /> Reject
                   </button>
                   <button
                     onClick={() => setActiveDialog('proceed')}
-                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors gap-2"
+                    disabled={isProcessing}
+                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <CheckCircle className="h-4 w-4" /> Proceed
                   </button>
@@ -473,12 +497,11 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
           />
           {renderStatusSpecificContent()}
         </div>
-      </div>
-
-      {activeDialog && (
+      </div>      {activeDialog && (
         <ConfirmDialog
           {...dialogConfigs[activeDialog]}
           onClose={() => setActiveDialog(null)}
+          isProcessing={isProcessing}
         />
       )}
     </div>
