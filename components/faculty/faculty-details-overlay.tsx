@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, UserCheck, UserMinus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface FacultyDetailsProps {
@@ -54,15 +54,17 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     photo: null,
     certificates: [],
   });
+  const [isSupervisor, setIsSupervisor] = useState(false);
+  const [isLoadingSupervisorStatus, setIsLoadingSupervisorStatus] = useState(false);
   // const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
   // const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
   // const [showAssignList, setShowAssignList] = useState(false);
   // const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
-
   useEffect(() => {
     fetchFacultyDetails();
     fetchWorkExperiences();
     fetchDocuments();
+    checkSupervisorStatus();
     // fetchAssignedStudents();
     // fetchUnassignedStudents();
   }, [faculty.id]);
@@ -99,7 +101,6 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
       setWorkExperiences(data || []);
     }
   };
-
   const fetchDocuments = async () => {
     try {
       const folderPath = `Faculties/${faculty.id}`;
@@ -117,6 +118,77 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
       });
     } catch (error) {
       console.error('Error fetching documents:', error);
+    }
+  };
+
+  const checkSupervisorStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('academy_supervisors')
+        .select('id')
+        .eq('id', faculty.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking supervisor status:', error);
+      } else {
+        setIsSupervisor(!!data);
+      }
+    } catch (error) {
+      console.error('Error checking supervisor status:', error);
+    }
+  };
+
+  const handleSupervisorToggle = async () => {
+    if (!facultyData) return;
+
+    setIsLoadingSupervisorStatus(true);
+    try {
+      if (isSupervisor) {
+        // Remove from supervisors table
+        const { error } = await supabase
+          .from('academy_supervisors')
+          .delete()
+          .eq('id', faculty.id);
+
+        if (error) {
+          console.error('Error removing supervisor:', error);
+          alert('Failed to set as faculty. Please try again.');
+        } else {
+          setIsSupervisor(false);
+          alert('Successfully set as faculty!');
+        }
+      } else {
+        // Add to supervisors table
+        const { error } = await supabase
+          .from('academy_supervisors')
+          .insert({
+            id: parseInt(faculty.id),
+            name: facultyData.name,
+            join_date: facultyData.join_date,
+            department: facultyData.department,
+            email: facultyData.email,
+            phone_no: facultyData.phone_no,
+            role: facultyData.role,
+            dob: facultyData.dob,
+            martialstatus: facultyData.martialstatus,
+            address: facultyData.address,
+            gender: facultyData.gender,
+          });
+
+        if (error) {
+          console.error('Error adding supervisor:', error);
+          alert('Failed to upgrade to supervisor. Please try again.');
+        } else {
+          setIsSupervisor(true);
+          alert('Successfully upgraded to supervisor!');
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling supervisor status:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsLoadingSupervisorStatus(false);
     }
   };
 
@@ -212,14 +284,52 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl">        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Faculty Details</h2>
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl">        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">          <div>
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              Faculty Details
+              {isSupervisor && (
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  Supervisor
+                </span>
+              )}
+            </h2>
             <p className="text-sm text-gray-500">Register No: {facultyData.register_no || faculty.id}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full">
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSupervisorToggle}
+              disabled={isLoadingSupervisorStatus}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isSupervisor
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isLoadingSupervisorStatus ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  {isSupervisor ? 'Setting as Faculty...' : 'Upgrading to Supervisor...'}
+                </>
+              ) : (
+                <>
+                  {isSupervisor ? (
+                    <>
+                      <UserMinus className="h-4 w-4" />
+                      Set as Faculty
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="h-4 w-4" />
+                      Upgrade to Supervisor
+                    </>
+                  )}
+                </>
+              )}
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full">
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
+          </div>
         </div>
 
         <div className="px-6 py-4 space-y-6">
