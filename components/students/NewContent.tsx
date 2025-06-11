@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export function NewContent({ studentId }: { studentId: string }) {
+  const [isVerifying, setIsVerifying] = useState(false);
+
   const handleVerification = async () => {
+    setIsVerifying(true);
     try {
       const response = await fetch('/api/verify-student', {
         method: 'POST',
@@ -18,10 +22,13 @@ export function NewContent({ studentId }: { studentId: string }) {
         throw new Error(data.message);
       }
 
+      toast.success('Student details verified successfully!');
       // Optionally refresh the page or update UI
       window.location.reload();    } catch (error) {
       console.error('Error during verification:', error);
       toast.error('Failed to verify details. Please try again.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -46,12 +53,19 @@ export function NewContent({ studentId }: { studentId: string }) {
               </button>
             </div>
           </div>
-            */}
-          <button 
+            */}          <button 
             onClick={handleVerification}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            disabled={isVerifying}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Verify Details
+            {isVerifying ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              'Verify Details'
+            )}
           </button>
         </div>
       </div>

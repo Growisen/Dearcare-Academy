@@ -14,8 +14,14 @@ import { supabase } from "../lib/supabase"
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
-
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const sidebar = document.getElementById('sidebar')
+      if (sidebar && !sidebar.contains(event.target as Node)) {
+        onClose()
+      }
+    }
+
     if (isOpen) {
       document.addEventListener('click', handleClickOutside)
     } else {
@@ -24,14 +30,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
     return () => {
       document.removeEventListener('click', handleClickOutside)
     }
-  }, [isOpen])
-
-  const handleClickOutside = (event: MouseEvent) => {
-    const sidebar = document.getElementById('sidebar')
-    if (sidebar && !sidebar.contains(event.target as Node)) {
-      onClose()
-    }
-  }
+  }, [isOpen, onClose])
 
   return (
     <div id="sidebar" className={`w-56 h-screen bg-gradient-to-b from-slate-800 to-slate-900 fixed left-0 top-0 shadow-xl z-50 

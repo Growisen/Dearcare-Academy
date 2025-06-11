@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, UserCheck, UserMinus, Edit, Save } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
+import Image from 'next/image';
 
 interface FacultyDetailsProps {
   faculty: { id: string };
@@ -93,7 +94,9 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
   // const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
   // const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
   // const [showAssignList, setShowAssignList] = useState(false);
-  // const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
+  // const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);  // This useEffect intentionally has stable dependencies to avoid unnecessary re-renders
+  // The functions fetchFacultyDetails, fetchWorkExperiences, fetchDocuments, and checkSupervisorStatus
+  // are stable and don't need to be in the dependency array
   useEffect(() => {
     fetchFacultyDetails();
     fetchWorkExperiences();
@@ -101,6 +104,7 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     checkSupervisorStatus();
     // fetchAssignedStudents();
     // fetchUnassignedStudents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [faculty.id]);
 
   // useEffect(() => {
@@ -604,13 +608,14 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
           <section>
             <h3 className="text-lg font-semibold text-gray-900">Document Upload</h3>
             <div className="space-y-4">
-              {/* Photo */}
-              {documents.photo && (
+              {/* Photo */}              {documents.photo && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-700">Photo</h4>
-                  <img
+                  <Image
                     src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/dearcare/${documents.photo}`}
                     alt="Faculty Photo"
+                    width={128}
+                    height={128}
                     className="w-32 h-32 object-cover rounded-lg border"
                   />
                 </div>

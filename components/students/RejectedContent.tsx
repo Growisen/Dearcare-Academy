@@ -10,10 +10,12 @@ export function RejectedContent({ studentId }: RejectedContentProps) {
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     const fetchRejectionReason = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
+        
         const { data, error } = await supabase
           .from('academy_rejects')
           .select('reason')
@@ -21,32 +23,42 @@ export function RejectedContent({ studentId }: RejectedContentProps) {
           .single();
 
         if (error) {
-          console.error('Error fetching rejection reason:', error);
+          console.error('Error fetching rejection reason:', error.message || error);
           setError('Failed to load rejection reason.');
         } else {
           setRejectionReason(data?.reason || 'No reason provided');
         }
       } catch (err) {
-        console.error('Unexpected error:', err);
+        console.error('Unexpected error:', err instanceof Error ? err.message : String(err));
         setError('An unexpected error occurred.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchRejectionReason();
+    if (studentId) {
+      fetchRejectionReason();
+    } else {
+      setError('No student ID provided.');
+      setIsLoading(false);
+    }
   }, [studentId]);
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[100px]">
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600"></div>
+        <span className="ml-2 text-sm text-gray-600">Loading rejection details...</span>
       </div>
     );
   }
 
   if (error) {
-    return <div className="text-red-600 text-sm">{error}</div>;
+    return (
+      <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+        <div className="text-red-600 text-sm font-medium">Error</div>
+        <div className="text-red-600 text-sm mt-1">{error}</div>
+      </div>
+    );
   }
 
   return (
