@@ -13,6 +13,7 @@ export interface DatabaseFaculty {
     department: string | null;
     email: string | null;
     phone_no: string | null;
+    register_no: string | null;
 }
 
 export interface UnassignedStudent {
@@ -26,6 +27,7 @@ export interface AssignedStudent {
     id: number;
     name: string;
     email: string;
+    register_no?: string;
     student_source?: {
         status: string;
     }[];
@@ -40,6 +42,7 @@ export interface FacultyDetailsProps {
         department: string;
         joinDate: string;
         status: string;
+        register_no?: string;
         assignedStudents: AssignedStudent[];
     };
     onClose: () => void;

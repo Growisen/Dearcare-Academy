@@ -24,6 +24,7 @@ interface Faculty {
   status: "active" | "on_leave" | "inactive"
   email: string
   phone: string
+  register_no?: string
   assignedStudents: AssignedStudent[]
 }
 
@@ -78,8 +79,7 @@ export default function FacultiesPage() {
   }, [router]);
 
   async function fetchFaculties() {
-    try {
-      const { data: dbFaculties, error } = await supabase
+    try {      const { data: dbFaculties, error } = await supabase
         .from('academy_faculties')
         .select('*')
 
@@ -121,6 +121,7 @@ export default function FacultiesPage() {
             status: 'active',
             email: fac.email || '',
             phone: fac.phone_no || '',
+            register_no: fac.register_no || '',
             faculties: [],
             assignedStudents: students
           }
@@ -218,9 +219,13 @@ export default function FacultiesPage() {
                   <tbody className="divide-y divide-gray-200">
                     {currentFaculties.map((faculty) => {
                       const StatusIcon = statusIcons[faculty.status];
-                      return (
-                        <tr key={faculty.id} className="hover:bg-gray-50/50">
-                          <td className="py-4 px-6 text-gray-900 font-medium">{faculty.name}</td>
+                      return (                        <tr key={faculty.id} className="hover:bg-gray-50/50">
+                          <td className="py-4 px-6 text-gray-900">
+                            <div className="font-medium">{faculty.name}</div>
+                            {faculty.register_no && (
+                              <div className="text-sm text-gray-500">({faculty.register_no})</div>
+                            )}
+                          </td>
                           <td className="py-4 px-6 text-gray-700">{faculty.joinDate}</td>
                           <td className="py-4 px-6 text-gray-700">{faculty.department}</td>
                           <td className="py-4 px-6">
@@ -255,10 +260,12 @@ export default function FacultiesPage() {
                 {currentFaculties.map((faculty) => {
                   const StatusIcon = statusIcons[faculty.status];
                   return (
-                    <div key={faculty.id} className="p-4 space-y-3">
-                      <div className="flex justify-between items-start">
+                    <div key={faculty.id} className="p-4 space-y-3">                      <div className="flex justify-between items-start">
                         <div>
                           <h3 className="font-medium text-gray-900">{faculty.name}</h3>
+                          {faculty.register_no && (
+                            <p className="text-sm text-gray-500">({faculty.register_no})</p>
+                          )}
                           <p className="text-sm text-gray-600">{faculty.department}</p>
                         </div>
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${statusColors[faculty.status]}`}>

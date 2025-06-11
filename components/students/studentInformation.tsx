@@ -3,12 +3,12 @@ import { Mail,  User,  Book, Briefcase, Users, Heart, FileText, File, Eye,  Luci
 import { fetchStudentData } from '../../utils/studentData';
 
 interface ClientInformationProps {
-  studentId: string;
-  initialData?: {
+  studentId: string;  initialData?: {
     id: string;
     name: string;
     email: string;
     phone: string;
+    register_no?: string;
     //service: string;
    // requestDate: string;
     //location: string;
@@ -629,15 +629,25 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
           </div>
         </div>
         <div className="p-6">
-          <div className="grid grid-cols-1 gap-6">
-            <InfoSection title="Personal Information" icon={User}>
-              <InfoItem 
-                label="Full Name" 
-                value={client.name} 
-                isEditing={isEditing}
-                onChange={(value) => handleChange('name', value)}
-                type="text"
-              />
+          <div className="grid grid-cols-1 gap-6">            <InfoSection title="Personal Information" icon={User}>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2.5 text-sm text-gray-900 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    value={client.name || ''}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                  />
+                ) : (
+                  <div className="px-4 py-2.5 text-sm text-gray-800 bg-gray-50 rounded-lg">
+                    <div>{client.name || 'N/A'}</div>
+                    {client.register_no && (
+                      <div className="text-sm text-gray-500">({client.register_no})</div>
+                    )}
+                  </div>
+                )}
+              </div>
               <InfoItem 
                 label="Date of Birth" 
                 value={client.dateOfBirth} 

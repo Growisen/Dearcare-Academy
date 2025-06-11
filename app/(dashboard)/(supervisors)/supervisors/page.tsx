@@ -29,6 +29,7 @@ interface Supervisor {
   status: "active" | "on_leave" | "inactive"
   email: string
   phone: string
+  register_no?: string
   faculties: Faculty[]
   assignedStudents: AssignedStudent[]
 }
@@ -89,7 +90,7 @@ export default function SupervisorsPage() {
                 id,
                 name,
                 email,
-                student_source!student_source_student_id_fkey (
+                student_source!student_source_student_id_fkey!inner (
                   status
                 )
               )
@@ -102,8 +103,7 @@ export default function SupervisorsPage() {
               name: student.name,
               email: student.email,
               student_source: student.student_source || [{ status: 'unknown' }]
-            }))
-          )
+            }))          )
 
           return {
             id: sup.id.toString(),
@@ -113,6 +113,7 @@ export default function SupervisorsPage() {
             status: 'active',
             email: sup.email || '',
             phone: sup.phone_no || '',
+            register_no: sup.register_no || '',
             faculties: [],
             assignedStudents: students
           }

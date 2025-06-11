@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 interface Student {
   id: number;
   name: string;
+  register_no?: string;
 }
 
 interface StudentSource {
@@ -14,6 +15,7 @@ interface StudentSource {
   students: {
     id: number;
     name: string;
+    register_no?: string;
   } | null; // Ensure students can be null
 }
 
@@ -32,12 +34,11 @@ export default function AttendancePage() {
   // Fetch students dynamically from the "students" and "student_source" tables
   useEffect(() => {
     const fetchStudents = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
+      setLoading(true);      const { data, error } = await supabase
         .from("student_source")
         .select(`
           student_id,
-          students!student_source_student_id_fkey (id, name)
+          students!student_source_student_id_fkey (id, name, register_no)
         `)
         .eq("status", "confirmed");
 
@@ -46,15 +47,14 @@ export default function AttendancePage() {
 
       if (error) {
         console.error("Error fetching students:", error);
-      } else if (data) {
-        // Ensure students is not null and map correctly
+      } else if (data) {        // Ensure students is not null and map correctly
         const studentData = data as unknown as StudentSource[];
-        //const mappedStudents = data
         const mappedStudents = studentData
           .filter((entry) => entry.students !== null) // Exclude rows where students is null
           .map((entry) => ({
             id: entry.students!.id, // Use non-null assertion
             name: entry.students!.name,
+            register_no: entry.students!.register_no,
           }));
         setStudents(mappedStudents);
 
@@ -173,10 +173,14 @@ export default function AttendancePage() {
                     : attendance[student.id] === false
                     ? "bg-red-100"
                     : ""
-                }`}
-              >
+                }`}              >
                 <div className="flex justify-between items-center">
-                  <span className="text-lg">{student.name}</span>
+                  <div>
+                    <span className="text-lg">{student.name}</span>
+                    {student.register_no && (
+                      <div className="text-sm text-gray-500">({student.register_no})</div>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       onClick={() => toggleAttendance(student.id, true)}

@@ -7,6 +7,7 @@ export interface Student {
   phone: string;
   enrollmentDate: string;
   location: string;
+  register_no?: string;
 }
 
 export interface DatabaseStudent {
@@ -17,6 +18,7 @@ export interface DatabaseStudent {
   course: string;
   payment_receipt: boolean;
   created_at: string;
+  register_no?: string;
   status?: string;
   city?: string;
   state?: string;

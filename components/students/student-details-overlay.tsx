@@ -14,7 +14,8 @@ interface StudentDetailsProps {
     email: string;
     phone: string;
     service: string;
-    course: string; 
+    course: string;
+    register_no?: string;
     requestDate: string;
     location: string;
     dateOfBirth: string;
@@ -306,7 +307,6 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
 
   // Extract state and city from location string
   const [city, state] = currentStudent.location?.split(', ') || [null, null];
-
   const transformedClientData = {
     ...currentStudent,
     // Basic info
@@ -314,6 +314,7 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
     email: currentStudent.email,
     phone: currentStudent.phone,
     course: currentStudent.course,
+    register_no: currentStudent.register_no,
     
     // Location info
     currentAddress: currentStudent.location,
@@ -382,11 +383,10 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-[80%] max-h-[95vh] overflow-y-auto rounded-lg shadow-xl">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">          <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Request Details</h2>
-              <p className="text-sm text-gray-500">ID: {currentStudent.id}</p>
+              <p className="text-sm text-gray-500">Register No: {currentStudent.register_no || currentStudent.id}</p>
             </div>
             <div className="flex items-center gap-3">
               {!['confirmed', 'rejected'].includes(status) && ( // Use the status variable with default value

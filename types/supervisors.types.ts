@@ -9,6 +9,7 @@ export interface SupervisorDetailsProps {
         department: string;
         joinDate: string;
         status: string;
+        register_no?: string;
         assignedStudents: AssignedStudent[];
     };
     onClose: () => void;
@@ -22,6 +23,7 @@ export interface DatabaseSupervisor {
     department: string | null;
     email: string | null;
     phone_no: string | null;
+    register_no: string | null;
 }
 
 export interface UnassignedStudent {
@@ -29,6 +31,7 @@ export interface UnassignedStudent {
     name: string;
     course?: string;
     email?: string;
+    register_no?: string;
 }
 
 export interface SupervisorAssignment {
@@ -40,6 +43,7 @@ export interface AssignedStudent {
     id: number;
     name: string;
     email: string;
+    register_no?: string;
     student_source?: {
         status: string;
     }[];

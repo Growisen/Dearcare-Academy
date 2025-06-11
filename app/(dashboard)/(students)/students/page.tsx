@@ -289,10 +289,12 @@ export default function StudentsPage() {
                         const status = student.student_source?.[0]?.status?.toLowerCase() || 'new';
                         const StatusIcon = statusIcons[status as keyof typeof statusIcons];
 
-                        return (
-                          <tr key={student.id} className="hover:bg-gray-50/50">
-                            <td className="py-4 px-6 text-gray-900 font-medium">
-                              {student.name}
+                        return (                          <tr key={student.id} className="hover:bg-gray-50/50">
+                            <td className="py-4 px-6 text-gray-900">
+                              <div className="font-medium">{student.name}</div>
+                              {student.register_no && (
+                                <div className="text-sm text-gray-500">({student.register_no})</div>
+                              )}
                             </td>
                             <td className="py-4 px-6 text-gray-700">
                               {student.course}
@@ -311,8 +313,7 @@ export default function StudentsPage() {
                                 <div className="text-gray-600">{student.mobile}</div>
                               </div>
                             </td>
-                            <td className="py-4 px-6">
-                              <button
+                            <td className="py-4 px-6">                              <button
                                 className="px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
                                 onClick={() => setSelectedStudent({
                                   id: student.id,
@@ -323,6 +324,7 @@ export default function StudentsPage() {
                                   status: status as "confirmed" | "follow-up" | "new" | "rejected",
                                   enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                                   location: getLocationString(student),
+                                  register_no: student.register_no,
                                 })}
                               >
                                 View Details
@@ -345,12 +347,14 @@ export default function StudentsPage() {
                   const preferredCourse = getPreferredCourse(student.student_preferences?.[0]);
 
                   return (
-                    <div key={student.id} className="p-4 space-y-3">
-                      <div className="flex justify-between items-start">
+                    <div key={student.id} className="p-4 space-y-3">                      <div className="flex justify-between items-start">
                         <div>
                           <h3 className="font-medium text-gray-900">
                             {student.name}
                           </h3>
+                          {student.register_no && (
+                            <p className="text-sm text-gray-500">({student.register_no})</p>
+                          )}
                           <p className="text-sm text-gray-600">{preferredCourse}</p>
                         </div>
                         <span
@@ -365,8 +369,7 @@ export default function StudentsPage() {
                       <div className="text-sm">
                         <p className="text-gray-900">{student.email}</p>
                         <p className="text-gray-600">{student.mobile}</p>
-                      </div>
-                      <button
+                      </div>                      <button
                         className="w-full mt-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
                         onClick={() => setSelectedStudent({
                           id: student.id,
@@ -377,6 +380,7 @@ export default function StudentsPage() {
                           status: status as "confirmed" | "follow-up" | "new" | "rejected",
                           enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                           location: getLocationString(student),
+                          register_no: student.register_no,
                         })}
                       >
                         View Details
@@ -394,9 +398,7 @@ export default function StudentsPage() {
               onClose={() => setShowAssignOverlay(false)}
               onAssign={handleAssignStudent}
             />
-          )}
-
-          {selectedStudent && (
+          )}          {selectedStudent && (
             <StudentDetailsOverlay
               student={{
                 id: selectedStudent.id,
@@ -411,6 +413,7 @@ export default function StudentsPage() {
                 dateOfBirth: "Not specified",
                 age: "Not specified",
                 gender: "Not specified",
+                register_no: selectedStudent.register_no,
               }}
               onClose={() => setSelectedStudent(null)}
             />
