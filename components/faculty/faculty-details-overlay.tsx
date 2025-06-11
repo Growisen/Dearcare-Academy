@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { toast } from 'react-hot-toast';
 
 interface FacultyDetailsProps {
   faculty: { id: string };
@@ -55,17 +54,17 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     photo: null,
     certificates: [],
   });
-  const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
-  const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
-  const [showAssignList, setShowAssignList] = useState(false);
-  const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
+  // const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
+  // const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
+  // const [showAssignList, setShowAssignList] = useState(false);
+  // const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
 
   useEffect(() => {
     fetchFacultyDetails();
     fetchWorkExperiences();
     fetchDocuments();
-    fetchAssignedStudents();
-    fetchUnassignedStudents();
+    // fetchAssignedStudents();
+    // fetchUnassignedStudents();
   }, [faculty.id]);
 
   // useEffect(() => {
@@ -189,17 +188,17 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
   //         student_id: studentId,
   //       });
 
-      if (error) {
-        console.error('Error assigning student:', error);
-      } else {
-        // Update the assigned and unassigned students lists
-        fetchAssignedStudents();
-        fetchUnassignedStudents();
-      }
-    } catch (error) {
-      console.error('Error assigning student:', error);
-    }
-  };
+  //     if (error) {
+  //       console.error('Error assigning student:', error);
+  //     } else {
+  //       // Update the assigned and unassigned students lists
+  //       fetchAssignedStudents();
+  //       fetchUnassignedStudents();
+  //     }
+  //   } catch (error) {
+  //     console.error('Error assigning student:', error);
+  //   }
+  // };
 
   if (!facultyData) {
     return (
@@ -215,48 +214,13 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <h2 className="text-xl font-semibold text-gray-900">Profile</h2>
-            {isSupervisor && (
-              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                <ShieldCheck className="mr-1 h-3 w-3" />
-                Supervisor
-              </span>
-            )}
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900">Profile</h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full">
             <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
         <div className="px-6 py-4 space-y-6">
-          {/* Supervisor Status Button */}
-          <div className="flex justify-end">
-            <button
-              onClick={isSupervisor ? handleSetAsFaculty : handleUpgradeToSupervisor}
-              disabled={isProcessing}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white ${
-                isSupervisor 
-                ? 'bg-amber-600 hover:bg-amber-700' 
-                : 'bg-blue-600 hover:bg-blue-700'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {isProcessing ? (
-                <span>Processing...</span>
-              ) : isSupervisor ? (
-                <>
-                  <UserMinus className="h-4 w-4" />
-                  Set as Faculty Only
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="h-4 w-4" />
-                  Upgrade to Supervisor
-                </>
-              )}
-            </button>
-          </div>
-
           {/* Personal Information */}
           <section>
             <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
