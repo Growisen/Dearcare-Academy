@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'react-hot-toast';
 
 export function NewContent({ studentId }: { studentId: string }) {
   const handleVerification = async () => {
@@ -18,10 +19,9 @@ export function NewContent({ studentId }: { studentId: string }) {
       }
 
       // Optionally refresh the page or update UI
-      window.location.reload();
-    } catch (error) {
+      window.location.reload();    } catch (error) {
       console.error('Error during verification:', error);
-      alert('Failed to verify details. Please try again.');
+      toast.error('Failed to verify details. Please try again.');
     }
   };
 

@@ -6,6 +6,7 @@ import { FollowUpContent } from './FollowUp';
 import { NewContent } from './NewContent';
 import { RejectedContent } from './RejectedContent';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'react-hot-toast';
 
 interface StudentDetailsProps {
   student: {
@@ -227,19 +228,15 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
           console.error('Error inserting new row in "student_source":', insertError);
           throw insertError;
         }
-      }
-
-      console.log('Successfully updated status. Updating local state...');
+      }      console.log('Successfully updated status. Updating local state...');
       setCurrentStudent((prev) => ({
         ...prev,
         status: newStatus.toLowerCase() as 'confirmed' | 'follow-up' | 'new' | 'rejected',
       }));
 
-      //new addition upto catch
-
     } catch (error) {
       console.error('Unhandled error in updateStudentStatus:', error);
-      alert('An error occurred while updating the student status. Please try again.');
+      toast.error('An error occurred while updating the student status. Please try again.');
     }
   };
 
@@ -275,9 +272,8 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
       ),
       confirmLabel: 'Proceed with Rejection',
       confirmStyle: 'bg-red-600 hover:bg-red-700',
-      onConfirm: () => {
-        if (!rejectionReason.trim()) {
-          alert('Rejection reason cannot be empty.');
+      onConfirm: () => {        if (!rejectionReason.trim()) {
+          toast.error('Rejection reason cannot be empty.');
           return;
         }
         setActiveDialog('reject-warning');
