@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Check } from 'lucide-react';
+import { X, UserPlus, Check, UserMinus } from 'lucide-react';
 import { SupervisorDetailsProps, UnassignedStudent, AssignedStudent } from '../../types/supervisors.types';
 import { supabase } from '../../lib/supabase';
 
@@ -146,6 +146,31 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
       console.error('Error assigning students:', error);
     }
   };
+  const handleRemoveStudent = async (studentId: number) => {
+    try {
+      // Remove the assignment from supervisor_assignment table
+      const { error } = await supabase
+        .from('supervisor_assignment')
+        .delete()
+        .match({
+          student_id: studentId,
+          supervisor_id: parseInt(supervisor.id)
+        });
+
+      if (error) throw error;
+
+      // Refresh assigned students list
+      await fetchAssignedStudents();
+      
+      // Also refresh unassigned students if the assign list is open
+      if (showAssignList) {
+        await fetchUnassignedStudents();
+      }
+
+    } catch (error) {
+      console.error('Error removing student assignment:', error);
+    }
+  };
 
   const toggleStudent = (studentId: string) => {
     setSelectedStudents(prev => 
@@ -253,9 +278,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
                 >
                   <UserPlus className="h-4 w-4" />Assign Student
                 </button>
-              </div>
-
-              <div className="grid gap-2 max-h-[40vh] overflow-y-auto pr-2">
+              </div>              <div className="grid gap-2 max-h-[40vh] overflow-y-auto pr-2">
                 {isLoadingAssigned ? (
                   <div className="text-center py-4">Loading assigned students...</div>
                 ) : assignedStudents.length > 0 ? (                  assignedStudents.map((student) => (
@@ -267,9 +290,19 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
                         )}
                         <p className="text-xs text-gray-500">{student.email}</p>
                       </div>
-                      <span className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                        {student.student_source?.[0]?.status || 'Active'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100">
+                          {student.student_source?.[0]?.status || 'Active'}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveStudent(student.id)}
+                          className="flex items-center gap-1 px-2 py-1 text-xs bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 transition-colors"
+                          title="Remove student assignment"
+                        >
+                          <UserMinus className="h-3 w-3" />
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
