@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Check, UserMinus } from 'lucide-react';
+import { X, UserPlus, Check, UserMinus, UserCheck } from 'lucide-react';
 import { SupervisorDetailsProps, UnassignedStudent, AssignedStudent } from '../../types/supervisors.types';
 import { supabase } from '../../lib/supabase';
+import { toast } from 'react-hot-toast';
 
 type SupervisorType = SupervisorDetailsProps['supervisor'];
 const SUPERVISOR_FIELDS: Array<[string, ((s: SupervisorType) => string) | keyof SupervisorType]> = [
@@ -29,12 +30,25 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
   const [assignedStudents, setAssignedStudents] = useState<AssignedStudent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
+  const [isLoadingFacultyStatus, setIsLoadingFacultyStatus] = useState(false);
+  const [facultyData, setFacultyData] = useState<{
+    register_no: string;
+    name: string;
+    join_date: string;
+    department: string;
+    email: string;
+    phone_no: string;
+    role: string;
+    dob: string;
+    martialstatus: string;
+    address: string;
+    gender: string;
+  } | null>(null);
   /*
   const allStudents = supervisor.faculties.flatMap(f => 
     f.students.map(name => ({ name, subject: f.subject }))
   );
-*/
-  useEffect(() => {
+*/  useEffect(() => {
     if (showAssignList) {
       fetchUnassignedStudents();
     }
@@ -42,6 +56,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
 
   useEffect(() => {
     fetchAssignedStudents();
+    fetchFacultyData();
   }, [supervisor.id]);
 
   const fetchUnassignedStudents = async () => {
@@ -171,13 +186,86 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
       console.error('Error removing student assignment:', error);
     }
   };
-
   const toggleStudent = (studentId: string) => {
     setSelectedStudents(prev => 
       prev.includes(studentId) 
         ? prev.filter(id => id !== studentId)
         : [...prev, studentId]
     );
+  };
+
+  const fetchFacultyData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('academy_faculties')
+        .select('*')
+        .eq('id', supervisor.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching faculty data:', error);
+      } else if (data) {
+        setFacultyData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching faculty data:', error);
+    }
+  };
+
+  const handleSetAsFaculty = async () => {
+    if (!facultyData) return;
+
+    setIsLoadingFacultyStatus(true);
+    try {
+      // Check if supervisor has assigned students before removing
+      const { data: assignedStudentsCheck, error: checkError } = await supabase
+        .from('supervisor_assignment')
+        .select('student_id')
+        .eq('supervisor_id', supervisor.id);
+
+      if (checkError) {
+        console.error('Error checking assigned students:', checkError);
+        toast.error('Failed to check supervisor status. Please try again.');
+        return;
+      }
+
+      if (assignedStudentsCheck && assignedStudentsCheck.length > 0) {
+        // Supervisor has assigned students, show clean error message
+        toast.error(
+          `Cannot set supervisor back to faculty. This supervisor currently has ${assignedStudentsCheck.length} assigned student${assignedStudentsCheck.length > 1 ? 's' : ''}. Please remove all assigned students first.`,
+          {
+            duration: 5000,
+            style: {
+              background: '#ef4444',
+              color: '#fff',
+              fontSize: '14px',
+              maxWidth: '500px',
+            },
+            icon: '⚠️',
+          }
+        );
+        return;
+      }
+
+      // Remove from supervisors table (no assigned students)
+      const { error } = await supabase
+        .from('academy_supervisors')
+        .delete()
+        .eq('id', supervisor.id);
+
+      if (error) {
+        console.error('Error removing supervisor:', error);
+        toast.error('Failed to set as faculty. Please try again.');
+      } else {
+        toast.success('Successfully set as faculty!');
+        onClose(); // Close the modal since the supervisor no longer exists
+      }
+    } catch (error) {
+      console.error('Error setting as faculty:', error);
+      toast.error('An error occurred. Please try again.');
+    } finally {
+      setIsLoadingFacultyStatus(false);
+    }
   };
 
   return (
@@ -246,11 +334,26 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
           <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Supervisor Details</h2>
-              <p className="text-sm text-gray-500">Register No: {supervisor.register_no || supervisor.id}</p>
+              <p className="text-sm text-gray-500">
+                Register No: {facultyData?.register_no || supervisor.register_no || supervisor.id}
+              </p>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full transition-colors duration-200">
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
+            <div className="flex items-center gap-3">
+              {facultyData && (
+                <button
+                  onClick={handleSetAsFaculty}
+                  disabled={isLoadingFacultyStatus}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Set supervisor back to faculty"
+                >
+                  <UserCheck className="h-4 w-4" />
+                  {isLoadingFacultyStatus ? 'Processing...' : 'Set as Faculty'}
+                </button>
+              )}
+              <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full transition-colors duration-200">
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
           </div>
 
           <div className="px-6 py-4 space-y-6">
