@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserCheck, UserMinus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { toast } from 'react-hot-toast';
 
 interface FacultyDetailsProps {
   faculty: { id: string };
@@ -137,15 +138,43 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     } catch (error) {
       console.error('Error checking supervisor status:', error);
     }
-  };
-
-  const handleSupervisorToggle = async () => {
+  };  const handleSupervisorToggle = async () => {
     if (!facultyData) return;
 
     setIsLoadingSupervisorStatus(true);
     try {
       if (isSupervisor) {
-        // Remove from supervisors table
+        // Check if supervisor has assigned students before removing
+        const { data: assignedStudents, error: checkError } = await supabase
+          .from('supervisor_assignment')
+          .select('student_id')
+          .eq('supervisor_id', faculty.id);
+
+        if (checkError) {
+          console.error('Error checking assigned students:', checkError);
+          toast.error('Failed to check supervisor status. Please try again.');
+          return;
+        }
+
+        if (assignedStudents && assignedStudents.length > 0) {
+          // Supervisor has assigned students, show clean error message
+          toast.error(
+            `Cannot set supervisor back to faculty. This supervisor currently has ${assignedStudents.length} assigned student${assignedStudents.length > 1 ? 's' : ''}. Please remove all assigned students first.`,
+            {
+              duration: 5000,
+              style: {
+                background: '#ef4444',
+                color: '#fff',
+                fontSize: '14px',
+                maxWidth: '500px',
+              },
+              icon: '⚠️',
+            }
+          );
+          return;
+        }
+
+        // Remove from supervisors table (no assigned students)
         const { error } = await supabase
           .from('academy_supervisors')
           .delete()
@@ -153,10 +182,10 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
 
         if (error) {
           console.error('Error removing supervisor:', error);
-          alert('Failed to set as faculty. Please try again.');
+          toast.error('Failed to set as faculty. Please try again.');
         } else {
           setIsSupervisor(false);
-          alert('Successfully set as faculty!');
+          toast.success('Successfully set as faculty!');
         }
       } else {
         // Add to supervisors table
@@ -178,15 +207,14 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
 
         if (error) {
           console.error('Error adding supervisor:', error);
-          alert('Failed to upgrade to supervisor. Please try again.');
+          toast.error('Failed to upgrade to supervisor. Please try again.');
         } else {
           setIsSupervisor(true);
-          alert('Successfully upgraded to supervisor!');
-        }
-      }
+          toast.success('Successfully upgraded to supervisor!');
+        }      }
     } catch (error) {
       console.error('Error toggling supervisor status:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.');
     } finally {
       setIsLoadingSupervisorStatus(false);
     }

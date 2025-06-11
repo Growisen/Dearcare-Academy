@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
+import { toast } from 'react-hot-toast';
 
 interface Student {
   id: number;
@@ -120,25 +121,22 @@ export default function AttendancePage() {
         student_id: parseInt(studentId, 10), // Use student_id as a foreign key
         date, // Use the selected date
         present: isPresent, // Use the attendance state (true for Present, false for Absent)
-      }));
-
-    // If no attendance data is available, show an alert
+      }));    // If no attendance data is available, show a toast
     if (attendanceEntries.length === 0) {
-      alert("No attendance data to save.");
+      toast.error("No attendance data to save.");
       return;
     }
 
     // Insert attendance data into the "academy_student_attendance" table
     const { error } = await supabase
       .from("academy_student_attendance")
-      .insert(attendanceEntries);
-
-    // Handle errors or success
+      .insert(attendanceEntries);    // Handle errors or success
     if (error) {
       console.error("Error saving attendance:", error);
-      alert("Failed to save attendance. Please try again.");
+      toast.error("Failed to save attendance. Please try again.");
     } else {
       setSaveStatus(true); // Update save status to true
+      toast.success("Attendance saved successfully!");
     }
   };
 
