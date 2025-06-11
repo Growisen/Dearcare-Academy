@@ -68,7 +68,7 @@ export default function StudentsPage() {
         .from('students')
         .select(`
           *,
-          student_source (
+          student_source!student_source_student_id_fkey (
             status,
             priority
           ),
