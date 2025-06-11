@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Check, UserMinus, UserCheck } from 'lucide-react';
+import { X, UserPlus, Check, UserMinus, UserCheck, Edit, Save } from 'lucide-react';
 import { SupervisorDetailsProps, UnassignedStudent, AssignedStudent } from '../../types/supervisors.types';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
@@ -14,12 +14,42 @@ const SUPERVISOR_FIELDS: Array<[string, ((s: SupervisorType) => string) | keyof 
   ['Status', (s: SupervisorType) => s.status.replace('_', ' ')]
 ];
 
-const InfoField = ({ label, value }: { label: string; value: React.ReactNode }) => (
+const InfoField = ({ 
+  label, 
+  value, 
+  isEditing = false, 
+  onChange, 
+  type = 'text' 
+}: { 
+  label: string; 
+  value: React.ReactNode;
+  isEditing?: boolean;
+  onChange?: (value: string) => void;
+  type?: 'text' | 'email' | 'tel' | 'date' | 'textarea';
+}) => (
   <div className="space-y-1.5">
     <label className="block text-sm font-medium text-gray-700">{label}</label>
-    <div className="w-full rounded-lg border border-gray-200 py-2 px-3 text-sm text-gray-900 bg-gray-50">
-      {value}
-    </div>
+    {isEditing && onChange ? (
+      type === 'textarea' ? (
+        <textarea
+          className="w-full rounded-lg border border-gray-200 py-2 px-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+          value={value as string || ''}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+        />
+      ) : (
+        <input
+          type={type}
+          className="w-full rounded-lg border border-gray-200 py-2 px-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+          value={value as string || ''}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )
+    ) : (
+      <div className="w-full rounded-lg border border-gray-200 py-2 px-3 text-sm text-gray-900 bg-gray-50">
+        {value}
+      </div>
+    )}
   </div>
 );
 
@@ -31,6 +61,8 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
   const [isLoadingFacultyStatus, setIsLoadingFacultyStatus] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [facultyData, setFacultyData] = useState<{
     register_no: string;
     name: string;
@@ -44,6 +76,7 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
     address: string;
     gender: string;
   } | null>(null);
+  const [originalData, setOriginalData] = useState<typeof facultyData>(null);
   /*
   const allStudents = supervisor.faculties.flatMap(f => 
     f.students.map(name => ({ name, subject: f.subject }))
@@ -200,12 +233,11 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
         .from('academy_faculties')
         .select('*')
         .eq('id', supervisor.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
+        .single();      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching faculty data:', error);
       } else if (data) {
         setFacultyData(data);
+        setOriginalData(data);
       }
     } catch (error) {
       console.error('Error fetching faculty data:', error);
@@ -266,6 +298,76 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
     } finally {
       setIsLoadingFacultyStatus(false);
     }
+  };
+
+  const handleSave = async () => {
+    if (!facultyData) return;
+    
+    setIsSaving(true);
+    try {
+      // Update supervisor data in the database
+      const { error: supervisorError } = await supabase
+        .from('academy_supervisors')
+        .update({
+          name: facultyData.name,
+          join_date: facultyData.join_date,
+          department: facultyData.department,
+          email: facultyData.email,
+          phone_no: facultyData.phone_no,
+          role: facultyData.role,
+          dob: facultyData.dob,
+          martialstatus: facultyData.martialstatus,
+          address: facultyData.address,
+          gender: facultyData.gender
+        })
+        .eq('id', supervisor.id);
+
+      if (supervisorError) throw supervisorError;
+
+      // Also update in faculty table if exists
+      const { error: facultyError } = await supabase
+        .from('academy_faculties')
+        .update({
+          name: facultyData.name,
+          join_date: facultyData.join_date,
+          department: facultyData.department,
+          email: facultyData.email,
+          phone_no: facultyData.phone_no,
+          role: facultyData.role,
+          dob: facultyData.dob,
+          martialstatus: facultyData.martialstatus,
+          address: facultyData.address,
+          gender: facultyData.gender
+        })
+        .eq('id', supervisor.id);
+
+      // Don't throw error if faculty record doesn't exist
+      if (facultyError && facultyError.code !== 'PGRST116') {
+        console.warn('Faculty record not found, but supervisor updated successfully');
+      }
+
+      setOriginalData(facultyData);
+      setIsEditing(false);
+      toast.success('Supervisor information updated successfully!');
+    } catch (error) {
+      console.error('Error saving supervisor data:', error);
+      toast.error('Failed to save changes. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFacultyData(originalData);
+    setIsEditing(false);
+  };
+
+  const handleFieldChange = (field: string, value: string) => {
+    if (!facultyData) return;
+    setFacultyData({
+      ...facultyData,
+      [field]: value
+    } as typeof facultyData);
   };
 
   return (
@@ -337,18 +439,45 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
               <p className="text-sm text-gray-500">
                 Register No: {facultyData?.register_no || supervisor.register_no || supervisor.id}
               </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {facultyData && (
-                <button
-                  onClick={handleSetAsFaculty}
-                  disabled={isLoadingFacultyStatus}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Set supervisor back to faculty"
-                >
-                  <UserCheck className="h-4 w-4" />
-                  {isLoadingFacultyStatus ? 'Processing...' : 'Set as Faculty'}
-                </button>
+            </div>            <div className="flex items-center gap-3">
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                  >
+                    <Save className="h-4 w-4" />
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit
+                  </button>
+                  {facultyData && (
+                    <button
+                      onClick={handleSetAsFaculty}
+                      disabled={isLoadingFacultyStatus}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Set supervisor back to faculty"
+                    >
+                      <UserCheck className="h-4 w-4" />
+                      {isLoadingFacultyStatus ? 'Processing...' : 'Set as Faculty'}
+                    </button>
+                  )}
+                </>
               )}
               <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full transition-colors duration-200">
                 <X className="h-5 w-5 text-gray-500" />
@@ -412,9 +541,83 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
                   <div className="text-center py-4 text-gray-500">
                     No students assigned yet
                   </div>
-                )}
+                )}              </div>
+            </div>{isEditing && facultyData && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <InfoField
+                  label="Name"
+                  value={facultyData.name || ''}
+                  isEditing={isEditing}
+                  onChange={(value) => handleFieldChange('name', value)}
+                  type="text"
+                />
+                <InfoField
+                  label="Email"
+                  value={facultyData.email || ''}
+                  isEditing={isEditing}
+                  onChange={(value) => handleFieldChange('email', value)}
+                  type="email"
+                />
+                <InfoField
+                  label="Phone"
+                  value={facultyData.phone_no || ''}
+                  isEditing={isEditing}
+                  onChange={(value) => handleFieldChange('phone_no', value)}
+                  type="tel"
+                />
+                <InfoField
+                  label="Department"
+                  value={facultyData.department || ''}
+                  isEditing={isEditing}
+                  onChange={(value) => handleFieldChange('department', value)}
+                  type="text"
+                />
+                <InfoField
+                  label="Join Date"
+                  value={facultyData.join_date || ''}
+                  isEditing={isEditing}
+                  onChange={(value) => handleFieldChange('join_date', value)}
+                  type="date"
+                />
+                <InfoField
+                  label="Role"
+                  value={facultyData.role || ''}
+                  isEditing={isEditing}
+                  onChange={(value) => handleFieldChange('role', value)}
+                  type="text"
+                />
+                <InfoField
+                  label="Date of Birth"
+                  value={facultyData.dob || ''}
+                  isEditing={isEditing}
+                  onChange={(value) => handleFieldChange('dob', value)}
+                  type="date"
+                />
+                <InfoField
+                  label="Marital Status"
+                  value={facultyData.martialstatus || ''}
+                  isEditing={isEditing}
+                  onChange={(value) => handleFieldChange('martialstatus', value)}
+                  type="text"
+                />
+                <InfoField
+                  label="Gender"
+                  value={facultyData.gender || ''}
+                  isEditing={isEditing}
+                  onChange={(value) => handleFieldChange('gender', value)}
+                  type="text"
+                />
+                <div className="sm:col-span-2">
+                  <InfoField
+                    label="Address"
+                    value={facultyData.address || ''}
+                    isEditing={isEditing}
+                    onChange={(value) => handleFieldChange('address', value)}
+                    type="textarea"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}

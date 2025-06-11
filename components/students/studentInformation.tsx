@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Mail,  User,  Book, Briefcase, Users, Heart, FileText, File, Eye,  LucideIcon } from 'lucide-react';
+import { Mail, User, Book, Briefcase, Users, Heart, FileText, File, Eye, Edit, Save, X, LucideIcon } from 'lucide-react';
 import { fetchStudentData } from '../../utils/studentData';
+import { supabase } from '../../lib/supabase';
+import { toast } from 'react-hot-toast';
 
 interface ClientInformationProps {
   studentId: string;  initialData?: {
@@ -322,9 +324,11 @@ const FileUpload = ({ label, file, existingUrl, onChange }: FileUploadProps) => 
 
 export function ClientInformation({ studentId, initialData }: ClientInformationProps) {
   const [isLoading, setIsLoading] = useState(!initialData);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [client, setClient] = useState<NonNullable<ClientInformationProps['initialData']> | undefined>(initialData || undefined);
-  const [isEditing] = useState(false);
+  const [originalData, setOriginalData] = useState<NonNullable<ClientInformationProps['initialData']> | undefined>(initialData || undefined);
+  const [isEditing, setIsEditing] = useState(false);
   const [files, setFiles] = useState({
     photo: null as File | null,
     documents: null as File | null,
@@ -406,9 +410,8 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
           photo: data.photo || undefined,
           documents: data.documents || undefined,
           nocCertificate: data.nocCertificate || undefined,
-        };
-
-        setClient(transformedData);
+        };        setClient(transformedData);
+        setOriginalData(transformedData);
       } catch (err) {
         console.error('Unexpected error:', err);
         setError('An unexpected error occurred');
@@ -434,7 +437,6 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
 
   type ClientData = NonNullable<ClientInformationProps['initialData']>
   type ValueType = string | NonNullable<ClientData>['academics'] | Record<string, string>;
-
   const handleChange = <T extends ValueType>(field: string, value: T) => {
     setClient(prev => {
       if (!prev) return prev;
@@ -444,18 +446,228 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
       };
     });
   };
-/*
-  const handleSave = () => {
-    // TODO: Implement save functionality
-    setIsEditing(false);
+
+  const handleSave = async () => {
+    if (!client) return;
+    
+    setIsSaving(true);
+    try {
+      // Update student data in the database
+      const { error: studentError } = await supabase
+        .from('students')
+        .update({
+          name: client.name,
+          dob: client.dateOfBirth,
+          age: parseInt(client.age),
+          gender: client.gender,
+          marital_status: client.maritalStatus,
+          nationality: client.nationality,
+          state: client.state,
+          city: client.city,
+          taluk: client.taluk,
+          mother_tongue: client.motherTongue,
+          languages: client.knownLanguages ? client.knownLanguages.split(',').map(lang => lang.trim()) : [],
+          religion: client.religion,
+          category: client.category,
+          email: client.email,
+          mobile: client.phone,
+          cur_address: client.currentAddress,
+          cur_pincode: client.currentPinCode,
+          perm_address: client.permanentAddress,
+          perm_pincode: client.permanentPinCode,
+          cur_health_status: client.healthStatus,
+          disability_details: client.disability,
+          noc_status: client.nocStatus
+        })
+        .eq('id', studentId);
+
+      if (studentError) throw studentError;
+
+      // Update academics
+      if (client.academics) {
+        // Delete existing academic records
+        await supabase
+          .from('student_academics')
+          .delete()
+          .eq('student_id', studentId);
+
+        // Insert new academic records
+        const academicRecords = [];
+        
+        if (client.academics.sslc && (client.academics.sslc.institution || client.academics.sslc.year || client.academics.sslc.grade)) {
+          academicRecords.push({
+            student_id: parseInt(studentId),
+            qualification: '10th (SSLC)',
+            institution: client.academics.sslc.institution,
+            year_of_passing: client.academics.sslc.year ? parseInt(client.academics.sslc.year) : null,
+            marks: client.academics.sslc.grade
+          });
+        }
+        
+        if (client.academics.hsc && (client.academics.hsc.institution || client.academics.hsc.year || client.academics.hsc.grade)) {
+          academicRecords.push({
+            student_id: parseInt(studentId),
+            qualification: '12th (HSC)',
+            institution: client.academics.hsc.institution,
+            year_of_passing: client.academics.hsc.year ? parseInt(client.academics.hsc.year) : null,
+            marks: client.academics.hsc.grade
+          });
+        }
+        
+        if (client.academics.gda && (client.academics.gda.institution || client.academics.gda.year || client.academics.gda.grade)) {
+          academicRecords.push({
+            student_id: parseInt(studentId),
+            qualification: 'GDA',
+            institution: client.academics.gda.institution,
+            year_of_passing: client.academics.gda.year ? parseInt(client.academics.gda.year) : null,
+            marks: client.academics.gda.grade
+          });
+        }
+        
+        if (client.academics.others && (client.academics.others.qualification || client.academics.others.institution || client.academics.others.year || client.academics.others.grade)) {
+          academicRecords.push({
+            student_id: parseInt(studentId),
+            qualification: client.academics.others.qualification || 'Other',
+            institution: client.academics.others.institution,
+            year_of_passing: client.academics.others.year ? parseInt(client.academics.others.year) : null,
+            marks: client.academics.others.grade
+          });
+        }
+
+        if (academicRecords.length > 0) {
+          const { error: academicError } = await supabase
+            .from('student_academics')
+            .insert(academicRecords);
+
+          if (academicError) throw academicError;
+        }
+      }
+
+      // Update work experience
+      if (client.organization || client.role || client.duration || client.responsibilities) {
+        // Delete existing experience
+        await supabase
+          .from('student_experience')
+          .delete()
+          .eq('student_id', studentId);
+
+        // Insert new experience
+        const { error: experienceError } = await supabase
+          .from('student_experience')
+          .insert({
+            student_id: parseInt(studentId),
+            org_name: client.organization,
+            role: client.role,
+            duration: client.duration ? parseInt(client.duration) : null,
+            responsibility: client.responsibilities
+          });
+
+        if (experienceError) throw experienceError;
+      }
+
+      // Update guardian information
+      if (client.guardianName || client.guardianRelation || client.guardianContact || client.guardianAddress || client.guardianAadhar) {
+        // Delete existing guardian info
+        await supabase
+          .from('student_guardian')
+          .delete()
+          .eq('student_id', studentId);
+
+        // Insert new guardian info
+        const { error: guardianError } = await supabase
+          .from('student_guardian')
+          .insert({
+            student_id: parseInt(studentId),
+            guardian_name: client.guardianName,
+            relation: client.guardianRelation,
+            mobile: client.guardianContact,
+            address: client.guardianAddress,
+            aadhaar: client.guardianAadhar
+          });
+
+        if (guardianError) throw guardianError;
+      }
+
+      // Update source information
+      if (client.sourceOfInformation || client.assigningAgent || client.sourceCategory || client.sourceSubCategory) {
+        // Check if record exists
+        const { data: existingSource } = await supabase
+          .from('student_source')
+          .select('id')
+          .eq('student_id', studentId)
+          .single();
+
+        if (existingSource) {
+          const { error: sourceError } = await supabase
+            .from('student_source')
+            .update({
+              source_of_info: client.sourceOfInformation,
+              assigning_agent: client.assigningAgent,
+              category: client.sourceCategory,
+              sub_category: client.sourceSubCategory
+            })
+            .eq('student_id', studentId);
+
+          if (sourceError) throw sourceError;
+        } else {
+          const { error: sourceError } = await supabase
+            .from('student_source')
+            .insert({
+              student_id: parseInt(studentId),
+              source_of_info: client.sourceOfInformation,
+              assigning_agent: client.assigningAgent,
+              category: client.sourceCategory,
+              sub_category: client.sourceSubCategory
+            });
+
+          if (sourceError) throw sourceError;
+        }
+      }
+
+      // Update service preferences
+      if (client.servicePreferences && Object.keys(client.servicePreferences).length > 0) {
+        // Delete existing preferences
+        await supabase
+          .from('student_preferences')
+          .delete()
+          .eq('student_id', studentId);
+
+        // Insert new preferences
+        const preferences = {
+          student_id: parseInt(studentId),
+          home_care: client.servicePreferences['Home Care Assistant'] || null,
+          delivery_care: client.servicePreferences['Delivery Care Assistant'] || null,
+          old_age_home: client.servicePreferences['Old Age Home/Rehabilitation Center'] || null,
+          hospital_care: client.servicePreferences['Hospital Care'] || null,
+          senior_citizen_assist: client.servicePreferences['Senior Citizens Assistant'] || null,
+          icu_home_care: client.servicePreferences['ICU Home Care Assistant'] || null,
+          critical_illness_care: client.servicePreferences['Critical Illness Care Assistant'] || null,
+          companionship: client.servicePreferences['Companion Ship Assistant'] || null,
+          clinical_assist: client.servicePreferences['Clinical Assistant'] || null
+        };
+
+        const { error: preferencesError } = await supabase
+          .from('student_preferences')
+          .insert(preferences);
+
+        if (preferencesError) throw preferencesError;
+      }
+
+      setOriginalData(client);
+      setIsEditing(false);
+      toast.success('Student information updated successfully!');
+    } catch (error) {
+      console.error('Error saving student data:', error);
+      toast.error('Failed to save changes. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
-*/
-/*
+
   const handleCancel = () => {
-    setClient(initialData || undefined);
+    setClient(originalData);
     setIsEditing(false);
   };
-*/
   const renderDocuments = () => {
     if (!isEditing) {
       return (
@@ -595,25 +807,34 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
 
   return (
     <div className="max-w-7xl mx-auto px-1 sm:px-4 lg:px-6 py-5">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden">
-        <div className="py-4 px-6 bg-gradient-to-r from-gray-50 to-white border-b">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden">        <div className="py-4 px-6 bg-gradient-to-r from-gray-50 to-white border-b">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 className="text-2xl font-semibold text-gray-800">Profile</h2>
-            {/*
             <div className="flex items-center gap-3">
               {isEditing ? (
                 <>
                   <button
                     onClick={handleCancel}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                    disabled={isSaving}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <X className="w-4 h-4" />Cancel
                   </button>
                   <button
                     onClick={handleSave}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    disabled={isSaving}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Save className="w-4 h-4" />Save Changes
+                    {isSaving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />Save Changes
+                      </>
+                    )}
                   </button>
                 </>
               ) : (
@@ -625,7 +846,6 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
                 </button>
               )}
             </div>
-            */}
           </div>
         </div>
         <div className="p-6">
