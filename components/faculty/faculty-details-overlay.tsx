@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Check, ShieldCheck, UserMinus } from 'lucide-react';
+import { X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
 
@@ -20,12 +20,12 @@ interface WorkExperience {
   responsibilities: string;
 }
 
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  student_source?: { status: string }[];
-}
+// interface Student {
+//   id: string;
+//   name: string;
+//   email: string;
+//   student_source?: { status: string }[];
+// }
 
 const InfoField = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="space-y-1.5">
@@ -59,8 +59,6 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
   const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
   const [showAssignList, setShowAssignList] = useState(false);
   const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
-  const [isSupervisor, setIsSupervisor] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     fetchFacultyDetails();
@@ -68,14 +66,13 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     fetchDocuments();
     fetchAssignedStudents();
     fetchUnassignedStudents();
-    checkSupervisorStatus();
   }, [faculty.id]);
 
-  useEffect(() => {
-    if (showAssignList) {
-      fetchUnassignedStudents();
-    }
-  }, [showAssignList]);
+  // useEffect(() => {
+  //   if (showAssignList) {
+  //     fetchUnassignedStudents();
+  //   }
+  // }, [showAssignList]);
 
   const fetchFacultyDetails = async () => {
     const { data, error } = await supabase
@@ -124,73 +121,73 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
     }
   };
 
-  const fetchAssignedStudents = async () => {
-    setIsLoadingAssigned(true);
-    try {
-      const { data, error } = await supabase
-        .from('faculty_assignment')
-        .select(`
-          student_id,
-          students (
-            id,
-            name,
-            email,
-            student_source (
-              status
-            )
-          )
-        `)
-        .eq('faculty_id', faculty.id);
+  // const fetchAssignedStudents = async () => {
+  //   setIsLoadingAssigned(true);
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from('faculty_assignment')
+  //       .select(`
+  //         student_id,
+  //         students (
+  //           id,
+  //           name,
+  //           email,
+  //           student_source (
+  //             status
+  //           )
+  //         )
+  //       `)
+  //       .eq('faculty_id', faculty.id);
 
-      if (error) throw error;
+  //     if (error) throw error;
 
-      const students = data?.map((item) => item.students).flat() || [];
-      setAssignedStudents(students);
-    } catch (error) {
-      console.error('Error fetching assigned students:', error);
-    } finally {
-      setIsLoadingAssigned(false);
-    }
-  };
+  //     const students = data?.map((item) => item.students).flat() || [];
+  //     setAssignedStudents(students);
+  //   } catch (error) {
+  //     console.error('Error fetching assigned students:', error);
+  //   } finally {
+  //     setIsLoadingAssigned(false);
+  //   }
+  // };
 
-  const fetchUnassignedStudents = async () => {
-    try {
-      const { data: assignedData } = await supabase
-        .from('faculty_assignment')
-        .select('student_id');
+  // const fetchUnassignedStudents = async () => {
+  //   try {
+  //     const { data: assignedData } = await supabase
+  //       .from('faculty_assignment')
+  //       .select('student_id');
 
-      const assignedIds = assignedData?.map((item) => item.student_id) || [];
+  //     const assignedIds = assignedData?.map((item) => item.student_id) || [];
 
-      const { data, error } = await supabase
-        .from('students')
-        .select(`
-          id,
-          name,
-          email,
-          student_source (
-            status
-          )
-        `)
-        .not('id', 'in', `(${assignedIds.join(',')})`);
+  //     const { data, error } = await supabase
+  //       .from('students')
+  //       .select(`
+  //         id,
+  //         name,
+  //         email,
+  //         student_source (
+  //           status
+  //         )
+  //       `)
+  //       .not('id', 'in', `(${assignedIds.join(',')})`);
 
-      if (error) {
-        console.error('Error fetching unassigned students:', error);
-      } else {
-        setUnassignedStudents(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching unassigned students:', error);
-    }
-  };
+  //     if (error) {
+  //       console.error('Error fetching unassigned students:', error);
+  //     } else {
+  //       setUnassignedStudents(data || []);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching unassigned students:', error);
+  //   }
+  // };
 
-  const handleAssignStudent = async (studentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('faculty_assignment')
-        .insert({
-          faculty_id: faculty.id,
-          student_id: studentId,
-        });
+  // const handleAssignStudent = async (studentId: string) => {
+  //   try {
+  //     const { error } = await supabase
+  //       .from('faculty_assignment')
+  //       .insert({
+  //         faculty_id: faculty.id,
+  //         student_id: studentId,
+  //       });
 
       if (error) {
         console.error('Error assigning student:', error);
@@ -201,161 +198,6 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
       }
     } catch (error) {
       console.error('Error assigning student:', error);
-    }
-  };
-
-  // Check if faculty is already a supervisor
-  const checkSupervisorStatus = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('academy_supervisors')
-        .select('id')
-        .eq('id', faculty.id);
-      
-      if (error) throw error;
-      setIsSupervisor(data && data.length > 0);
-    } catch (error) {
-      console.error('Error checking supervisor status:', error);
-    }
-  };
-
-  // Function to upgrade faculty to supervisor
-  const handleUpgradeToSupervisor = async () => {
-    try {
-      setIsProcessing(true);
-      
-      // First check if this faculty already exists as a supervisor
-      const { data: existingSupervisor, error: checkError } = await supabase
-        .from('academy_supervisors')
-        .select('id')
-        .eq('id', faculty.id)
-        .maybeSingle();
-      
-      if (checkError) {
-        console.error('Error checking supervisor status:', checkError);
-        toast.error(`Check error: ${checkError.message || JSON.stringify(checkError)}`);
-        return;
-      }
-      
-      // If already a supervisor, don't try to insert again
-      if (existingSupervisor) {
-        setIsSupervisor(true);
-        toast.success('Already a supervisor');
-        return;
-      }
-      
-      // Get faculty data first
-      const { data: facultyData, error: fetchError } = await supabase
-        .from('academy_faculties')
-        .select('*')
-        .eq('id', faculty.id)
-        .single();
-      
-      if (fetchError) {
-        console.error('Error fetching faculty data:', fetchError);
-        toast.error(`Fetch error: ${fetchError.message || JSON.stringify(fetchError)}`);
-        return;
-      }
-      
-      if (!facultyData) {
-        toast.error('Faculty data not found');
-        return;
-      }
-      
-      // Important: Don't convert ID - use it as is from the database
-      const supervisorData = {
-        id: facultyData.id, // Keep original ID format
-        name: facultyData.name || '',
-        dob: facultyData.dob || null,
-        gender: facultyData.gender || '',
-        martialstatus: facultyData.martialstatus || '',
-        email: facultyData.email || '',
-        phone_no: facultyData.phone_no || '',
-        address: facultyData.address || '',
-        join_date: facultyData.join_date || null,
-        department: facultyData.department || '',
-        role: facultyData.role || ''
-      };
-      
-      console.log('Inserting supervisor with data:', supervisorData);
-      
-      // Insert into academy_supervisors table
-      const { error: insertError } = await supabase
-        .from('academy_supervisors')
-        .insert(supervisorData);
-      
-      if (insertError) {
-        console.error('Error inserting supervisor:', insertError);
-        toast.error(`Insert error: ${insertError.message || JSON.stringify(insertError)}`);
-        return;
-      }
-      
-      setIsSupervisor(true);
-      toast.success('Successfully upgraded to supervisor');
-    } catch (error) {
-      console.error('Error upgrading to supervisor:', error);
-      // Improved error reporting with fallback
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (typeof error === 'object' && error !== null)
-          ? JSON.stringify(error)
-          : 'Unknown error';
-      
-      toast.error(`Failed to upgrade to supervisor: ${errorMessage}`);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Function to set supervisor back to faculty only
-  const handleSetAsFaculty = async () => {
-    try {
-      setIsProcessing(true);
-      
-      // Check if supervisor has assigned students
-      const { data: assignmentData, error: checkError } = await supabase
-        .from('supervisor_assignment')
-        .select('student_id')
-        .eq('supervisor_id', faculty.id);
-      
-      if (checkError) {
-        console.error('Error checking assignments:', checkError);
-        toast.error(`Check error: ${checkError.message || JSON.stringify(checkError)}`);
-        return;
-      }
-      
-      // If supervisor has assignments, show warning
-      if (assignmentData && assignmentData.length > 0) {
-        toast.error('Cannot remove supervisor role: has assigned students');
-        return;
-      }
-      
-      // Delete from academy_supervisors table
-      const { error: deleteError } = await supabase
-        .from('academy_supervisors')
-        .delete()
-        .eq('id', faculty.id);
-      
-      if (deleteError) {
-        console.error('Error removing supervisor:', deleteError);
-        toast.error(`Delete error: ${deleteError.message || JSON.stringify(deleteError)}`);
-        return;
-      }
-      
-      setIsSupervisor(false);
-      toast.success('Successfully set as faculty only');
-    } catch (error) {
-      console.error('Error setting as faculty:', error);
-      // Improved error reporting
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (typeof error === 'object' && error !== null)
-          ? JSON.stringify(error)
-          : 'Unknown error';
-      
-      toast.error(`Failed to change role: ${errorMessage}`);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -515,18 +357,16 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
           </section>
 
           {/* Assigned Students */}
+          {/* 
           <section>
             <div className="flex justify-between items-center border-b border-gray-200 pb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Assigned Students</h3>
                 <p className="text-sm text-gray-500">Total {assignedStudents.length} students</p>
               </div>
-              <button
-                onClick={() => setShowAssignList(true)} // Opens the "Assign Students" overlay
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                <UserPlus className="h-4 w-4" /> Assign Student
-              </button>
+              { 
+              // <button> ...Assign Student... </button>
+              }
             </div>
 
             <div className="grid gap-2 max-h-[40vh] overflow-y-auto pr-2">
@@ -552,9 +392,11 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
               )}
             </div>
           </section>
+          */}
         </div>
       </div>
 
+      {/* 
       {showAssignList && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-xl">
@@ -597,6 +439,7 @@ export function FacultyDetailsOverlay({ faculty, onClose }: FacultyDetailsProps)
           </div>
         </div>
       )}
+      */}
     </div>
   );
 }

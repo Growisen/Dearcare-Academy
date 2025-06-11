@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+ import React, { useState } from 'react';
 import { X, CheckCircle, XCircle } from 'lucide-react';
 import { ClientInformation } from './studentInformation';
 import { ConfirmedContent } from './ConfirmedContent';
@@ -108,7 +108,35 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
   const [activeDialog, setActiveDialog] = useState<'delete' | 'proceed' | 'reject' | 'confirm-warning' | 'reject-warning' | null>(null);
   const [currentStudent, setCurrentStudent] = useState(student);
   const [rejectionReason, setRejectionReason] = useState(''); // State for rejection reason
+  // const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  // const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  // const [nocUrl, setNocUrl] = useState<string | null>(null);
   const status = currentStudent.status || 'new';
+
+  // useEffect(() => {
+  //   if (!student.id) return;
+
+    // photo.jpg
+  //   const { data: photoData } = supabase
+  //     .storage
+  //     .from('dearcare')
+  //     .getPublicUrl(`Students/${student.id}/photo.jpg`);
+  //   setPhotoUrl(photoData?.publicUrl || null);
+
+  //   // documents.pdf
+  //   const { data: docData } = supabase
+  //     .storage
+  //     .from('dearcare')
+  //     .getPublicUrl(`Students/${student.id}/documents.pdf`);
+  //   setDocumentUrl(docData?.publicUrl || null);
+
+  //   // noc.pdf
+  //   const { data: nocData } = supabase
+  //     .storage
+  //     .from('dearcare')
+  //     .getPublicUrl(`Students/${student.id}/noc.pdf`);
+  //   setNocUrl(nocData?.publicUrl || null);
+  // }, [student.id]);
 
   const updateStudentStatus = async (newStatus: string) => {
     try {
@@ -395,6 +423,54 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
         </div>
 
         <div className="px-6 py-4 space-y-6">
+          <div className="space-y-4">
+            {/* Photo Section */}
+            {/* <div>
+              <h4 className="font-semibold mb-2">Photo</h4>
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt="Student Photo"
+                  className="w-32 h-32 object-cover rounded-lg border"
+                />
+              ) : (
+                <span className="text-gray-500">No photo uploaded.</span>
+              )}
+            </div> */}
+            {/* Document Section */}
+            {/* <div>
+              <h4 className="font-semibold mb-2">Documents</h4>
+              {documentUrl ? (
+                <a
+                  href={documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  View Document
+                </a>
+              ) : (
+                <span className="text-gray-500">No document uploaded.</span>
+              )}
+            </div> */}
+            {/* NOC Certificate Section */}
+            {/* <div>
+              <h4 className="font-semibold mb-2">NOC Certificate</h4>
+              {nocUrl ? (
+                <a
+                  href={nocUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  View NOC Certificate
+                </a>
+              ) : (
+                <span className="text-gray-500">No NOC certificate uploaded.</span>
+              )}
+            </div> */}
+          </div>
+          {/* Existing Client Information and Status-Specific Content */}
           <ClientInformation 
             studentId={currentStudent.id} 
             initialData={transformedClientData}
