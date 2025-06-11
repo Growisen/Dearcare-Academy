@@ -86,10 +86,10 @@ export function SupervisorDetailsOverlay({ supervisor, onClose }: SupervisorDeta
       fetchUnassignedStudents();
     }
   }, [showAssignList]);
-
   useEffect(() => {
     fetchAssignedStudents();
     fetchFacultyData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supervisor.id]);
 
   const fetchUnassignedStudents = async () => {

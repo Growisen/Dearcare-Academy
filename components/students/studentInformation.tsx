@@ -3,6 +3,7 @@ import { Mail, User, Book, Briefcase, Users, Heart, FileText, File, Eye, Edit, S
 import { fetchStudentData } from '../../utils/studentData';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
+import Image from 'next/image';
 
 interface ClientInformationProps {
   studentId: string;  initialData?: {
@@ -226,9 +227,11 @@ const InfoItem = ({
 
 const ImagePreview = ({ url, className = '' }: { url: string; className?: string }) => (
   <div className={`relative rounded-lg overflow-hidden bg-gray-100 ${className}`}>
-    <img 
+    <Image 
       src={url} 
       alt="Preview" 
+      width={100}
+      height={100}
       className="w-full h-full object-cover"
       onError={(e) => {
         const target = e.target as HTMLImageElement;
