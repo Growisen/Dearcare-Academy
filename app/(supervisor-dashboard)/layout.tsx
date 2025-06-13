@@ -47,7 +47,7 @@ export default function SupervisorDashboardLayout({
                 onMenuClick={() => setSidebarOpen(!sidebarOpen)}
                 onLogout={handleLogout}
               />
-              <main className="h-full overflow-auto px-4 sm:px-6 lg:px-8 lg:pl-16 pt-24 pb-5">
+              <main className="h-full overflow-auto px-4 sm:px-6 lg:px-8 pt-24 pb-5">
                 {children}
               </main>
             </div>
