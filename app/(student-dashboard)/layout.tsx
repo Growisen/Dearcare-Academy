@@ -39,8 +39,7 @@ export default function StudentDashboardLayout({
               isOpen={sidebarOpen} 
               onClose={() => setSidebarOpen(false)} 
               user={user}
-            />
-            <div className={`h-full relative lg:pl-56 transition-all duration-300 ${
+            />            <div className={`h-full relative lg:pl-56 transition-all duration-300 ${
               sidebarOpen ? 'lg:filter-none lg:blur-sm' : ''
             }`}>
               <StudentNavbar 
@@ -48,7 +47,7 @@ export default function StudentDashboardLayout({
                 onMenuClick={() => setSidebarOpen(!sidebarOpen)}
                 onLogout={handleLogout}
               />
-              <main className="h-full overflow-auto px-4 sm:px-6 lg:px-8 pt-20 pb-5">
+              <main className="h-full overflow-auto px-4 sm:px-6 lg:px-8 lg:pl-16 pt-24 pb-5">
                 {children}
               </main>
             </div>
