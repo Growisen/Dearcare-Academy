@@ -14,6 +14,18 @@ interface AssignedStudent {
   mobile: string;
 }
 
+interface SupervisorAssignmentData {
+  student_id: number;
+  students: {
+    id: number;
+    name: string;
+    course: string;
+    register_no: string;
+    email: string;
+    mobile: string;
+  }[];
+}
+
 export default function SupervisorStudents() {
   const [loading, setLoading] = useState(true);
   const [assignedStudents, setAssignedStudents] = useState<AssignedStudent[]>([]);
@@ -39,16 +51,13 @@ export default function SupervisorStudents() {
             mobile
           )
         `)
-        .eq('supervisor_id', supervisorId);
-
-      if (error) throw error;      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const students = data.map((assignment: any) => ({
-        id: assignment.students.id,
-        name: assignment.students.name,
-        course: assignment.students.course,
-        register_no: assignment.students.register_no,
-        email: assignment.students.email,
-        mobile: assignment.students.mobile
+        .eq('supervisor_id', supervisorId);      if (error) throw error;      const students = data.map((assignment: SupervisorAssignmentData) => ({
+        id: assignment.students[0]?.id || 0,
+        name: assignment.students[0]?.name || '',
+        course: assignment.students[0]?.course || '',
+        register_no: assignment.students[0]?.register_no || '',
+        email: assignment.students[0]?.email || '',
+        mobile: assignment.students[0]?.mobile || ''
       }));
 
       setAssignedStudents(students);

@@ -21,6 +21,26 @@ interface Student {
   course: string;
 }
 
+interface SupervisorStudentAssignment {
+  students: {
+    id: number;
+    name: string;
+    register_no: string;
+    course: string;
+  }[];
+}
+
+interface AttendanceData {
+  id: number;
+  student_id: number;
+  date: string;
+  present: boolean;
+  notes?: string;
+  students: {
+    name: string;
+  };
+}
+
 export default function SupervisorAttendance() {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
@@ -47,16 +67,13 @@ export default function SupervisorAttendance() {
             course
           )
         `)
-        .eq('supervisor_id', supervisorId);
+        .eq('supervisor_id', supervisorId);      if (error) throw error;
 
-      if (error) throw error;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const studentList = data?.map((item: any) => ({
-        id: item.students.id,
-        name: item.students.name,
-        register_no: item.students.register_no,
-        course: item.students.course
+      const studentList = data?.map((item: SupervisorStudentAssignment) => ({
+        id: item.students[0]?.id || 0,
+        name: item.students[0]?.name || '',
+        register_no: item.students[0]?.register_no || '',
+        course: item.students[0]?.course || ''
       })) || [];
 
       setStudents(studentList);
@@ -75,12 +92,9 @@ export default function SupervisorAttendance() {
             name
           )
         `)
-        .eq('date', selectedDate);
+        .eq('date', selectedDate);      if (error) throw error;
 
-      if (error) throw error;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const records = data?.map((record: any) => ({
+      const records = data?.map((record: AttendanceData) => ({
         id: record.id,
         student_id: record.student_id,
         student_name: record.students.name,

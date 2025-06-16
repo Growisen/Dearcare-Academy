@@ -8,6 +8,7 @@ import {
   Home, 
   User, 
   ClipboardList,
+  Settings,
   ArrowLeftCircle,
   LogOut
 } from "lucide-react";
@@ -41,11 +42,11 @@ export default function StudentSidebar({ isOpen, onClose, user }: StudentSidebar
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [isOpen, onClose]);
-  const navigationItems = [
+  }, [isOpen, onClose]);  const navigationItems = [
     { icon: Home, label: "Dashboard", href: "/student-dashboard" },
     { icon: User, label: "Profile", href: "/student-profile" },
     { icon: ClipboardList, label: "Attendance", href: "/student-attendance" },
+    { icon: Settings, label: "Settings", href: "/student-settings" }
   ];
   return (
     <div 
