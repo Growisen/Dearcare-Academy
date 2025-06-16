@@ -7,7 +7,7 @@ import { Calendar, Clock, MapPin, User, BookOpen, AlertCircle } from "lucide-rea
 interface ScheduleItem {
   id: number;
   title: string;
-  type: 'class' | 'exam' | 'assignment' | 'event';
+  type: 'class' | 'exam' | 'event';
   date: string;
   time: string;
   duration: string;
@@ -50,20 +50,7 @@ const mockSchedule: ScheduleItem[] = [
     time: "10:00 AM",
     duration: "3 hours",
     location: "Exam Hall",
-    instructor: "Multiple",
-    description: "Comprehensive nursing exam covering all modules",
-    status: "upcoming"
-  },
-  {
-    id: 4,
-    title: "Case Study Assignment",
-    type: "assignment",
-    date: "2025-06-18",
-    time: "11:59 PM",
-    duration: "",
-    location: "Online Submission",
-    instructor: "Dr. Williams",
-    description: "Submit detailed patient care analysis",
+    instructor: "Multiple",    description: "Comprehensive nursing exam covering all modules",
     status: "upcoming"
   }
 ];
@@ -84,9 +71,7 @@ export default function StudentSchedule() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'class': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'exam': return 'bg-red-100 text-red-800 border-red-200';
-      case 'assignment': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'class': return 'bg-blue-100 text-blue-800 border-blue-200';      case 'exam': return 'bg-red-100 text-red-800 border-red-200';
       case 'event': return 'bg-purple-100 text-purple-800 border-purple-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -96,7 +81,6 @@ export default function StudentSchedule() {
     switch (type) {
       case 'class': return '📚';
       case 'exam': return '📝';
-      case 'assignment': return '📋';
       case 'event': return '🎉';
       default: return '📅';
     }
@@ -202,22 +186,7 @@ export default function StudentSchedule() {
                 {scheduleItems.filter(item => item.type === 'exam' && item.status === 'upcoming').length}
               </p>
             </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Assignments Due</p>
-              <p className="text-xl font-bold text-gray-900">
-                {scheduleItems.filter(item => item.type === 'assignment' && item.status === 'upcoming').length}
-              </p>
-            </div>
-          </div>
-        </div>
+          </div>        </div>
 
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="flex items-center space-x-3">

@@ -7,13 +7,9 @@ import { usePathname } from "next/navigation";
 import { 
   Home, 
   Calendar, 
-  BookOpen, 
-  FileText, 
   User, 
-  GraduationCap,
   ClipboardList,
   ArrowLeftCircle,
-  Award,
   LogOut
 } from "lucide-react";
 import { AuthUser } from "../../lib/auth";
@@ -47,16 +43,11 @@ export default function StudentSidebar({ isOpen, onClose, user }: StudentSidebar
       document.removeEventListener('click', handleClickOutside);
     };
   }, [isOpen, onClose]);
-
   const navigationItems = [
     { icon: Home, label: "Dashboard", href: "/student-dashboard" },
     { icon: User, label: "Profile", href: "/student-profile" },
     { icon: Calendar, label: "Schedule", href: "/student-schedule" },
     { icon: ClipboardList, label: "Attendance", href: "/student-attendance" },
-    { icon: BookOpen, label: "Courses", href: "/student-courses" },
-    { icon: FileText, label: "Assignments", href: "/student-assignments" },
-    { icon: Award, label: "Grades", href: "/student-grades" },
-    { icon: GraduationCap, label: "Progress", href: "/student-progress" },
   ];
   return (
     <div 

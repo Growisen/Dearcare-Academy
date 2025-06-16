@@ -9,11 +9,9 @@ import {
   Users, 
   Calendar, 
   ClipboardList, 
-  FileText, 
   User, 
   ArrowLeftCircle,
   TrendingUp,
-  Award,
   Settings,
   LogOut
 } from "lucide-react";
@@ -48,15 +46,12 @@ export default function SupervisorSidebar({ isOpen, onClose, user }: SupervisorS
       document.removeEventListener('click', handleClickOutside);
     };
   }, [isOpen, onClose]);
-
   const navigationItems = [
     { icon: Home, label: "Dashboard", href: "/supervisor-dashboard" },
     { icon: Users, label: "My Students", href: "/supervisor-students" },
     { icon: Calendar, label: "Schedule", href: "/supervisor-schedule" },
     { icon: ClipboardList, label: "Attendance", href: "/supervisor-attendance" },
     { icon: TrendingUp, label: "Reports", href: "/supervisor-reports" },
-    { icon: FileText, label: "Assignments", href: "/supervisor-assignments" },
-    { icon: Award, label: "Evaluations", href: "/supervisor-evaluations" },
     { icon: User, label: "Profile", href: "/supervisor-profile" },
     { icon: Settings, label: "Settings", href: "/supervisor-settings" }
   ];

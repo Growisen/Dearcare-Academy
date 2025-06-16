@@ -6,7 +6,7 @@ import { getUserSession, clearUserSession, AuthUser } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
 import StudentSidebar from "../../../components/student/student-sidebar";
 import StudentNavbar from "../../../components/student/student-navbar";
-import { BookOpen, Calendar, FileText, User, Clock, Award } from "lucide-react";
+import { BookOpen, Calendar, User, Clock, Award } from "lucide-react";
 
 interface StudentData {
   id: number;
@@ -25,26 +25,16 @@ interface StudentStats {
   upcomingClasses: number;
 }
 
-interface Assignment {
-  id: number;
-  title: string;
-  dueDate: string;
-  status: 'pending' | 'submitted' | 'graded';
-  subject: string;
-}
-
 export default function StudentDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [studentData, setStudentData] = useState<StudentData | null>(null);
-  const [stats, setStats] = useState<StudentStats>({
+  const [studentData, setStudentData] = useState<StudentData | null>(null);  const [stats, setStats] = useState<StudentStats>({
     totalClasses: 0,
     attendedClasses: 0,
     attendancePercentage: 0,
     upcomingClasses: 0
   });
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const checkAuthentication = useCallback(async () => {
@@ -86,39 +76,12 @@ export default function StudentDashboard() {
 
       const totalClasses = attendanceData?.length || 0;
       const attendedClasses = attendanceData?.filter(record => record.present).length || 0;
-      const attendancePercentage = totalClasses > 0 ? Math.round((attendedClasses / totalClasses) * 100) : 0;
-
-      setStats({
+      const attendancePercentage = totalClasses > 0 ? Math.round((attendedClasses / totalClasses) * 100) : 0;      setStats({
         totalClasses,
         attendedClasses,
         attendancePercentage,
         upcomingClasses: 5 // This would come from a schedule table
       });
-
-      // Mock assignments data
-      setAssignments([
-        {
-          id: 1,
-          title: "Clinical Procedures Assignment",
-          dueDate: "2025-06-20",
-          status: "pending",
-          subject: "Clinical Practice"
-        },
-        {
-          id: 2,
-          title: "Patient Care Report",
-          dueDate: "2025-06-18",
-          status: "submitted",
-          subject: "Patient Care"
-        },
-        {
-          id: 3,
-          title: "Medical Terminology Quiz",
-          dueDate: "2025-06-15",
-          status: "graded",
-          subject: "Medical Terms"
-        }
-      ]);
     } catch (error) {
       console.error('Error fetching student stats:', error);
     }
@@ -246,45 +209,12 @@ export default function StudentDashboard() {
                     <div>
                       <label className="text-sm font-medium text-gray-600">Registration Number</label>
                       <p className="text-gray-900">{studentData.register_no}</p>
-                    </div>
-                    <div>
+                    </div>                    <div>
                       <label className="text-sm font-medium text-gray-600">Course</label>
                       <p className="text-gray-900">{studentData.course}</p>
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Recent Assignments */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <FileText className="h-5 w-5 mr-2" />
-                  Recent Assignments
-                </h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {assignments.map((assignment) => (
-                    <div key={assignment.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-medium text-gray-900">{assignment.title}</h3>
-                          <p className="text-sm text-gray-600">{assignment.subject}</p>
-                          <p className="text-sm text-gray-500">Due: {assignment.dueDate}</p>
-                        </div>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          assignment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          assignment.status === 'submitted' ? 'bg-blue-100 text-blue-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {assignment.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
