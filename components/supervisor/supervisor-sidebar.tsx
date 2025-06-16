@@ -7,11 +7,9 @@ import { usePathname } from "next/navigation";
 import { 
   Home, 
   Users, 
-  Calendar, 
   ClipboardList, 
   User, 
   ArrowLeftCircle,
-  TrendingUp,
   Settings,
   LogOut
 } from "lucide-react";
@@ -49,9 +47,7 @@ export default function SupervisorSidebar({ isOpen, onClose, user }: SupervisorS
   const navigationItems = [
     { icon: Home, label: "Dashboard", href: "/supervisor-dashboard" },
     { icon: Users, label: "My Students", href: "/supervisor-students" },
-    { icon: Calendar, label: "Schedule", href: "/supervisor-schedule" },
     { icon: ClipboardList, label: "Attendance", href: "/supervisor-attendance" },
-    { icon: TrendingUp, label: "Reports", href: "/supervisor-reports" },
     { icon: User, label: "Profile", href: "/supervisor-profile" },
     { icon: Settings, label: "Settings", href: "/supervisor-settings" }
   ];

@@ -6,7 +6,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
   Home, 
-  Calendar, 
   User, 
   ClipboardList,
   ArrowLeftCircle,
@@ -46,7 +45,6 @@ export default function StudentSidebar({ isOpen, onClose, user }: StudentSidebar
   const navigationItems = [
     { icon: Home, label: "Dashboard", href: "/student-dashboard" },
     { icon: User, label: "Profile", href: "/student-profile" },
-    { icon: Calendar, label: "Schedule", href: "/student-schedule" },
     { icon: ClipboardList, label: "Attendance", href: "/student-attendance" },
   ];
   return (

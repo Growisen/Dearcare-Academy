@@ -6,7 +6,7 @@ import { getUserSession, clearUserSession, AuthUser } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
 import StudentSidebar from "../../../components/student/student-sidebar";
 import StudentNavbar from "../../../components/student/student-navbar";
-import { BookOpen, Calendar, User, Clock, Award } from "lucide-react";
+import { BookOpen, Calendar, User, Award } from "lucide-react";
 
 interface StudentData {
   id: number;
@@ -152,18 +152,6 @@ export default function StudentDashboard() {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Attendance</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.attendancePercentage}%</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-yellow-100">
-                  <Clock className="h-6 w-6 text-yellow-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Upcoming Classes</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.upcomingClasses}</p>
                 </div>
               </div>
             </div>
