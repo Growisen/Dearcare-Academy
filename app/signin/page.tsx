@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Lock, Mail, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+import { authenticateUser, setUserSession } from "../../lib/auth";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -21,14 +21,19 @@ const LoginPage = () => {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
+      const result = await authenticateUser({ email, password });
       
-      router.push('/dashboard');
+      if (result.success && result.user) {
+        // Store user session for non-admin users
+        if (result.user.role !== 'admin') {
+          setUserSession(result.user);
+        }
+        
+        // Redirect based on role
+        router.push(result.redirectTo || '/dashboard');
+      } else {
+        setError(result.error || 'Authentication failed');
+      }
     } catch (err: unknown) {
       if (err instanceof Error || (typeof err === 'object' && err && 'message' in err)) {
         setError((err as { message: string }).message);
@@ -54,9 +59,8 @@ const LoginPage = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, type: "spring" }}
             className="flex flex-col items-center space-y-3"
-          >
-            <Image src="/logo2.png" alt="Logo" width={150} height={50} className="mb-2 object-contain" />
-            <h1 className="text-2xl font-bold text-dCblue">Admin Portal</h1>
+          >            <Image src="/logo2.png" alt="Logo" width={150} height={50} className="mb-2 object-contain" />
+            <h1 className="text-2xl font-bold text-dCblue">Dearcare Academy</h1>
             <p className="text-dCblack/70 text-center text-sm">Secure Access to Your Dashboard</p>
           </motion.div>
 

@@ -1,5 +1,21 @@
 import { supabase } from '../lib/supabase';
 import { getStudentFileUrl } from './storage';
+import { StudentAcademics, StudentPreferences } from '../types/student.types';
+
+// Define academic accumulator type
+interface AcademicRecord {
+  institution: string;
+  year: string;
+  grade: string;
+}
+
+interface AcademicsAccumulator {
+  sslc: AcademicRecord;
+  hsc: AcademicRecord;
+  gda: AcademicRecord;
+  others: AcademicRecord;
+  [key: string]: AcademicRecord;
+}
 
 export const fetchStudentData = async (studentId: string) => {
   try {
@@ -79,13 +95,12 @@ export const fetchStudentData = async (studentId: string) => {
       photo: photoUrl,
       documents: documentsUrl,
       nocCertificate: nocUrl,
-      
-      // Transform academics
-      academics: student.student_academics?.reduce((acc: any, curr: any) => {
+        // Transform academics
+      academics: student.student_academics?.reduce((acc: AcademicsAccumulator, curr: StudentAcademics) => {
         const level = curr.qualification.toLowerCase();
         acc[level] = {
           institution: curr.institution,
-          year: curr.year_of_passing?.toString(),
+          year: curr.year_of_passing?.toString() || '',
           grade: curr.marks
         };
         return acc;
@@ -115,10 +130,8 @@ export const fetchStudentData = async (studentId: string) => {
       status: student.student_source?.[0]?.status,
       priority: student.student_source?.[0]?.priority,
       sourceCategory: student.student_source?.[0]?.category,
-      sourceSubCategory: student.student_source?.[0]?.sub_category,
-
-      // Service preferences
-      servicePreferences: student.student_preferences?.reduce((acc: any, pref: any) => {
+      sourceSubCategory: student.student_source?.[0]?.sub_category,      // Service preferences
+      servicePreferences: student.student_preferences?.reduce((acc: Record<string, string>, pref: StudentPreferences) => {
         acc['Home Care Assistant'] = pref.home_care;
         acc['Delivery Care Assistant'] = pref.delivery_care;
         acc['Old Age Home/Rehabilitation Center'] = pref.old_age_home;
