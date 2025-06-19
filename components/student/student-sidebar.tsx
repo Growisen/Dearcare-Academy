@@ -12,8 +12,7 @@ import {
   ArrowLeftCircle,
   LogOut
 } from "lucide-react";
-import { AuthUser } from "../../lib/auth";
-import { supabase } from "../../lib/supabase";
+import { AuthUser, logout } from "../../lib/auth";
 import { useRouter } from "next/navigation";
 
 interface StudentSidebarProps {
@@ -112,14 +111,12 @@ export default function StudentSidebar({ isOpen, onClose, user }: StudentSidebar
                 </Link>
               );
             })}          </nav>
-        </div>
-
-        {/* Logout Button */}
+        </div>        {/* Logout Button */}
         <div className="p-3 border-t border-slate-700/50">
           <button
             onClick={async () => {
-              await supabase.auth.signOut()
-              router.push('/signin')
+              await logout();
+              router.push('/signin');
             }}
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 w-full
               text-slate-300 hover:bg-slate-700/50 hover:text-slate-100"
