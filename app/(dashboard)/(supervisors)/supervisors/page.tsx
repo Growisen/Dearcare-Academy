@@ -43,22 +43,12 @@ export default function SupervisorsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("active")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null)
-
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/signin');
-        return;
-      }
-
-      const { data: userRole } = await supabase
-        .from('academy_roles')
-        .select('role')
-        .eq('uid', session.user.id)
-        .single();
-
-      if (!userRole || userRole.role !== 'admin') {
+      const { checkAuthStatus } = await import('../../../../lib/auth');
+      const currentUser = await checkAuthStatus();
+      
+      if (!currentUser || currentUser.role !== 'admin') {
         router.push('/signin');
         return;
       }

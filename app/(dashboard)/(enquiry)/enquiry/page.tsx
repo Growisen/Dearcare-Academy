@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { getVisibleEnquiries, hideEnquiry } from '@/lib/supabase';
-import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 interface Enquiry {
@@ -21,22 +20,12 @@ export default function EnquiryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [authChecked, setAuthChecked] = useState(false);
   const itemsPerPage = 10;
-
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/signin');
-        return;
-      }
-
-      const { data: userRole } = await supabase
-        .from('academy_roles')
-        .select('role')
-        .eq('uid', session.user.id)
-        .single();
-
-      if (!userRole || userRole.role !== 'admin') {
+      const { checkAuthStatus } = await import('../../../../lib/auth');
+      const currentUser = await checkAuthStatus();
+      
+      if (!currentUser || currentUser.role !== 'admin') {
         router.push('/signin');
         return;
       }

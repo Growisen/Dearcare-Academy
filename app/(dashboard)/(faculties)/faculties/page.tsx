@@ -51,22 +51,12 @@ export default function FacultiesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFaculty, setSelectedFaculty] = useState<Faculty | null>(null)
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
-
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/signin');
-        return;
-      }
-
-      const { data: userRole } = await supabase
-        .from('academy_roles')
-        .select('role')
-        .eq('uid', session.user.id)
-        .single();
-
-      if (!userRole || userRole.role !== 'admin') {
+      const { checkAuthStatus } = await import('../../../../lib/auth');
+      const currentUser = await checkAuthStatus();
+      
+      if (!currentUser || currentUser.role !== 'admin') {
         router.push('/signin');
         return;
       }
