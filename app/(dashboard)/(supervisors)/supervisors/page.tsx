@@ -74,7 +74,7 @@ export default function SupervisorsPage() {
       const formattedSupervisors: Supervisor[] = await Promise.all(
         (dbSupervisors as DatabaseSupervisor[]).map(async (sup) => {
           const { data: assignedStudents } = await supabase
-            .from('supervisor_assignments')
+            .from('supervisor_assignment')
             .select(`
               student:students (
                 id,

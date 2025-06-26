@@ -21,14 +21,9 @@ interface Student {
   course: string;
 }
 
-interface SupervisorStudentAssignment {
-  students: {
-    id: number;
-    name: string;
-    register_no: string;
-    course: string;
-  }[];
-}
+
+
+
 
 interface AttendanceData {
   id: number;
@@ -46,17 +41,27 @@ export default function SupervisorAttendance() {
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const currentUser = getUserSession();    if (currentUser) {
-      fetchStudents(currentUser.id);
-      fetchAttendance();
-    }
-    setLoading(false);
+    const initializeData = async () => {
+      const currentUser = getUserSession();
+      if (currentUser) {
+        await fetchStudents(currentUser.id);
+        await fetchAttendance();
+      } else {
+        setError('User session not found. Please sign in again.');
+        setLoading(false);
+      }
+    };
+    
+    initializeData();
   }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchStudents = async (supervisorId: number) => {
     try {
+      setError(null);
       const { data, error } = await supabase
         .from('supervisor_assignment')
         .select(`
@@ -67,23 +72,31 @@ export default function SupervisorAttendance() {
             course
           )
         `)
-        .eq('supervisor_id', supervisorId);      if (error) throw error;
+        .eq('supervisor_id', supervisorId);
 
-      const studentList = data?.map((item: SupervisorStudentAssignment) => ({
-        id: item.students[0]?.id || 0,
-        name: item.students[0]?.name || '',
-        register_no: item.students[0]?.register_no || '',
-        course: item.students[0]?.course || ''
-      })) || [];
+      if (error) throw error;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const studentList = data?.map((item: any) => {
+        const student = item.students;
+        return {
+          id: student?.id || 0,
+          name: student?.name || '',
+          register_no: student?.register_no || '',
+          course: student?.course || ''
+        };
+      }).filter((student: Student) => student.id > 0) || []; // Filter out invalid students
 
       setStudents(studentList);
     } catch (error) {
       console.error('Error fetching students:', error);
+      setError('Failed to load students. Please try again.');
     }
   };
 
   const fetchAttendance = async () => {
     try {
+      setError(null);
       const { data, error } = await supabase
         .from('academy_student_attendance')
         .select(`
@@ -92,7 +105,9 @@ export default function SupervisorAttendance() {
             name
           )
         `)
-        .eq('date', selectedDate);      if (error) throw error;
+        .eq('date', selectedDate);
+
+      if (error) throw error;
 
       const records = data?.map((record: AttendanceData) => ({
         id: record.id,
@@ -106,11 +121,17 @@ export default function SupervisorAttendance() {
       setAttendanceRecords(records);
     } catch (error) {
       console.error('Error fetching attendance:', error);
+      setError('Failed to load attendance records. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const markAttendance = async (studentId: number, present: boolean) => {
     try {
+      setSaving(true);
+      setError(null);
+      
       const existingRecord = attendanceRecords.find(r => r.student_id === studentId);
 
       if (existingRecord) {
@@ -130,13 +151,15 @@ export default function SupervisorAttendance() {
           });
 
         if (error) throw error;
-      }      // Refresh attendance data
-      const currentUser = getUserSession();
-      if (currentUser) {
-        fetchAttendance();
       }
+
+      // Refresh attendance data
+      await fetchAttendance();
     } catch (error) {
       console.error('Error marking attendance:', error);
+      setError('Failed to save attendance. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -149,6 +172,7 @@ export default function SupervisorAttendance() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Loading attendance data...</span>
       </div>
     );
   }
@@ -158,15 +182,37 @@ export default function SupervisorAttendance() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Student Attendance</h1>
         <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700">Date:</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div>
+            <label className="text-sm font-medium text-gray-700">Date:</label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {saving && (
+            <div className="flex items-center text-blue-600">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+              Saving...
+            </div>
+          )}
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="text-red-600 font-medium">{error}</div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="ml-4 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -227,10 +273,10 @@ export default function SupervisorAttendance() {
         </div>
         
         <div className="divide-y divide-gray-200">
-          {students.map((student) => {
+          {students.map((student, index) => {
             const status = getAttendanceStatus(student.id);
             return (
-              <div key={student.id} className="p-6 hover:bg-gray-50">
+              <div key={`attendance-${student.id}-${index}-${student.register_no || student.name || 'unknown'}`} className="p-6 hover:bg-gray-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">

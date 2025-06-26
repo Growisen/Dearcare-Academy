@@ -30,9 +30,11 @@ export default function StudentAttendance() {
   });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [error, setError] = useState<string | null>(null);
 
   const fetchAttendanceData = useCallback(async (studentId: number) => {
     try {
+      setError(null);
       const { data, error } = await supabase
         .from('academy_student_attendance')
         .select('*')
@@ -63,15 +65,22 @@ export default function StudentAttendance() {
       });
     } catch (error) {
       console.error('Error fetching attendance data:', error);
+      setError('Failed to load attendance data. Please try again.');
     }
   }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
-    const currentUser = getUserSession();
-    if (currentUser) {
-      fetchAttendanceData(currentUser.id);
-    }
-    setLoading(false);
+    const initializeData = async () => {
+      const currentUser = getUserSession();
+      if (currentUser) {
+        await fetchAttendanceData(currentUser.id);
+      } else {
+        setError('User session not found. Please sign in again.');
+      }
+      setLoading(false);
+    };
+    
+    initializeData();
   }, [fetchAttendanceData]);
 
   const getAttendanceStatus = (present: boolean) => {
@@ -98,6 +107,23 @@ export default function StudentAttendance() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Loading attendance data...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -113,7 +139,7 @@ export default function StudentAttendance() {
             className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {Array.from({ length: 12 }, (_, i) => (
-              <option key={i} value={i}>
+              <option key={`month-${i}`} value={i}>
                 {new Date(0, i).toLocaleString('default', { month: 'long' })}
               </option>
             ))}
@@ -124,7 +150,7 @@ export default function StudentAttendance() {
             className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {Array.from({ length: 5 }, (_, i) => (
-              <option key={i} value={new Date().getFullYear() - i}>
+              <option key={`year-${new Date().getFullYear() - i}`} value={new Date().getFullYear() - i}>
                 {new Date().getFullYear() - i}
               </option>
             ))}
@@ -201,12 +227,12 @@ export default function StudentAttendance() {
         </div>
         
         <div className="divide-y divide-gray-200">
-          {attendanceRecords.map((record) => {
+          {attendanceRecords.map((record, index) => {
             const status = getAttendanceStatus(record.present);
             const StatusIcon = status.icon;
             
             return (
-              <div key={record.id} className="px-6 py-4 hover:bg-gray-50">
+              <div key={`attendance-record-${record.id}-${index}-${record.date}`} className="px-6 py-4 hover:bg-gray-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${status.bg}`}>
@@ -249,6 +275,19 @@ export default function StudentAttendance() {
           </div>
         )}
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-5 h-5 text-red-600" />
+            <span className="text-red-800 font-medium">Error</span>
+          </div>
+          <p className="text-red-700 mt-2">
+            {error}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -270,8 +270,8 @@ export default function SupervisorDashboard() {
               <div className="p-6">
                 <div className="space-y-4 max-h-96 overflow-y-auto">
                   {assignedStudents.length > 0 ? (
-                    assignedStudents.map((student) => (
-                      <div key={student.id} className="border border-gray-200 rounded-lg p-4">
+                    assignedStudents.map((student, index) => (
+                      <div key={`dashboard-student-${student.id}-${index}-${student.register_no || student.name || 'unknown'}`} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-start justify-between">
                           <div>
                             <h3 className="font-medium text-gray-900">{student.name}</h3>
