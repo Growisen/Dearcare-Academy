@@ -76,24 +76,28 @@ export default function SupervisorsPage() {
           const { data: assignedStudents } = await supabase
             .from('supervisor_assignment')
             .select(`
-              student:students (
+              student_id,
+              students!supervisor_assignment_student_id_fkey (
                 id,
                 name,
                 email,
-                student_source!student_source_student_id_fkey!inner (
+                student_source!student_source_student_id_fkey (
                   status
                 )
               )
             `)
             .eq('supervisor_id', sup.id)
 
-          const students = (assignedStudents || []).flatMap((assignment: { student: { id: number; name: string; email: string; student_source: { status: string }[] }[] }) =>
-            assignment.student.map((student) => ({
-              id: student.id,
-              name: student.name,
-              email: student.email,
-              student_source: student.student_source || [{ status: 'unknown' }]
-            }))          )
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const students = (assignedStudents || []).map((assignment: any) => {
+            const student = assignment.students;
+            return {
+              id: student?.id || 0,
+              name: student?.name || '',
+              email: student?.email || '',
+              student_source: student?.student_source || [{ status: 'unknown' }]
+            };
+          }).filter(student => student.id > 0)
 
           return {
             id: sup.id.toString(),
