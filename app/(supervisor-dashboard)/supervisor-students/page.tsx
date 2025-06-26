@@ -14,30 +14,34 @@ interface AssignedStudent {
   mobile: string;
 }
 
-interface SupervisorAssignmentData {
-  student_id: number;
-  students: {
-    id: number;
-    name: string;
-    course: string;
-    register_no: string;
-    email: string;
-    mobile: string;
-  }[];
-}
+
 
 export default function SupervisorStudents() {
   const [loading, setLoading] = useState(true);
   const [assignedStudents, setAssignedStudents] = useState<AssignedStudent[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredStudents, setFilteredStudents] = useState<AssignedStudent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    const currentUser = getUserSession();
-    if (currentUser) {
-      fetchAssignedStudents(currentUser.id);
-    }
-    setLoading(false);  }, []);
+    const initializeData = async () => {
+      const currentUser = getUserSession();
+      if (currentUser) {
+        await fetchAssignedStudents(currentUser.id);
+      } else {
+        setError('User session not found. Please sign in again.');
+        setLoading(false);
+      }
+    };
+    
+    initializeData();
+  }, []);
 
   const fetchAssignedStudents = async (supervisorId: number) => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from('supervisor_assignment')
         .select(`
@@ -51,25 +55,65 @@ export default function SupervisorStudents() {
             mobile
           )
         `)
-        .eq('supervisor_id', supervisorId);      if (error) throw error;      const students = data.map((assignment: SupervisorAssignmentData) => ({
-        id: assignment.students[0]?.id || 0,
-        name: assignment.students[0]?.name || '',
-        course: assignment.students[0]?.course || '',
-        register_no: assignment.students[0]?.register_no || '',
-        email: assignment.students[0]?.email || '',
-        mobile: assignment.students[0]?.mobile || ''
-      }));
+        .eq('supervisor_id', supervisorId);
+
+      if (error) throw error;
+
+      // Process the data correctly - students is not an array, it's a single object
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const students = data?.map((assignment: any) => {
+        const student = assignment.students;
+        return {
+          id: student?.id || 0,
+          name: student?.name || '',
+          course: student?.course || '',
+          register_no: student?.register_no || '',
+          email: student?.email || '',
+          mobile: student?.mobile || ''
+        };
+      }).filter((student: AssignedStudent) => student.id > 0) || []; // Filter out invalid students
 
       setAssignedStudents(students);
+      setFilteredStudents(students);
     } catch (error) {
       console.error('Error fetching assigned students:', error);
+      setError('Failed to load assigned students. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const filtered = assignedStudents.filter(student =>
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.register_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredStudents(filtered);
+  }, [assignedStudents, searchTerm]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Loading your students...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -83,10 +127,21 @@ export default function SupervisorStudents() {
         </div>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by name, register no, course, or email"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+        />
+      </div>
+
       {/* Students Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {assignedStudents.map((student) => (
-          <div key={student.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        {filteredStudents.map((student, index) => (
+          <div key={`student-${student.id}-${index}-${student.register_no || student.email || 'unknown'}`} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">

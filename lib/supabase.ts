@@ -209,9 +209,27 @@ export const insertStudentData = async (formData: StudentFormData): Promise<{
 
 export const insertEnquiryData = async (formData: EnquiryFormData) => {
   try {
+    // Prepare the data object with proper validation
+    const enquiryData = {
+      name: formData.name,
+      email: formData.email,
+      phone_no: formData.phone_no,
+      course: formData.course,
+      ...(formData.age && { age: formData.age }),
+      ...(formData.dob && { dob: formData.dob }),
+      ...(formData.address && { address: formData.address }),
+      ...(formData.gender && { gender: formData.gender }),
+      ...(formData.religion && { religion: formData.religion }),
+      ...(formData.caste && { caste: formData.caste }),
+      ...(formData.aadhaar_no && { aadhaar_no: formData.aadhaar_no }),
+      ...(formData.guardian_name && { guardian_name: formData.guardian_name }),
+      ...(formData.highest_qualification && { highest_qualification: formData.highest_qualification }),
+      ...(formData.year_of_passing && { year_of_passing: formData.year_of_passing }),
+    };
+
     const { data, error } = await supabase
       .from('academy_enquiries')
-      .insert([formData])
+      .insert([enquiryData])
       .select()
       .single();
 
