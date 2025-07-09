@@ -100,7 +100,7 @@ const FORM_CONFIG = {
       "Odia"
     ],
     courses: [
-      "Advanced General Nursing Assistant (AGDA)",
+      "Advanced Home Care & Care Giver Training",
       "Diploma in Healthcare Assistance",
       "Ayurveda Nursing & Baby Care"
     ],

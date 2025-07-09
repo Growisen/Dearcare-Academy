@@ -27,6 +27,15 @@ export default function EnquiryPage() {
   const [showFilters, setShowFilters] = useState(false);
   const itemsPerPage = 10;
 
+  // Helper function for DD:MM:YYYY
+  function formatDateDMY(dateString: string | Date) {
+    const d = new Date(dateString);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}:${month}:${year}`;
+  }
+
   useEffect(() => {
     const checkAuth = async () => {
       const { checkAuthStatus } = await import('../../../../lib/auth');
@@ -395,7 +404,7 @@ export default function EnquiryPage() {
                       <tr key={enquiry.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div>
-                            <div className="font-medium">{new Date(enquiry.created_at).toLocaleDateString()}</div>
+                            <div className="font-medium">{formatDateDMY(enquiry.created_at)}</div>
                             <div className="text-xs text-gray-500">{new Date(enquiry.created_at).toLocaleTimeString()}</div>
                           </div>
                         </td>
@@ -548,7 +557,7 @@ export default function EnquiryPage() {
               <div className="flex items-center justify-between mb-6 pb-4 border-b">
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">Enquiry Details</h3>
-                  <p className="text-sm text-gray-500">ID: {selectedEnquiry.id} • Submitted on {new Date(selectedEnquiry.created_at).toLocaleString()}</p>
+                  <p className="text-sm text-gray-500">ID: {selectedEnquiry.id} • Submitted on {formatDateDMY(selectedEnquiry.created_at)} {new Date(selectedEnquiry.created_at).toLocaleTimeString()}</p>
                 </div>
                 <button
                   onClick={() => setShowModal(false)}
@@ -581,7 +590,7 @@ export default function EnquiryPage() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">
-                          {selectedEnquiry.dob ? new Date(selectedEnquiry.dob).toLocaleDateString() : 'Not provided'}
+                          {selectedEnquiry.dob ? formatDateDMY(selectedEnquiry.dob) : 'Not provided'}
                         </p>
                       </div>
                       <div>
