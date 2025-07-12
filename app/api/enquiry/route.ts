@@ -110,7 +110,10 @@ export async function POST(request: Request) {
       name: enquiryData.name,
       courseName: enquiryData.course,
       courseFees: courseDetails.course_fees,
-      regFees: courseDetails.reg_fees
+      regFees: courseDetails.reg_fees,
+      first_installment: courseDetails.first_installment,
+      second_installment: courseDetails.second_installment,
+      third_installment: courseDetails.third_installment,
     });
     
     if (!success) {

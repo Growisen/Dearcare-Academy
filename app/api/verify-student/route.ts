@@ -16,7 +16,10 @@ export async function POST(request: Request) {
         course:academy_courses!inner (
           course_name,
           course_fees,
-          reg_fees
+          reg_fees,
+          first_installment,
+          second_installment,
+          third_installment
         )
       `)
       .eq('id', studentId)
@@ -44,6 +47,9 @@ export async function POST(request: Request) {
       courseName: student.course.course_name,
       courseFees: student.course.course_fees,
       regFees: student.course.reg_fees,
+      first_installment: student.course.first_installment,
+      second_installment: student.course.second_installment,
+      third_installment: student.course.third_installment,
       studentId: studentId 
     });
 
