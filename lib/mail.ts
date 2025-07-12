@@ -14,6 +14,9 @@ interface MailDetailsEnquiry{
     courseName: string;
     courseFees?: number;
     regFees?: number;
+    first_installment?: number;
+    second_installment?: number;
+    third_installment?: number;
 }
 
 interface MailDetailsReceipt{
@@ -21,6 +24,9 @@ interface MailDetailsReceipt{
     email: string;
     courseFees?: number;
     regFees?: number;
+    first_installment?: number;
+    second_installment?: number;
+    third_installment?: number;
 }
 
 interface MailDetailsConfirmation{
@@ -59,10 +65,10 @@ async function send_mail(details: MailDetails) {
 }
 
 export async function enquiry_reply(details: MailDetailsEnquiry) {
-  const { name, email, courseFees, regFees } = details;
+  const { name, email, courseFees, regFees, first_installment, second_installment, third_installment } = details;
 
   const subject = `Course Enquiry - ${details.courseName}`;
-  const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nCourse Details:\nRegistration Fee: ₹${regFees}\nCourse Fee: ₹${courseFees}\n\nPlease find the brochure attached and use the link below to register:\n\n${student_reg_link}\n`;
+  const text = `Hi ${name},\n\nThank you for your interest in ${details.courseName}.\n\nCourse Details:\nRegistration Fee: ₹${regFees}\nCourse Fee: ₹${courseFees}\nFirst Installment: ₹${first_installment}\nSecond Installment: ₹${second_installment}\nThird Installment: ₹${third_installment}\n\nPlease find the brochure attached and use the link below to register:\n\n${student_reg_link}\n`;
 /*
   const html = `
     <p>Hi <strong>${name}</strong>,</p>
@@ -109,6 +115,9 @@ export async function enquiry_reply(details: MailDetailsEnquiry) {
                     <ul>
                       <li>Registration Fee: ₹${regFees}</li>
                       <li>Course Fee: ₹${courseFees}</li>
+                      <li>First Installment: ₹${first_installment}</li>
+                      <li>Second Installment: ₹${second_installment}</li>
+                      <li>Third Installment: ₹${third_installment}</li>
                     </ul>
                   </p>
                   <p style="margin-bottom: 5px; font-size: 16px;">
@@ -142,8 +151,8 @@ export async function enquiry_reply(details: MailDetailsEnquiry) {
 }
 
 export async function receipt_upload(details: MailDetailsReceipt & { courseName: string; studentId: string }) {
-    const { name, email, courseFees, regFees, courseName, studentId } = details;
-  
+    const { name, email, courseFees, regFees, first_installment, second_installment, third_installment, courseName, studentId } = details;
+
     const subject = `Upload Your Fee Payment Receipt - ${courseName}`;
     const uploadLink = `${DOMAIN}/receipt_upload/${studentId}`;
   
@@ -153,6 +162,9 @@ Your registration for ${courseName} has been verified and you can now proceed wi
 Fee Details:
 Registration Fee: ₹${regFees || 'N/A'}
 Course Fee: ₹${courseFees || 'N/A'}
+First Installment: ₹${first_installment || 'N/A'}
+Second Installment: ₹${second_installment || 'N/A'}
+Third Installment: ₹${third_installment || 'N/A'}
 
 Kindly upload your payment receipt using the following link:
 ${uploadLink}
@@ -205,6 +217,9 @@ Thank you.`;
                     <ul>
                       <li>Registration Fee: ₹${regFees}</li>
                       <li>Course Fee: ₹${courseFees}</li>
+                      <li>First Installment: ₹${first_installment}</li>
+                      <li>Second Installment: ₹${second_installment}</li>
+                      <li>Third Installment: ₹${third_installment}</li>
                     </ul>
                   </p>
                   <p style="margin-bottom: 5px; font-size: 16px;">

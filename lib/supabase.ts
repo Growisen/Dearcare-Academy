@@ -259,7 +259,7 @@ export const getCourseDetails = async (courseName: string) => {
   try {
     const { data, error } = await supabase
       .from('academy_courses')
-      .select('course_name, course_fees, reg_fees')
+      .select('course_name, course_fees, reg_fees, first_installment, second_installment, third_installment')
       .eq('course_name', courseName)
       .single();
 
