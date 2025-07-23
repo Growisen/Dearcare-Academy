@@ -5,7 +5,7 @@ import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 interface PasswordUpdateFormProps {
-  userId: number;
+  userId: number | string;
   userType: 'student' | 'supervisor';
 }
 

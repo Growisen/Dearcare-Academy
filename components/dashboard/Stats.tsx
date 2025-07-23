@@ -1,6 +1,6 @@
 import { Card } from "../ui/card"
 import { CountUp } from "use-count-up"
-import { Users, GraduationCap, BookOpen, Trophy } from "lucide-react"
+import { Users, GraduationCap, BookOpen, Trophy, LucideIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { getDashboardStats } from "@/lib/supabase"
 
@@ -13,8 +13,6 @@ interface Stat {
   bgColor: string;
   iconColor: string;
 }
-
-import { LucideIcon } from "lucide-react";
 
 export default function Stats() {
   const [statsData, setStatsData] = useState({

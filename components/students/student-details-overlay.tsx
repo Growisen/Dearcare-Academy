@@ -17,6 +17,8 @@ interface StudentDetailsProps {
     service: string;
     course: string;
     register_no?: string;
+    batch?: string;
+    roll_no?: number;
     requestDate: string;
     location: string;
     dateOfBirth: string;
@@ -405,7 +407,17 @@ export function StudentDetailsOverlay({ student, onClose }: StudentDetailsProps)
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">          <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Request Details</h2>
-              <p className="text-sm text-gray-500">Register No: {currentStudent.register_no || currentStudent.id}</p>
+              <div className="space-y-1">
+                <p className="text-sm text-gray-500">Register No: {currentStudent.register_no || currentStudent.id}</p>
+                {currentStudent.batch && (
+                  <p className="text-sm text-gray-500">
+                    Batch: <span className="font-medium text-blue-600">{currentStudent.batch}</span>
+                    {currentStudent.roll_no && (
+                      <span className="ml-3">Roll No: <span className="font-medium text-blue-600">{currentStudent.roll_no}</span></span>
+                    )}
+                  </p>
+                )}
+              </div>
             </div>            <div className="flex items-center gap-3">
               {!['confirmed', 'rejected'].includes(status) && ( // Use the status variable with default value
                 <>
