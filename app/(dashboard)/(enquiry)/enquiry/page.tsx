@@ -5,7 +5,7 @@ import { getVisibleEnquiries, hideEnquiry } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { EnquiryRecord } from '@/types/enquiry.types';
 import { 
-  Eye, EyeOff, User, Mail, Phone, GraduationCap, Calendar, MapPin, 
+  Eye, EyeOff, User, Mail, Phone, GraduationCap, Calendar, 
   Users, Filter, Download, RefreshCw, Search,
   UserCheck, Clock, TrendingUp, BookOpen
 } from 'lucide-react';
