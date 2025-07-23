@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+interface AttendanceUpdateData {
+  fn_theory?: boolean;
+  an_theory?: boolean;
+  fn_practical?: boolean;
+  an_practical?: boolean;
+}
+
+interface AttendanceInsertData {
+  student_id: number;
+  date: string;
+  fn_theory: boolean;
+  an_theory: boolean;
+  fn_practical: boolean;
+  an_practical: boolean;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -102,11 +118,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { supervisorId, studentId, date, present } = body;
+    const { supervisorId, studentId, date, session, type, isPresent } = body;
 
-    if (!supervisorId || !studentId || !date || present === undefined) {
+    if (!supervisorId || !studentId || !date || !session || !type || isPresent === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields: supervisorId, studentId, date, present' },
+        { error: 'Missing required fields: supervisorId, studentId, date, session, type, isPresent' },
         { status: 400 }
       );
     }
@@ -114,7 +130,7 @@ export async function POST(request: NextRequest) {
     // Check if attendance record already exists
     const { data: existing, error: checkError } = await supabase
       .from('academy_student_attendance')
-      .select('id')
+      .select('*')
       .eq('student_id', studentId)
       .eq('date', date)
       .single();
@@ -124,11 +140,42 @@ export async function POST(request: NextRequest) {
     }
 
     let result;
+    
     if (existing) {
       // Update existing record
+      const updateData: AttendanceUpdateData = {};
+      
+      // Set the specific field based on session and type
+      if (session === 'fn' && type === 'theory') {
+        updateData.fn_theory = isPresent;
+      } else if (session === 'fn' && type === 'practical') {
+        updateData.fn_practical = isPresent;
+      } else if (session === 'an' && type === 'theory') {
+        updateData.an_theory = isPresent;
+      } else if (session === 'an' && type === 'practical') {
+        updateData.an_practical = isPresent;
+      }
+      
+      // Implement mutual exclusion logic
+      if (isPresent) {
+        if (session === 'fn') {
+          if (type === 'theory') {
+            updateData.fn_practical = false;
+          } else {
+            updateData.fn_theory = false;
+          }
+        } else {
+          if (type === 'theory') {
+            updateData.an_practical = false;
+          } else {
+            updateData.an_theory = false;
+          }
+        }
+      }
+      
       const { data, error } = await supabase
         .from('academy_student_attendance')
-        .update({ present })
+        .update(updateData)
         .eq('id', existing.id)
         .select();
 
@@ -136,13 +183,46 @@ export async function POST(request: NextRequest) {
       result = data[0];
     } else {
       // Create new record
+      const insertData: AttendanceInsertData = {
+        student_id: studentId,
+        date,
+        fn_theory: false,
+        an_theory: false,
+        fn_practical: false,
+        an_practical: false
+      };
+      
+      // Set the specific field based on session and type
+      if (session === 'fn' && type === 'theory') {
+        insertData.fn_theory = isPresent;
+      } else if (session === 'fn' && type === 'practical') {
+        insertData.fn_practical = isPresent;
+      } else if (session === 'an' && type === 'theory') {
+        insertData.an_theory = isPresent;
+      } else if (session === 'an' && type === 'practical') {
+        insertData.an_practical = isPresent;
+      }
+      
+      // Implement mutual exclusion logic for new records
+      if (isPresent) {
+        if (session === 'fn') {
+          if (type === 'theory') {
+            insertData.fn_practical = false;
+          } else {
+            insertData.fn_theory = false;
+          }
+        } else {
+          if (type === 'theory') {
+            insertData.an_practical = false;
+          } else {
+            insertData.an_theory = false;
+          }
+        }
+      }
+
       const { data, error } = await supabase
         .from('academy_student_attendance')
-        .insert({
-          student_id: studentId,
-          date,
-          present
-        })
+        .insert(insertData)
         .select();
 
       if (error) throw error;

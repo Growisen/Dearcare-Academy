@@ -34,20 +34,36 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
-    // Calculate statistics
-    const totalClasses = attendanceRecords?.length || 0;
-    const attendedClasses = attendanceRecords?.filter(record => record.present).length || 0;
-    const absentClasses = totalClasses - attendedClasses;
-    const attendancePercentage = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
+    // Calculate statistics based on new structure
+    const totalSessions = attendanceRecords?.reduce((total, record) => {
+      let sessionCount = 0;
+      if (record.fn_theory !== null) sessionCount++;
+      if (record.fn_practical !== null) sessionCount++;
+      if (record.an_theory !== null) sessionCount++;
+      if (record.an_practical !== null) sessionCount++;
+      return total + sessionCount;
+    }, 0) || 0;
+    
+    const attendedSessions = attendanceRecords?.reduce((total, record) => {
+      let attendedCount = 0;
+      if (record.fn_theory === true) attendedCount++;
+      if (record.fn_practical === true) attendedCount++;
+      if (record.an_theory === true) attendedCount++;
+      if (record.an_practical === true) attendedCount++;
+      return total + attendedCount;
+    }, 0) || 0;
+    
+    const absentSessions = totalSessions - attendedSessions;
+    const attendancePercentage = totalSessions > 0 ? (attendedSessions / totalSessions) * 100 : 0;
 
     return NextResponse.json({
       success: true,
       data: {
         records: attendanceRecords || [],
         statistics: {
-          totalClasses,
-          attendedClasses,
-          absentClasses,
+          totalSessions,
+          attendedSessions,
+          absentSessions,
           attendancePercentage: Math.round(attendancePercentage * 100) / 100
         },
         period: {
