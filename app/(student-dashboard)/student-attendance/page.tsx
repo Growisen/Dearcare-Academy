@@ -54,23 +54,25 @@ export default function StudentAttendance() {
 
       setAttendanceRecords(filteredData);
 
-      // Calculate stats based on new structure
+      // Calculate stats based on correct session structure
+      // Each day has max 2 sessions: FN (Forenoon) and AN (Afternoon)
       const totalSessions = filteredData.reduce((total, record) => {
-        // Count each session that has been marked (either true or false)
         let sessionCount = 0;
-        if (record.fn_theory !== null && record.fn_theory !== undefined) sessionCount++;
-        if (record.fn_practical !== null && record.fn_practical !== undefined) sessionCount++;
-        if (record.an_theory !== null && record.an_theory !== undefined) sessionCount++;
-        if (record.an_practical !== null && record.an_practical !== undefined) sessionCount++;
+        // Count FN session if either theory or practical is marked
+        if (record.fn_theory !== null && record.fn_theory !== undefined || 
+            record.fn_practical !== null && record.fn_practical !== undefined) sessionCount++;
+        // Count AN session if either theory or practical is marked  
+        if (record.an_theory !== null && record.an_theory !== undefined || 
+            record.an_practical !== null && record.an_practical !== undefined) sessionCount++;
         return total + sessionCount;
       }, 0);
       
       const attendedSessions = filteredData.reduce((total, record) => {
         let attendedCount = 0;
-        if (record.fn_theory === true) attendedCount++;
-        if (record.fn_practical === true) attendedCount++;
-        if (record.an_theory === true) attendedCount++;
-        if (record.an_practical === true) attendedCount++;
+        // Count FN session as attended if theory OR practical is true
+        if (record.fn_theory === true || record.fn_practical === true) attendedCount++;
+        // Count AN session as attended if theory OR practical is true
+        if (record.an_theory === true || record.an_practical === true) attendedCount++;
         return total + attendedCount;
       }, 0);
       

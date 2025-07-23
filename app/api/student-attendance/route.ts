@@ -34,22 +34,24 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
-    // Calculate statistics based on new structure
+    // Calculate statistics based on correct session structure
+    // Each day has max 2 sessions: FN (Forenoon) and AN (Afternoon)
+    // Each session can be either Theory OR Practical
     const totalSessions = attendanceRecords?.reduce((total, record) => {
       let sessionCount = 0;
-      if (record.fn_theory !== null) sessionCount++;
-      if (record.fn_practical !== null) sessionCount++;
-      if (record.an_theory !== null) sessionCount++;
-      if (record.an_practical !== null) sessionCount++;
+      // Count FN session if either theory or practical is marked
+      if (record.fn_theory !== null || record.fn_practical !== null) sessionCount++;
+      // Count AN session if either theory or practical is marked
+      if (record.an_theory !== null || record.an_practical !== null) sessionCount++;
       return total + sessionCount;
     }, 0) || 0;
     
     const attendedSessions = attendanceRecords?.reduce((total, record) => {
       let attendedCount = 0;
-      if (record.fn_theory === true) attendedCount++;
-      if (record.fn_practical === true) attendedCount++;
-      if (record.an_theory === true) attendedCount++;
-      if (record.an_practical === true) attendedCount++;
+      // Count FN session as attended if theory OR practical is true
+      if (record.fn_theory === true || record.fn_practical === true) attendedCount++;
+      // Count AN session as attended if theory OR practical is true
+      if (record.an_theory === true || record.an_practical === true) attendedCount++;
       return total + attendedCount;
     }, 0) || 0;
     

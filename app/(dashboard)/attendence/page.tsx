@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { toast } from 'react-hot-toast';
+import { Eye } from 'lucide-react';
+import StudentAttendanceInsight from '@/components/attendance/StudentAttendanceInsight';
 
 // interface Student {
 //   id: number;
@@ -65,6 +67,15 @@ export default function AttendancePage() {
   const [saveStatus, setSaveStatus] = useState(false); // Track save status
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  
+  // Insight modal state
+  const [insightModalOpen, setInsightModalOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+
+  const openInsightModal = (studentId: number) => {
+    setSelectedStudentId(studentId);
+    setInsightModalOpen(true);
+  };
 
   // Fetch students dynamically from the "students" and "student_source" tables
   useEffect(() => {
@@ -344,11 +355,12 @@ export default function AttendancePage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {Object.values(attendance).reduce((total, a) => {
                     if (!a) return total;
-                    return total + 
-                      (a.fn_theory === true ? 1 : 0) +
-                      (a.fn_practical === true ? 1 : 0) +
-                      (a.an_theory === true ? 1 : 0) +
-                      (a.an_practical === true ? 1 : 0);
+                    let sessionsAttended = 0;
+                    // Count FN session as attended if theory OR practical is true
+                    if (a.fn_theory === true || a.fn_practical === true) sessionsAttended++;
+                    // Count AN session as attended if theory OR practical is true
+                    if (a.an_theory === true || a.an_practical === true) sessionsAttended++;
+                    return total + sessionsAttended;
                   }, 0)}
                 </p>
               </div>
@@ -402,6 +414,13 @@ export default function AttendancePage() {
                           <div className="text-sm text-gray-500">({student.register_no})</div>
                         )}
                       </div>
+                      <Button
+                        onClick={() => openInsightModal(student.student_id)}
+                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>View Insights</span>
+                      </Button>
                     </div>
                     
                     {/* Forenoon Sessions */}
@@ -566,6 +585,18 @@ export default function AttendancePage() {
           </Button>
         )}
       </div>
+      
+      {/* Student Attendance Insight Modal */}
+      {selectedStudentId && (
+        <StudentAttendanceInsight
+          studentId={selectedStudentId}
+          isOpen={insightModalOpen}
+          onClose={() => {
+            setInsightModalOpen(false);
+            setSelectedStudentId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { getUserSession } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
-import { Calendar, Users, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Calendar, Users, CheckCircle, XCircle, Clock, Eye } from "lucide-react";
+import StudentAttendanceInsight from '@/components/attendance/StudentAttendanceInsight';
 
 interface AttendanceRecord {
   id: number;
@@ -45,6 +46,15 @@ export default function SupervisorAttendance() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  
+  // Insight modal state
+  const [insightModalOpen, setInsightModalOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+
+  const openInsightModal = (studentId: number) => {
+    setSelectedStudentId(studentId);
+    setInsightModalOpen(true);
+  };
 
   useEffect(() => {
     const initializeData = async () => {
@@ -245,9 +255,14 @@ export default function SupervisorAttendance() {
             <div>
               <p className="text-sm text-gray-500">Sessions Attended</p>
               <p className="text-xl font-bold text-gray-900">
-                {attendanceRecords.reduce((count, r) => 
-                  count + (r.fn_theory ? 1 : 0) + (r.an_theory ? 1 : 0) + (r.fn_practical ? 1 : 0) + (r.an_practical ? 1 : 0), 0
-                )}
+                {attendanceRecords.reduce((count, r) => {
+                  let sessionsAttended = 0;
+                  // Count FN session as attended if theory OR practical is true
+                  if (r.fn_theory === true || r.fn_practical === true) sessionsAttended++;
+                  // Count AN session as attended if theory OR practical is true
+                  if (r.an_theory === true || r.an_practical === true) sessionsAttended++;
+                  return count + sessionsAttended;
+                }, 0)}
               </p>
             </div>
           </div>
@@ -297,14 +312,23 @@ export default function SupervisorAttendance() {
             return (
               <div key={`attendance-${student.id}-${index}-${student.register_no || student.name || 'unknown'}`} className="p-6 hover:bg-gray-50">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Users className="w-5 h-5 text-blue-600" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Users className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">{student.name}</h3>
+                        <p className="text-sm text-gray-500">{student.register_no} • {student.course}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">{student.name}</h3>
-                      <p className="text-sm text-gray-500">{student.register_no} • {student.course}</p>
-                    </div>
+                    <button
+                      onClick={() => openInsightModal(student.id)}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="View Student Attendance Insights"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
                   </div>
                   
                   {/* Forenoon Sessions */}
@@ -452,6 +476,18 @@ export default function SupervisorAttendance() {
           </div>
         )}
       </div>
+      
+      {/* Student Attendance Insight Modal */}
+      {selectedStudentId && (
+        <StudentAttendanceInsight
+          studentId={selectedStudentId}
+          isOpen={insightModalOpen}
+          onClose={() => {
+            setInsightModalOpen(false);
+            setSelectedStudentId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
