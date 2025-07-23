@@ -82,7 +82,8 @@ export default function EnquiryPage() {
   const handleExportData = () => {
     const csvContent = [
       // Header
-      ['ID', 'Date', 'Name', 'Email', 'Phone', 'Course', 'Age', 'Gender', 'Address', 'Guardian', 'Qualification', 'Year of Passing', 'Religion', 'Caste', 'Aadhaar'],
+      //['ID', 'Date', 'Name', 'Email', 'Phone', 'Course', 'Age', 'Gender', 'Address', 'Guardian', 'Qualification', 'Year of Passing', 'Religion', 'Caste', 'Aadhaar'],
+      ['ID', 'Date', 'Name', 'Email', 'Phone', 'Course', 'Age', 'Gender', 'Message'],
       // Data
       ...filteredEnquiries.map(enquiry => [
         enquiry.id,
@@ -93,13 +94,14 @@ export default function EnquiryPage() {
         enquiry.course,
         enquiry.age || '',
         enquiry.gender || '',
-        enquiry.address || '',
-        enquiry.guardian_name || '',
-        enquiry.highest_qualification || '',
-        enquiry.year_of_passing || '',
-        enquiry.religion || '',
-        enquiry.caste || '',
-        enquiry.aadhaar_no || ''
+        // enquiry.address || '',
+        // enquiry.guardian_name || '',
+        // enquiry.highest_qualification || '',
+        // enquiry.year_of_passing || '',
+        // enquiry.religion || '',
+        // enquiry.caste || '',
+        // enquiry.aadhaar_no || ''
+        enquiry.message || ''
       ])
     ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
 
@@ -118,8 +120,9 @@ export default function EnquiryPage() {
   const filteredEnquiries = enquiries.filter(enquiry => {
     const matchesSearch = enquiry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          enquiry.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         enquiry.phone_no.includes(searchTerm) ||
-                         (enquiry.guardian_name && enquiry.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()));
+                         enquiry.phone_no.includes(searchTerm);
+                        // enquiry.phone_no.includes(searchTerm) ||
+                        // (enquiry.guardian_name && enquiry.guardian_name.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesCourse = courseFilter === '' || enquiry.course === courseFilter;
     
@@ -154,7 +157,8 @@ export default function EnquiryPage() {
   const todayEnquiries = enquiries.filter(e => new Date(e.created_at).toDateString() === new Date().toDateString()).length;
   const weekEnquiries = enquiries.filter(e => new Date(e.created_at) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
   const avgAge = enquiries.filter(e => e.age).reduce((acc, e) => acc + (e.age || 0), 0) / enquiries.filter(e => e.age).length || 0;
-  const completedProfiles = enquiries.filter(e => e.age && e.dob && e.address && e.gender).length;
+  //const completedProfiles = enquiries.filter(e => e.age && e.dob && e.address && e.gender).length;
+  const completedProfiles = enquiries.filter(e => e.age && e.gender).length;
 
   if (error && !loading) {
     return (
@@ -419,9 +423,9 @@ export default function EnquiryPage() {
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">{enquiry.name}</div>
-                              {enquiry.guardian_name && (
+                              {/* {enquiry.guardian_name && (
                                 <div className="text-sm text-gray-500">Guardian: {enquiry.guardian_name}</div>
-                              )}
+                              )} */}
                               {enquiry.gender && (
                                 <div className="text-xs text-gray-400">{enquiry.gender}</div>
                               )}
@@ -442,9 +446,9 @@ export default function EnquiryPage() {
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             {enquiry.course}
                           </span>
-                          {enquiry.highest_qualification && (
+                          {/* {enquiry.highest_qualification && (
                             <div className="text-xs text-gray-500 mt-1">{enquiry.highest_qualification}</div>
-                          )}
+                          )} */}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col space-y-1">
@@ -453,14 +457,14 @@ export default function EnquiryPage() {
                                 Age: {enquiry.age}
                               </span>
                             )}
-                            {enquiry.dob && (
+                            {/* {enquiry.dob && (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
                                 DOB: {new Date(enquiry.dob).toLocaleDateString()}
                               </span>
-                            )}
-                            {(!enquiry.age && !enquiry.dob) && (
+                            )} */}
+                            {/* {(!enquiry.age && !enquiry.dob) && (
                               <span className="text-xs text-gray-400">Incomplete</span>
-                            )}
+                            )} */}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -589,22 +593,22 @@ export default function EnquiryPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                        <p className="text-sm text-gray-900 bg-white p-2 rounded border">
+                        {/* <p className="text-sm text-gray-900 bg-white p-2 rounded border">
                           {selectedEnquiry.dob ? formatDateDMY(selectedEnquiry.dob) : 'Not provided'}
-                        </p>
+                        </p> */}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.gender || 'Not provided'}</p>
                       </div>
-                      <div>
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Religion</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.religion || 'Not provided'}</p>
-                      </div>
-                      <div>
+                      </div> */}
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Caste</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.caste || 'Not provided'}</p>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
 
@@ -629,13 +633,13 @@ export default function EnquiryPage() {
                           <p className="text-sm text-gray-900 bg-white p-2 rounded border flex-1">{selectedEnquiry.phone_no}</p>
                         </div>
                       </div>
-                      <div>
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                         <div className="flex items-start">
                           <MapPin className="w-4 h-4 mr-2 text-gray-400 mt-2" />
                           <p className="text-sm text-gray-900 bg-white p-2 rounded border flex-1">{selectedEnquiry.address || 'Not provided'}</p>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 </div>
@@ -657,14 +661,14 @@ export default function EnquiryPage() {
                           </span>
                         </div>
                       </div>
-                      <div>
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Highest Qualification</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.highest_qualification || 'Not provided'}</p>
-                      </div>
-                      <div>
+                      </div> */}
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Year of Passing</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.year_of_passing || 'Not provided'}</p>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
 
@@ -675,16 +679,16 @@ export default function EnquiryPage() {
                       Additional Information
                     </h4>
                     <div className="space-y-4">
-                      <div>
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Guardian Name</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.guardian_name || 'Not provided'}</p>
-                      </div>
-                      <div>
+                      </div> */}
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Aadhaar Number</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">
                           {selectedEnquiry.aadhaar_no ? `**** **** ${selectedEnquiry.aadhaar_no.slice(-4)}` : 'Not provided'}
                         </p>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
 
@@ -697,11 +701,12 @@ export default function EnquiryPage() {
                     <div className="space-y-2">
                       {[
                         { label: 'Basic Info', completed: !!(selectedEnquiry.name && selectedEnquiry.email && selectedEnquiry.phone_no) },
-                        { label: 'Personal Details', completed: !!(selectedEnquiry.age && selectedEnquiry.dob && selectedEnquiry.gender) },
-                        { label: 'Address', completed: !!selectedEnquiry.address },
-                        { label: 'Education', completed: !!selectedEnquiry.highest_qualification },
-                        { label: 'Guardian Info', completed: !!selectedEnquiry.guardian_name },
-                        { label: 'Identity', completed: !!selectedEnquiry.aadhaar_no }
+                        // { label: 'Personal Details', completed: !!(selectedEnquiry.age && selectedEnquiry.dob && selectedEnquiry.gender) },
+                        { label: 'Personal Details', completed: !!(selectedEnquiry.age && selectedEnquiry.gender) },
+                        // { label: 'Address', completed: !!selectedEnquiry.address },
+                        // { label: 'Education', completed: !!selectedEnquiry.highest_qualification },
+                        // { label: 'Guardian Info', completed: !!selectedEnquiry.guardian_name },
+                        // { label: 'Identity', completed: !!selectedEnquiry.aadhaar_no }
                       ].map((item, index) => (
                         <div key={index} className="flex items-center justify-between">
                           <span className="text-sm text-gray-700">{item.label}</span>
