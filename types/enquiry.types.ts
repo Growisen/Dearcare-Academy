@@ -4,15 +4,16 @@ export type EnquiryFormData = {
   phone_no: string;
   course: string;
   age?: number;
-  dob?: string;
-  address?: string;
+  // dob?: string;
+  // address?: string;
   gender?: string;
-  religion?: string;
-  caste?: string;
-  aadhaar_no?: string;
-  guardian_name?: string;
-  highest_qualification?: string;
-  year_of_passing?: number;
+  // religion?: string;
+  // caste?: string;
+  // aadhaar_no?: string;
+  // guardian_name?: string;
+  // highest_qualification?: string;
+  // year_of_passing?: number;
+  message?: string;
 };
 
 export type EnquiryRecord = {
@@ -22,17 +23,18 @@ export type EnquiryRecord = {
   email: string;
   phone_no: string;
   course: string;
-  hide?: boolean;
+  // hide?: boolean;
   age?: number;
-  dob?: string;
-  address?: string;
+  // dob?: string;
+  // address?: string;
   gender?: string;
-  religion?: string;
-  caste?: string;
-  aadhaar_no?: string;
-  guardian_name?: string;
-  highest_qualification?: string;
-  year_of_passing?: number;
+  // religion?: string;
+  // caste?: string;
+  // aadhaar_no?: string;
+  // guardian_name?: string;
+  // highest_qualification?: string;
+  // year_of_passing?: number;
+  message?: string;
 };
 
 export type CoursesDB = {

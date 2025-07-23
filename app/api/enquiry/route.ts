@@ -42,12 +42,12 @@ export async function POST(request: Request) {
     }
 
     // Validate Aadhaar number format if provided
-    if (body.aadhaar_no && !/^[0-9]{12}$/.test(body.aadhaar_no.replace(/\D/g, ''))) {
-      return NextResponse.json(
-        { error: 'Aadhaar number must be exactly 12 digits' },
-        { status: 400 }
-      );
-    }
+    // if (body.aadhaar_no && !/^[0-9]{12}$/.test(body.aadhaar_no.replace(/\D/g, ''))) {
+    //   return NextResponse.json(
+    //     { error: 'Aadhaar number must be exactly 12 digits' },
+    //     { status: 400 }
+    //   );
+    // }
 
     // Fetch valid courses and validate
     const { data: validCourses, error: coursesError } = await getCourses();
@@ -83,15 +83,16 @@ export async function POST(request: Request) {
       phone_no: body.phone_no.trim(),
       course: body.course,
       age: body.age ? parseInt(body.age) : undefined,
-      dob: body.dob || undefined,
-      address: body.address?.trim() || undefined,
+      // dob: body.dob || undefined,
+      // address: body.address?.trim() || undefined,
       gender: body.gender || undefined,
-      religion: body.religion?.trim() || undefined,
-      caste: body.caste?.trim() || undefined,
-      aadhaar_no: body.aadhaar_no?.trim() || undefined,
-      guardian_name: body.guardian_name?.trim() || undefined,
-      highest_qualification: body.highest_qualification?.trim() || undefined,
-      year_of_passing: body.year_of_passing ? parseInt(body.year_of_passing) : undefined,
+      // religion: body.religion?.trim() || undefined,
+      // caste: body.caste?.trim() || undefined,
+      // aadhaar_no: body.aadhaar_no?.trim() || undefined,
+      // guardian_name: body.guardian_name?.trim() || undefined,
+      // highest_qualification: body.highest_qualification?.trim() || undefined,
+      // year_of_passing: body.year_of_passing ? parseInt(body.year_of_passing) : undefined,
+      message: body.message?.trim() || undefined,
     };
 
     // Insert data
