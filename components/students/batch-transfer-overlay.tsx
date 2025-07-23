@@ -85,25 +85,36 @@ export function BatchTransferOverlay({ onClose, onTransfer }: BatchTransferOverl
     }
   };
 
-  const getNextRollNumber = async (batch: string, course: string): Promise<number> => {
+  const getNextAvailableRollNumbers = async (batch: string, course: string, count: number): Promise<number[]> => {
     try {
+      // Get all existing roll numbers for this batch and course
       const { data, error } = await supabase
         .from('students')
         .select('roll_no')
         .eq('batch', batch)
         .eq('course', course)
-        .order('roll_no', { ascending: false })
-        .limit(1);
+        .not('roll_no', 'is', null)
+        .order('roll_no', { ascending: true });
 
       if (error) throw error;
       
-      if (data && data.length > 0 && data[0].roll_no) {
-        return data[0].roll_no + 1;
+      const existingRollNumbers = new Set((data || []).map(student => student.roll_no));
+      const availableRollNumbers: number[] = [];
+      
+      let currentRoll = 1;
+      while (availableRollNumbers.length < count) {
+        if (!existingRollNumbers.has(currentRoll)) {
+          availableRollNumbers.push(currentRoll);
+        }
+        currentRoll++;
       }
-      return 1;
+      
+      return availableRollNumbers;
     } catch (error) {
-      console.error('Error getting next roll number:', error);
-      return 1;
+      console.error('Error getting available roll numbers:', error);
+      // Fallback: return sequential numbers starting from a high number
+      const fallbackStart = 1000 + Math.floor(Math.random() * 1000);
+      return Array.from({ length: count }, (_, i) => fallbackStart + i);
     }
   };
 
@@ -163,14 +174,18 @@ export function BatchTransferOverlay({ onClose, onTransfer }: BatchTransferOverl
 
       // Transfer students and assign new roll numbers
       for (const [course, courseStudents] of studentsByCourse) {
-        let nextRollNo = await getNextRollNumber(toBatch, course);
+        // Get available roll numbers for this course in the destination batch
+        const availableRollNumbers = await getNextAvailableRollNumbers(toBatch, course, courseStudents.length);
         
-        for (const student of courseStudents) {
+        for (let i = 0; i < courseStudents.length; i++) {
+          const student = courseStudents[i];
+          const newRollNo = availableRollNumbers[i];
+          
           const { error } = await supabase
             .from('students')
             .update({
               batch: toBatch,
-              roll_no: nextRollNo
+              roll_no: newRollNo
             })
             .eq('id', student.id);
 
@@ -178,14 +193,22 @@ export function BatchTransferOverlay({ onClose, onTransfer }: BatchTransferOverl
             console.error(`Error transferring student ${student.id}:`, error);
             throw error;
           }
-          
-          nextRollNo++;
         }
       }
 
       toast.success(`Successfully transferred ${selectedStudents.size} student(s) from Batch ${fromBatch} to Batch ${toBatch}`);
+      
+      // Reset the form state
+      setSelectedStudents(new Set());
+      setFromBatch('');
+      setToBatch('');
+      setSearchTerm('');
+      
+      // Refresh the students list
+      await fetchAssignedStudents();
+      
+      // Call the parent callback
       onTransfer();
-      onClose();
     } catch (error) {
       console.error('Error transferring students:', error);
       toast.error('Failed to transfer students. Please try again.');
@@ -384,7 +407,7 @@ export function BatchTransferOverlay({ onClose, onTransfer }: BatchTransferOverl
                 onClick={onClose}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                Cancel
+                Close
               </button>
               <button
                 onClick={handleTransferBatch}

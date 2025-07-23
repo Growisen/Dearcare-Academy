@@ -51,25 +51,36 @@ export function AssignBatchOverlay({ onClose, onAssign }: AssignBatchOverlayProp
     }
   };
 
-  const getNextRollNumber = async (batch: string, course: string): Promise<number> => {
+  const getNextAvailableRollNumbers = async (batch: string, course: string, count: number): Promise<number[]> => {
     try {
+      // Get all existing roll numbers for this batch and course
       const { data, error } = await supabase
         .from('students')
         .select('roll_no')
         .eq('batch', batch)
         .eq('course', course)
-        .order('roll_no', { ascending: false })
-        .limit(1);
+        .not('roll_no', 'is', null)
+        .order('roll_no', { ascending: true });
 
       if (error) throw error;
       
-      if (data && data.length > 0 && data[0].roll_no) {
-        return data[0].roll_no + 1;
+      const existingRollNumbers = new Set((data || []).map(student => student.roll_no));
+      const availableRollNumbers: number[] = [];
+      
+      let currentRoll = 1;
+      while (availableRollNumbers.length < count) {
+        if (!existingRollNumbers.has(currentRoll)) {
+          availableRollNumbers.push(currentRoll);
+        }
+        currentRoll++;
       }
-      return 1; // Start from 1 if no students in this batch/course combination
+      
+      return availableRollNumbers;
     } catch (error) {
-      console.error('Error getting next roll number:', error);
-      return 1;
+      console.error('Error getting available roll numbers:', error);
+      // Fallback: return sequential numbers starting from a high number
+      const fallbackStart = 1000 + Math.floor(Math.random() * 1000);
+      return Array.from({ length: count }, (_, i) => fallbackStart + i);
     }
   };
 
@@ -119,14 +130,18 @@ export function AssignBatchOverlay({ onClose, onAssign }: AssignBatchOverlayProp
 
       // Assign batch and roll numbers
       for (const [course, courseStudents] of studentsByTourse) {
-        let nextRollNo = await getNextRollNumber(selectedBatch, course);
+        // Get available roll numbers for this course in the selected batch
+        const availableRollNumbers = await getNextAvailableRollNumbers(selectedBatch, course, courseStudents.length);
         
-        for (const student of courseStudents) {
+        for (let i = 0; i < courseStudents.length; i++) {
+          const student = courseStudents[i];
+          const newRollNo = availableRollNumbers[i];
+          
           const { error } = await supabase
             .from('students')
             .update({
               batch: selectedBatch,
-              roll_no: nextRollNo
+              roll_no: newRollNo
             })
             .eq('id', student.id);
 
@@ -134,14 +149,21 @@ export function AssignBatchOverlay({ onClose, onAssign }: AssignBatchOverlayProp
             console.error(`Error updating student ${student.id}:`, error);
             throw error;
           }
-          
-          nextRollNo++;
         }
       }
 
       toast.success(`Successfully assigned ${selectedStudents.size} student(s) to batch ${selectedBatch}`);
+      
+      // Reset the form state
+      setSelectedStudents(new Set());
+      setSelectedBatch('');
+      setSearchTerm('');
+      
+      // Refresh the students list
+      await fetchUnassignedStudents();
+      
+      // Call the parent callback
       onAssign();
-      onClose();
     } catch (error) {
       console.error('Error assigning batch:', error);
       toast.error('Failed to assign batch. Please try again.');
@@ -297,7 +319,7 @@ export function AssignBatchOverlay({ onClose, onAssign }: AssignBatchOverlayProp
                 onClick={onClose}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                Cancel
+                Close
               </button>
               <button
                 onClick={handleAssignBatch}
