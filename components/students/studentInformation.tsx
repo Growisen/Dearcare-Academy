@@ -12,6 +12,8 @@ interface ClientInformationProps {
     email: string;
     phone: string;
     register_no?: string;
+    batch?: string;
+    roll_no?: number;
     //service: string;
    // requestDate: string;
     //location: string;
@@ -871,6 +873,29 @@ export function ClientInformation({ studentId, initialData }: ClientInformationP
                   </div>
                 )}
               </div>
+              
+              {/* Batch and Roll Number Display */}
+              {(client.batch || client.roll_no) && (
+                <div className="space-y-2 col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Batch Information</label>
+                  <div className="px-4 py-2.5 text-sm text-gray-800 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex flex-wrap gap-4">
+                      {client.batch && (
+                        <span>
+                          <span className="font-medium text-blue-700">Batch:</span>{' '}
+                          <span className="font-semibold">{client.batch}</span>
+                        </span>
+                      )}
+                      {client.roll_no && (
+                        <span>
+                          <span className="font-medium text-blue-700">Roll No:</span>{' '}
+                          <span className="font-semibold">{client.roll_no}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               <InfoItem 
                 label="Date of Birth" 
                 value={client.dateOfBirth} 

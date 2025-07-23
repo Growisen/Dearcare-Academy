@@ -8,6 +8,8 @@ export interface Student {
   enrollmentDate: string;
   location: string;
   register_no?: string;
+  batch?: string;
+  roll_no?: number;
 }
 
 export interface DatabaseStudent {
@@ -22,6 +24,8 @@ export interface DatabaseStudent {
   status?: string;
   city?: string;
   state?: string;
+  batch?: string;
+  roll_no?: number;
   student_source?: {
     status: string;
     priority: string;
@@ -66,6 +70,8 @@ export interface StudentRecord {
   disability_details: string;
   noc_status: string;
   payment_receipt?: boolean;
+  batch?: string;
+  roll_no?: number;
 }
 
 export type StudentInsertData = Omit<StudentRecord, 'id' | 'created_at'>;

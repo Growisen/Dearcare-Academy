@@ -2,10 +2,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../../lib/supabase";
 import { useRouter } from "next/navigation";
-import { Search, CheckCircle, Clock, User, XCircle } from "lucide-react";
+import { Search, CheckCircle, Clock, User, XCircle, Users, ArrowUpDown } from "lucide-react";
 import { Input } from "../../../../components/ui/input";
 import { AddStudentOverlay } from "../../../../components/students/add-student-overlay";
 import { StudentDetailsOverlay } from "../../../../components/students/student-details-overlay";
+import { AssignBatchOverlay } from "../../../../components/students/assign-batch-overlay";
+import { BatchTransferOverlay } from "../../../../components/students/batch-transfer-overlay";
 import { StudentFormData, DatabaseStudent, Student } from "../../../../types/student.types";
 
 export default function StudentsPage() {
@@ -14,8 +16,11 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedBatch, setSelectedBatch] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAssignOverlay, setShowAssignOverlay] = useState(false);
+  const [showBatchAssignOverlay, setShowBatchAssignOverlay] = useState(false);
+  const [showBatchTransferOverlay, setShowBatchTransferOverlay] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [hasNewStudents, setHasNewStudents] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -99,12 +104,16 @@ export default function StudentsPage() {
   const filteredStudents = students.filter((student) => {
     const sourceStatus = student.student_source?.[0]?.status?.toLowerCase() || '';
     const matchesStatus = selectedStatus === "all" ? true : sourceStatus === selectedStatus;
+    const matchesBatch = selectedBatch === "all" ? true : 
+      (selectedBatch === "unassigned" ? !student.batch : student.batch === selectedBatch);
     const searchTerm = searchQuery.toLowerCase();
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm) ||
       student.email.toLowerCase().includes(searchTerm) ||
-      student.mobile?.toLowerCase().includes(searchTerm);
-    return matchesStatus && matchesSearch;
+      student.mobile?.toLowerCase().includes(searchTerm) ||
+      (student.register_no && student.register_no.toLowerCase().includes(searchTerm)) ||
+      (student.batch && student.batch.toLowerCase().includes(searchTerm));
+    return matchesStatus && matchesBatch && matchesSearch;
   });
 
   const indexOfLastStudent = currentPage * studentsPerPage;
@@ -114,7 +123,7 @@ export default function StudentsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedStatus, searchQuery]);
+  }, [selectedStatus, selectedBatch, searchQuery]);
 
   const getPreferredCourse = (preferences: Record<string, string> = {}) => {
     const interestedService = Object.entries(preferences)
@@ -207,12 +216,28 @@ export default function StudentsPage() {
                 </h1>
                 
               </div>
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                onClick={() => setShowAssignOverlay(true)}
-              >
-                Add Student
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                  onClick={() => setShowBatchAssignOverlay(true)}
+                >
+                  <Users className="h-4 w-4" />
+                  Assign Batch
+                </button>
+                <button
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2"
+                  onClick={() => setShowBatchTransferOverlay(true)}
+                >
+                  <ArrowUpDown className="h-4 w-4" />
+                  Batch Transfer
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={() => setShowAssignOverlay(true)}
+                >
+                  Add Student
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -245,6 +270,22 @@ export default function StudentsPage() {
                   )
                 )}
               </div>
+              
+              {/* Batch Filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Filter by Batch:</label>
+                <select
+                  value={selectedBatch}
+                  onChange={(e) => setSelectedBatch(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Batches</option>
+                  <option value="unassigned">Unassigned</option>
+                  <option value="A">Batch A</option>
+                  <option value="B">Batch B</option>
+                  <option value="C">Batch C</option>
+                </select>
+              </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
@@ -262,6 +303,12 @@ export default function StudentsPage() {
                         </th>
                         <th className="py-4 px-6 font-semibold text-gray-700">
                           Course
+                        </th>
+                        <th className="py-4 px-6 font-semibold text-gray-700">
+                          Batch
+                        </th>
+                        <th className="py-4 px-6 font-semibold text-gray-700">
+                          Roll No
                         </th>
                         <th className="py-4 px-6 font-semibold text-gray-700">
                           Status
@@ -290,6 +337,20 @@ export default function StudentsPage() {
                               {student.course}
                             </td>
                             <td className="py-4 px-6">
+                              {student.batch ? (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  Batch {student.batch}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                  Unassigned
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 text-gray-700">
+                              {student.roll_no || '-'}
+                            </td>
+                            <td className="py-4 px-6">
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
                                 statusColors[status as keyof typeof statusColors]
                               }`}>
@@ -315,6 +376,8 @@ export default function StudentsPage() {
                                   enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                                   location: getLocationString(student),
                                   register_no: student.register_no,
+                                  batch: student.batch,
+                                  roll_no: student.roll_no,
                                 })}
                               >
                                 View Details
@@ -359,6 +422,13 @@ export default function StudentsPage() {
                       <div className="text-sm">
                         <p className="text-gray-900">{student.email}</p>
                         <p className="text-gray-600">{student.mobile}</p>
+                        {(student.batch || student.roll_no) && (
+                          <p className="text-gray-600 mt-1">
+                            {student.batch && `Batch: ${student.batch}`}
+                            {student.batch && student.roll_no && ' • '}
+                            {student.roll_no && `Roll: ${student.roll_no}`}
+                          </p>
+                        )}
                       </div>                      <button
                         className="w-full mt-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
                         onClick={() => setSelectedStudent({
@@ -371,6 +441,8 @@ export default function StudentsPage() {
                           enrollmentDate: new Date(student.created_at).toISOString().split('T')[0],
                           location: getLocationString(student),
                           register_no: student.register_no,
+                          batch: student.batch,
+                          roll_no: student.roll_no,
                         })}
                       >
                         View Details
@@ -388,7 +460,29 @@ export default function StudentsPage() {
               onClose={() => setShowAssignOverlay(false)}
               onAssign={handleAssignStudent}
             />
-          )}          {selectedStudent && (
+          )}
+
+          {showBatchAssignOverlay && (
+            <AssignBatchOverlay
+              onClose={() => setShowBatchAssignOverlay(false)}
+              onAssign={() => {
+                setShowBatchAssignOverlay(false);
+                fetchStudents();
+              }}
+            />
+          )}
+
+          {showBatchTransferOverlay && (
+            <BatchTransferOverlay
+              onClose={() => setShowBatchTransferOverlay(false)}
+              onTransfer={() => {
+                setShowBatchTransferOverlay(false);
+                fetchStudents();
+              }}
+            />
+          )}
+
+          {selectedStudent && (
             <StudentDetailsOverlay
               student={{
                 id: selectedStudent.id,
@@ -404,6 +498,8 @@ export default function StudentsPage() {
                 age: "Not specified",
                 gender: "Not specified",
                 register_no: selectedStudent.register_no,
+                batch: selectedStudent.batch,
+                roll_no: selectedStudent.roll_no,
               }}
               onClose={() => setSelectedStudent(null)}
             />
