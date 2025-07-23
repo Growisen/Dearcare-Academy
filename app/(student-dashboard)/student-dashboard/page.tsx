@@ -72,11 +72,30 @@ export default function StudentDashboard() {
 
       if (attendanceError) throw attendanceError;
 
-      const totalClasses = attendanceData?.length || 0;
-      const attendedClasses = attendanceData?.filter(record => record.present).length || 0;
-      const attendancePercentage = totalClasses > 0 ? Math.round((attendedClasses / totalClasses) * 100) : 0;      setStats({
-        totalClasses,
-        attendedClasses,
+      // Calculate stats based on new session structure
+      const totalSessions = attendanceData?.reduce((total, record) => {
+        let sessionCount = 0;
+        if (record.fn_theory !== null && record.fn_theory !== undefined) sessionCount++;
+        if (record.fn_practical !== null && record.fn_practical !== undefined) sessionCount++;
+        if (record.an_theory !== null && record.an_theory !== undefined) sessionCount++;
+        if (record.an_practical !== null && record.an_practical !== undefined) sessionCount++;
+        return total + sessionCount;
+      }, 0) || 0;
+      
+      const attendedSessions = attendanceData?.reduce((total, record) => {
+        let attendedCount = 0;
+        if (record.fn_theory === true) attendedCount++;
+        if (record.fn_practical === true) attendedCount++;
+        if (record.an_theory === true) attendedCount++;
+        if (record.an_practical === true) attendedCount++;
+        return total + attendedCount;
+      }, 0) || 0;
+      
+      const attendancePercentage = totalSessions > 0 ? Math.round((attendedSessions / totalSessions) * 100) : 0;
+      
+      setStats({
+        totalClasses: totalSessions,
+        attendedClasses: attendedSessions,
         attendancePercentage,
         upcomingClasses: 5 // This would come from a schedule table
       });

@@ -22,7 +22,10 @@ import { toast } from 'react-hot-toast';
 
 interface AttendanceRecord {
   student_id: number;
-  present: boolean;
+  fn_theory: boolean;
+  an_theory: boolean;
+  fn_practical: boolean;
+  an_practical: boolean;
 }
 
 // interface SupervisorAssignment {
@@ -47,8 +50,15 @@ interface StudentWithSupervisor {
   register_no?: string;
 }
 
+interface SessionAttendance {
+  fn_theory: boolean | null;
+  an_theory: boolean | null;
+  fn_practical: boolean | null;
+  an_practical: boolean | null;
+}
+
 export default function AttendancePage() {
-  const [attendance, setAttendance] = useState<{ [key: number]: boolean | null }>({});
+  const [attendance, setAttendance] = useState<{ [key: number]: SessionAttendance }>({});
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [students, setStudents] = useState<StudentWithSupervisor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,9 +118,14 @@ export default function AttendancePage() {
           setStudents(mapped);
           
           // Initialize attendance state for all students
-          const initialAttendance: { [key: number]: boolean | null } = {};
+          const initialAttendance: { [key: number]: SessionAttendance } = {};
           mapped.forEach((student) => {
-            initialAttendance[student.student_id] = null;
+            initialAttendance[student.student_id] = {
+              fn_theory: null,
+              an_theory: null,
+              fn_practical: null,
+              an_practical: null
+            };
           });
           setAttendance(initialAttendance);
         }
@@ -130,7 +145,7 @@ export default function AttendancePage() {
     const fetchSavedAttendance = async () => {
       const { data, error } = await supabase
         .from("academy_student_attendance")
-        .select("student_id, present")
+        .select("student_id, fn_theory, an_theory, fn_practical, an_practical")
         .eq("date", date);
 
       if (error) {
@@ -139,7 +154,12 @@ export default function AttendancePage() {
         const savedAttendance = (data as AttendanceRecord[]).reduce(
           (acc, record) => ({
             ...acc,
-            [record.student_id]: record.present,
+            [record.student_id]: {
+              fn_theory: record.fn_theory,
+              an_theory: record.an_theory,
+              fn_practical: record.fn_practical,
+              an_practical: record.an_practical
+            },
           }),
           {}
         );
@@ -147,9 +167,14 @@ export default function AttendancePage() {
         setSaveStatus(true); // Mark save status as true since attendance exists
       } else {
         // Reset attendance state if no saved data exists
-        const initialAttendance: { [key: number]: boolean | null } = {};
+        const initialAttendance: { [key: number]: SessionAttendance } = {};
         students.forEach((student) => {
-          initialAttendance[student.student_id] = null;
+          initialAttendance[student.student_id] = {
+            fn_theory: null,
+            an_theory: null,
+            fn_practical: null,
+            an_practical: null
+          };
         });
         setAttendance(initialAttendance);
         setSaveStatus(false); // Mark save status as false
@@ -159,11 +184,41 @@ export default function AttendancePage() {
     fetchSavedAttendance();
   }, [date, students]);
 
-  const toggleAttendance = (studentId: number, isPresent: boolean) => {
-    setAttendance((prev) => ({
-      ...prev,
-      [studentId]: isPresent,
-    }));
+  const toggleAttendance = (studentId: number, session: 'fn' | 'an', type: 'theory' | 'practical', isPresent: boolean) => {
+    setAttendance((prev) => {
+      const currentAttendance = prev[studentId] || {
+        fn_theory: null,
+        an_theory: null,
+        fn_practical: null,
+        an_practical: null
+      };
+      
+      const fieldName = `${session}_${type}` as keyof SessionAttendance;
+      const updatedAttendance = { ...currentAttendance };
+      updatedAttendance[fieldName] = isPresent;
+      
+      // Implement mutual exclusion logic
+      if (isPresent) {
+        if (session === 'fn') {
+          if (type === 'theory') {
+            updatedAttendance.fn_practical = false;
+          } else {
+            updatedAttendance.fn_theory = false;
+          }
+        } else {
+          if (type === 'theory') {
+            updatedAttendance.an_practical = false;
+          } else {
+            updatedAttendance.an_theory = false;
+          }
+        }
+      }
+      
+      return {
+        ...prev,
+        [studentId]: updatedAttendance,
+      };
+    });
   };
 
   const saveAttendance = async () => {
@@ -173,11 +228,22 @@ export default function AttendancePage() {
       
       // Map attendance state to create attendance entries
       const attendanceEntries = Object.entries(attendance)
-        .filter(([, isPresent]) => isPresent !== null) // Only save rows with valid attendance
-        .map(([studentId, isPresent]) => ({
-          student_id: parseInt(studentId, 10), // Use student_id as a foreign key
-          date, // Use the selected date
-          present: isPresent, // Use the attendance state (true for Present, false for Absent)
+        .filter(([, sessionAttendance]) => {
+          // Only save rows where at least one session has been marked
+          return sessionAttendance && (
+            sessionAttendance.fn_theory !== null ||
+            sessionAttendance.an_theory !== null ||
+            sessionAttendance.fn_practical !== null ||
+            sessionAttendance.an_practical !== null
+          );
+        })
+        .map(([studentId, sessionAttendance]) => ({
+          student_id: parseInt(studentId, 10),
+          date,
+          fn_theory: sessionAttendance?.fn_theory || false,
+          an_theory: sessionAttendance?.an_theory || false,
+          fn_practical: sessionAttendance?.fn_practical || false,
+          an_practical: sessionAttendance?.an_practical || false
         }));
 
       // If no attendance data is available, show a toast
@@ -186,10 +252,13 @@ export default function AttendancePage() {
         return;
       }
 
-      // Insert attendance data into the "academy_student_attendance" table
+      // Use upsert to handle both insert and update cases
       const { error } = await supabase
         .from("academy_student_attendance")
-        .insert(attendanceEntries);
+        .upsert(attendanceEntries, {
+          onConflict: 'student_id,date',
+          ignoreDuplicates: false
+        });
 
       // Handle errors or success
       if (error) {
@@ -234,6 +303,60 @@ export default function AttendancePage() {
         )}
       </div>
 
+      {/* Statistics Cards */}
+      {!loading && students.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total Students</p>
+                <p className="text-2xl font-bold text-blue-600">{students.length}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">FN Sessions Marked</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {Object.values(attendance).filter(a => a && (a.fn_theory !== null || a.fn_practical !== null)).length}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">AN Sessions Marked</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {Object.values(attendance).filter(a => a && (a.an_theory !== null || a.an_practical !== null)).length}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total Sessions Attended</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {Object.values(attendance).reduce((total, a) => {
+                    if (!a) return total;
+                    return total + 
+                      (a.fn_theory === true ? 1 : 0) +
+                      (a.fn_practical === true ? 1 : 0) +
+                      (a.an_theory === true ? 1 : 0) +
+                      (a.an_practical === true ? 1 : 0);
+                  }, 0)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
@@ -256,43 +379,166 @@ export default function AttendancePage() {
       ) : (
         <div className="space-y-4">
           {students.length > 0 ? (
-            students.map((student, index) => (
-              <Card
-                key={`attendance-${student.student_id}-${index}`}
-                className={`p-4 ${
-                  attendance[student.student_id] === true
-                    ? "bg-green-100"
-                    : attendance[student.student_id] === false
-                    ? "bg-red-100"
-                    : ""
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="text-lg font-semibold">
-                      Supervisor ({student.supervisor_name}) ---&gt; Student ({student.student_name})
-                    </span>
-                    {student.register_no && (
-                      <div className="text-sm text-gray-500">({student.register_no})</div>
-                    )}
+            students.map((student, index) => {
+              const studentAttendance = attendance[student.student_id] || {
+                fn_theory: null,
+                an_theory: null,
+                fn_practical: null,
+                an_practical: null
+              };
+              
+              return (
+                <Card
+                  key={`attendance-${student.student_id}-${index}`}
+                  className="p-6"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-lg font-semibold">
+                          Supervisor ({student.supervisor_name}) → Student ({student.student_name})
+                        </span>
+                        {student.register_no && (
+                          <div className="text-sm text-gray-500">({student.register_no})</div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Forenoon Sessions */}
+                    <div className="border rounded-lg p-4 bg-blue-50">
+                      <h4 className="text-sm font-semibold text-blue-900 mb-3">Forenoon (FN)</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* FN Theory */}
+                        <div>
+                          <p className="text-xs text-gray-600 mb-2">Theory</p>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              onClick={() => toggleAttendance(student.student_id, 'fn', 'theory', true)}
+                              disabled={studentAttendance.fn_practical === true}
+                              className={`px-3 py-1 text-xs ${
+                                studentAttendance.fn_theory === true
+                                  ? 'bg-green-600 text-white'
+                                  : studentAttendance.fn_practical === true
+                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                              }`}
+                            >
+                              Present
+                            </Button>
+                            <Button
+                              onClick={() => toggleAttendance(student.student_id, 'fn', 'theory', false)}
+                              className={`px-3 py-1 text-xs ${
+                                studentAttendance.fn_theory === false
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                              }`}
+                            >
+                              Absent
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* FN Practical */}
+                        <div>
+                          <p className="text-xs text-gray-600 mb-2">Practical</p>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              onClick={() => toggleAttendance(student.student_id, 'fn', 'practical', true)}
+                              disabled={studentAttendance.fn_theory === true}
+                              className={`px-3 py-1 text-xs ${
+                                studentAttendance.fn_practical === true
+                                  ? 'bg-green-600 text-white'
+                                  : studentAttendance.fn_theory === true
+                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                              }`}
+                            >
+                              Present
+                            </Button>
+                            <Button
+                              onClick={() => toggleAttendance(student.student_id, 'fn', 'practical', false)}
+                              className={`px-3 py-1 text-xs ${
+                                studentAttendance.fn_practical === false
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                              }`}
+                            >
+                              Absent
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Afternoon Sessions */}
+                    <div className="border rounded-lg p-4 bg-orange-50">
+                      <h4 className="text-sm font-semibold text-orange-900 mb-3">Afternoon (AN)</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* AN Theory */}
+                        <div>
+                          <p className="text-xs text-gray-600 mb-2">Theory</p>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              onClick={() => toggleAttendance(student.student_id, 'an', 'theory', true)}
+                              disabled={studentAttendance.an_practical === true}
+                              className={`px-3 py-1 text-xs ${
+                                studentAttendance.an_theory === true
+                                  ? 'bg-green-600 text-white'
+                                  : studentAttendance.an_practical === true
+                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                              }`}
+                            >
+                              Present
+                            </Button>
+                            <Button
+                              onClick={() => toggleAttendance(student.student_id, 'an', 'theory', false)}
+                              className={`px-3 py-1 text-xs ${
+                                studentAttendance.an_theory === false
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                              }`}
+                            >
+                              Absent
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* AN Practical */}
+                        <div>
+                          <p className="text-xs text-gray-600 mb-2">Practical</p>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              onClick={() => toggleAttendance(student.student_id, 'an', 'practical', true)}
+                              disabled={studentAttendance.an_theory === true}
+                              className={`px-3 py-1 text-xs ${
+                                studentAttendance.an_practical === true
+                                  ? 'bg-green-600 text-white'
+                                  : studentAttendance.an_theory === true
+                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                              }`}
+                            >
+                              Present
+                            </Button>
+                            <Button
+                              onClick={() => toggleAttendance(student.student_id, 'an', 'practical', false)}
+                              className={`px-3 py-1 text-xs ${
+                                studentAttendance.an_practical === false
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                              }`}
+                            >
+                              Absent
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => toggleAttendance(student.student_id, true)}
-                      className="bg-green-500 text-white hover:bg-green-600"
-                    >
-                      Present
-                    </Button>
-                    <Button
-                      onClick={() => toggleAttendance(student.student_id, false)}
-                      className="bg-red-500 text-white hover:bg-red-600"
-                    >
-                      Absent
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))
+                </Card>
+              );
+            })
           ) : (
             <p className="text-gray-500">No students assigned to supervisors found.</p>
           )}
