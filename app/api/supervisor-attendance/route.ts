@@ -120,9 +120,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { supervisorId, studentId, date, session, type, isPresent } = body;
 
-    if (!supervisorId || !studentId || !date || !session || !type || isPresent === undefined) {
+    // supervisorId is now optional (admin can update any attendance)
+    if (!studentId || !date || !session || !type || isPresent === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields: supervisorId, studentId, date, session, type, isPresent' },
+        { error: 'Missing required fields: studentId, date, session, type, isPresent' },
         { status: 400 }
       );
     }

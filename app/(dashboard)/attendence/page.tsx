@@ -37,14 +37,16 @@ interface SessionAttendance {
   an_practical: boolean | null;
 }
 
+
 export default function AttendancePage() {
   const [supervisors, setSupervisors] = useState<SupervisorWithStudents[]>([]);
   const [unassignedStudents, setUnassignedStudents] = useState<StudentWithAttendance[]>([]);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  
+  // Collapsible state for unassigned students
+  const [unassignedExpanded, setUnassignedExpanded] = useState(false);
+
   // Insight modal state
   const [insightModalOpen, setInsightModalOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
@@ -61,6 +63,8 @@ export default function AttendancePage() {
         : supervisor
     ));
   };
+
+  const toggleUnassignedExpanded = () => setUnassignedExpanded((prev) => !prev);
 
   // Fetch students organized by supervisors and unassigned students
   useEffect(() => {
@@ -184,8 +188,9 @@ export default function AttendancePage() {
     fetchData();
   }, [date]);
 
-  const toggleAttendance = (studentId: number, session: 'fn' | 'an', type: 'theory' | 'practical', isPresent: boolean) => {
-    // Update supervisors
+  // Instant save logic for attendance toggle
+  const toggleAttendance = async (studentId: number, session: 'fn' | 'an', type: 'theory' | 'practical', isPresent: boolean) => {
+    // Update local state for immediate UI feedback
     setSupervisors(prev => prev.map(supervisor => ({
       ...supervisor,
       students: supervisor.students.map(student => {
@@ -193,125 +198,111 @@ export default function AttendancePage() {
           const currentAttendance = { ...student.attendance };
           const fieldName = `${session}_${type}` as keyof SessionAttendance;
           currentAttendance[fieldName] = isPresent;
-          
-          // Implement mutual exclusion logic
+          // Mutual exclusion
           if (isPresent) {
             if (session === 'fn') {
-              if (type === 'theory') {
-                currentAttendance.fn_practical = false;
-              } else {
-                currentAttendance.fn_theory = false;
-              }
+              if (type === 'theory') currentAttendance.fn_practical = false;
+              else currentAttendance.fn_theory = false;
             } else {
-              if (type === 'theory') {
-                currentAttendance.an_practical = false;
-              } else {
-                currentAttendance.an_theory = false;
-              }
+              if (type === 'theory') currentAttendance.an_practical = false;
+              else currentAttendance.an_theory = false;
             }
           }
-          
           return { ...student, attendance: currentAttendance };
         }
         return student;
       })
     })));
-
-    // Update unassigned students
     setUnassignedStudents(prev => prev.map(student => {
       if (student.student_id === studentId) {
         const currentAttendance = { ...student.attendance };
         const fieldName = `${session}_${type}` as keyof SessionAttendance;
         currentAttendance[fieldName] = isPresent;
-        
-        // Implement mutual exclusion logic
         if (isPresent) {
           if (session === 'fn') {
-            if (type === 'theory') {
-              currentAttendance.fn_practical = false;
-            } else {
-              currentAttendance.fn_theory = false;
-            }
+            if (type === 'theory') currentAttendance.fn_practical = false;
+            else currentAttendance.fn_theory = false;
           } else {
-            if (type === 'theory') {
-              currentAttendance.an_practical = false;
-            } else {
-              currentAttendance.an_theory = false;
-            }
+            if (type === 'theory') currentAttendance.an_practical = false;
+            else currentAttendance.an_theory = false;
           }
         }
-        
         return { ...student, attendance: currentAttendance };
       }
       return student;
     }));
-  };
 
-  const saveAttendance = async () => {
+    // Save instantly to DB using the same API as supervisor
     try {
-      setSaving(true);
-      setError(null);
-      
-      // Collect all students from supervisors and unassigned
-      const allStudents = [
-        ...supervisors.flatMap(s => s.students),
-        ...unassignedStudents
-      ];
+      // Find the current student for fallback values
+      const student = [...supervisors.flatMap(s => s.students), ...unassignedStudents].find(s => s.student_id === studentId);
+      // Always send booleans, never undefined/null
+      let fn_theory = student?.attendance.fn_theory ?? false;
+      let fn_practical = student?.attendance.fn_practical ?? false;
+      let an_theory = student?.attendance.an_theory ?? false;
+      let an_practical = student?.attendance.an_practical ?? false;
+      if (session === 'fn') {
+        if (type === 'theory') {
+          fn_theory = isPresent;
+          fn_practical = false;
+        } else {
+          fn_practical = isPresent;
+          fn_theory = false;
+        }
+      } else {
+        if (type === 'theory') {
+          an_theory = isPresent;
+          an_practical = false;
+        } else {
+          an_practical = isPresent;
+          an_theory = false;
+        }
+      }
 
-      // Map attendance state to create attendance entries
-      const attendanceEntries = allStudents
-        .filter(student => {
-          // Only save rows where at least one session has been marked
-          const att = student.attendance;
-          return att && (
-            att.fn_theory !== null ||
-            att.an_theory !== null ||
-            att.fn_practical !== null ||
-            att.an_practical !== null
-          );
-        })
-        .map(student => ({
-          student_id: student.student_id,
-          date,
-          fn_theory: student.attendance?.fn_theory || false,
-          an_theory: student.attendance?.an_theory || false,
-          fn_practical: student.attendance?.fn_practical || false,
-          an_practical: student.attendance?.an_practical || false
-        }));
-
-      // If no attendance data is available, show a toast
-      if (attendanceEntries.length === 0) {
-        toast.error("No attendance data to save.");
+      // Validate all required fields before API call
+      if (
+        studentId == null ||
+        !date ||
+        !session ||
+        !type ||
+        typeof isPresent !== 'boolean'
+      ) {
+        console.error('Missing required fields for attendance API:', { studentId, date, session, type, isPresent });
+        toast.error('Internal error: Missing required fields.');
         return;
       }
 
-      // Use upsert to handle both insert and update cases
-      const { error } = await supabase
-        .from("academy_student_attendance")
-        .upsert(attendanceEntries, {
-          onConflict: 'student_id,date',
-          ignoreDuplicates: false
-        });
+      // Log payload for debugging
+      const payload = {
+        supervisorId: 0, // Admin context, not used in backend logic
+        studentId,
+        date,
+        session,
+        type,
+        isPresent
+      };
+      console.log('Sending attendance payload:', payload);
 
-      // Handle errors or success
-      if (error) {
-        console.error("Error saving attendance:", error);
-        setError("Failed to save attendance. Please try again.");
-        toast.error("Failed to save attendance. Please try again.");
+      const response = await fetch('/api/supervisor-attendance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to save attendance.');
       } else {
-        toast.success("Attendance saved successfully!");
-        
-        // Force refresh the entire component data
-        window.location.reload();
+        toast.success('Attendance saved!');
       }
-    } catch (error) {
-      console.error("Unexpected error saving attendance:", error);
-      setError("An unexpected error occurred. Please try again.");
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      toast.error('Unexpected error saving attendance.');
     }
   };
+
+  // saveAttendance removed (instant save now)
 
   return (
     <div className="p-6">
@@ -442,29 +433,43 @@ export default function AttendancePage() {
             </Card>
           ))}
 
-          {/* Unassigned students */}
-          {unassignedStudents.length > 0 && (
-            <Card className="p-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Users className="w-6 h-6 text-orange-600" />
-                <h2 className="text-xl font-bold text-gray-900">Unassigned Students</h2>
-                <span className="bg-orange-100 text-orange-800 text-sm font-medium px-2.5 py-0.5 rounded">
-                  {unassignedStudents.length} students
-                </span>
-              </div>
-              
-              <div className="space-y-4">
-                {unassignedStudents.map((student, index) => (
-                  <StudentAttendanceCard 
-                    key={`unassigned-${student.student_id}-${index}`}
-                    student={student}
-                    onToggleAttendance={toggleAttendance}
-                    onOpenInsights={openInsightModal}
-                  />
-                ))}
-              </div>
-            </Card>
+      {/* Unassigned students - collapsible */}
+      {unassignedStudents.length > 0 && (
+        <Card className="p-6">
+          <div
+            className="flex items-center justify-between cursor-pointer mb-4 hover:bg-gray-50 p-2 rounded-lg transition-colors"
+            onClick={toggleUnassignedExpanded}
+          >
+            <div className="flex items-center space-x-2">
+              {unassignedExpanded ? (
+                <ChevronDown className="w-5 h-5 text-orange-600" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-orange-600" />
+              )}
+              <Users className="w-6 h-6 text-orange-600" />
+              <h2 className="text-xl font-bold text-gray-900">Unassigned Students</h2>
+              <span className="bg-orange-100 text-orange-800 text-sm font-medium px-2.5 py-0.5 rounded">
+                {unassignedStudents.length} students
+              </span>
+            </div>
+            <div className="text-sm text-gray-500">
+              {unassignedExpanded ? 'Click to collapse' : 'Click to expand and mark attendance'}
+            </div>
+          </div>
+          {unassignedExpanded && (
+            <div className="space-y-4">
+              {unassignedStudents.map((student, index) => (
+                <StudentAttendanceCard
+                  key={`unassigned-${student.student_id}-${index}`}
+                  student={student}
+                  onToggleAttendance={toggleAttendance}
+                  onOpenInsights={openInsightModal}
+                />
+              ))}
+            </div>
           )}
+        </Card>
+      )}
 
           {supervisors.length === 0 && unassignedStudents.length === 0 && (
             <p className="text-gray-500 text-center py-8">No students found.</p>
@@ -472,26 +477,7 @@ export default function AttendancePage() {
         </div>
       )}
 
-      <div className="mt-6">
-        <Button
-          onClick={saveAttendance}
-          disabled={saving}
-          className={`px-6 py-2 rounded-md transition-colors ${
-            saving 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-blue-500 hover:bg-blue-600'
-          } text-white`}
-        >
-          {saving ? (
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Saving...
-            </div>
-          ) : (
-            'Save All Attendance'
-          )}
-        </Button>
-      </div>
+      {/* Save All Attendance button removed for instant save */}
       
       {/* Student Attendance Insight Modal */}
       {selectedStudentId && (
