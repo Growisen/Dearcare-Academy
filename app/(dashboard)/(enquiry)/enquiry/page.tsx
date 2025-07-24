@@ -5,7 +5,7 @@ import { getVisibleEnquiries, hideEnquiry } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { EnquiryRecord } from '@/types/enquiry.types';
 import { 
-  Eye, EyeOff, User, Mail, Phone, GraduationCap, Calendar, MapPin, 
+  Eye, EyeOff, User, Mail, Phone, GraduationCap, Calendar, //MapPin, 
   Users, Filter, Download, RefreshCw, Search,
   UserCheck, Clock, TrendingUp, BookOpen
 } from 'lucide-react';
@@ -591,12 +591,12 @@ export default function EnquiryPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.age || 'Not provided'}</p>
                       </div>
-                      <div>
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                        {/* <p className="text-sm text-gray-900 bg-white p-2 rounded border">
+                        { <p className="text-sm text-gray-900 bg-white p-2 rounded border">
                           {selectedEnquiry.dob ? formatDateDMY(selectedEnquiry.dob) : 'Not provided'}
-                        </p> */}
-                      </div>
+                        </p> }
+                      </div> */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.gender || 'Not provided'}</p>
@@ -676,13 +676,13 @@ export default function EnquiryPage() {
                   <div className="bg-gray-50 rounded-lg p-6">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <Users className="w-5 h-5 mr-2 text-orange-600" />
-                      Additional Information
+                      Additional Information/Questions
                     </h4>
                     <div className="space-y-4">
-                      {/* <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Guardian Name</label>
-                        <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.guardian_name || 'Not provided'}</p>
-                      </div> */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Queries</label>
+                        <p className="text-sm text-gray-900 bg-white p-2 rounded border">{selectedEnquiry.message || 'Not provided'}</p>
+                      </div>
                       {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Aadhaar Number</label>
                         <p className="text-sm text-gray-900 bg-white p-2 rounded border">
