@@ -234,30 +234,6 @@ export default function AttendancePage() {
 
     // Save instantly to DB using the same API as supervisor
     try {
-      // Find the current student for fallback values
-      const student = [...supervisors.flatMap(s => s.students), ...unassignedStudents].find(s => s.student_id === studentId);
-      // Always send booleans, never undefined/null
-      let fn_theory = student?.attendance.fn_theory ?? false;
-      let fn_practical = student?.attendance.fn_practical ?? false;
-      let an_theory = student?.attendance.an_theory ?? false;
-      let an_practical = student?.attendance.an_practical ?? false;
-      if (session === 'fn') {
-        if (type === 'theory') {
-          fn_theory = isPresent;
-          fn_practical = false;
-        } else {
-          fn_practical = isPresent;
-          fn_theory = false;
-        }
-      } else {
-        if (type === 'theory') {
-          an_theory = isPresent;
-          an_practical = false;
-        } else {
-          an_practical = isPresent;
-          an_theory = false;
-        }
-      }
 
       // Validate all required fields before API call
       if (
@@ -297,7 +273,8 @@ export default function AttendancePage() {
       } else {
         toast.success('Attendance saved!');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error saving attendance:', error);
       toast.error('Unexpected error saving attendance.');
     }
   };

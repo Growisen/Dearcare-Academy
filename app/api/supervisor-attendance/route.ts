@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { supervisorId, studentId, date, session, type, isPresent } = body;
+    const { studentId, date, session, type, isPresent } = body;
 
     // supervisorId is now optional (admin can update any attendance)
     if (!studentId || !date || !session || !type || isPresent === undefined) {
