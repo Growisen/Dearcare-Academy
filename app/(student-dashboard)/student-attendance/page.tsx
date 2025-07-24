@@ -8,14 +8,17 @@ import { Calendar, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 interface AttendanceRecord {
   id: number;
   date: string;
-  present: boolean;
+  fn_theory: boolean;
+  an_theory: boolean;
+  fn_practical: boolean;
+  an_practical: boolean;
   created_at: string;
 }
 
 interface AttendanceStats {
-  totalClasses: number;
-  attendedClasses: number;
-  absentClasses: number;
+  totalSessions: number;
+  attendedSessions: number;
+  absentSessions: number;
   attendancePercentage: number;
 }
 
@@ -23,9 +26,9 @@ export default function StudentAttendance() {
   const [loading, setLoading] = useState(true);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [stats, setStats] = useState<AttendanceStats>({
-    totalClasses: 0,
-    attendedClasses: 0,
-    absentClasses: 0,
+    totalSessions: 0,
+    attendedSessions: 0,
+    absentSessions: 0,
     attendancePercentage: 0
   });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -51,16 +54,35 @@ export default function StudentAttendance() {
 
       setAttendanceRecords(filteredData);
 
-      // Calculate stats
-      const totalClasses = filteredData.length;
-      const attendedClasses = filteredData.filter(record => record.present).length;
-      const absentClasses = totalClasses - attendedClasses;
-      const attendancePercentage = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
+      // Calculate stats based on correct session structure
+      // Each day has max 2 sessions: FN (Forenoon) and AN (Afternoon)
+      const totalSessions = filteredData.reduce((total, record) => {
+        let sessionCount = 0;
+        // Count FN session if either theory or practical is marked
+        if (record.fn_theory !== null && record.fn_theory !== undefined || 
+            record.fn_practical !== null && record.fn_practical !== undefined) sessionCount++;
+        // Count AN session if either theory or practical is marked  
+        if (record.an_theory !== null && record.an_theory !== undefined || 
+            record.an_practical !== null && record.an_practical !== undefined) sessionCount++;
+        return total + sessionCount;
+      }, 0);
+      
+      const attendedSessions = filteredData.reduce((total, record) => {
+        let attendedCount = 0;
+        // Count FN session as attended if theory OR practical is true
+        if (record.fn_theory === true || record.fn_practical === true) attendedCount++;
+        // Count AN session as attended if theory OR practical is true
+        if (record.an_theory === true || record.an_practical === true) attendedCount++;
+        return total + attendedCount;
+      }, 0);
+      
+      const absentSessions = totalSessions - attendedSessions;
+      const attendancePercentage = totalSessions > 0 ? (attendedSessions / totalSessions) * 100 : 0;
 
       setStats({
-        totalClasses,
-        attendedClasses,
-        absentClasses,
+        totalSessions,
+        attendedSessions,
+        absentSessions,
         attendancePercentage
       });
     } catch (error) {
@@ -82,20 +104,6 @@ export default function StudentAttendance() {
     
     initializeData();
   }, [fetchAttendanceData]);
-
-  const getAttendanceStatus = (present: boolean) => {
-    return present ? {
-      icon: CheckCircle,
-      color: 'text-green-500',
-      bg: 'bg-green-50',
-      text: 'Present'
-    } : {
-      icon: XCircle,
-      color: 'text-red-500',
-      bg: 'bg-red-50',
-      text: 'Absent'
-    };
-  };
 
   const getAttendanceColor = (percentage: number) => {
     if (percentage >= 75) return 'text-green-600';
@@ -163,8 +171,8 @@ export default function StudentAttendance() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Classes</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalClasses}</p>
+              <p className="text-sm font-medium text-gray-600">Total Sessions</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.totalSessions}</p>
             </div>
             <Calendar className="w-8 h-8 text-blue-500" />
           </div>
@@ -174,7 +182,7 @@ export default function StudentAttendance() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Present</p>
-              <p className="text-3xl font-bold text-green-600">{stats.attendedClasses}</p>
+              <p className="text-3xl font-bold text-green-600">{stats.attendedSessions}</p>
             </div>
             <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
@@ -184,7 +192,7 @@ export default function StudentAttendance() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Absent</p>
-              <p className="text-3xl font-bold text-red-600">{stats.absentClasses}</p>
+              <p className="text-3xl font-bold text-red-600">{stats.absentSessions}</p>
             </div>
             <XCircle className="w-8 h-8 text-red-500" />
           </div>
@@ -208,7 +216,7 @@ export default function StudentAttendance() {
       </div>
 
       {/* Attendance Requirements Alert */}
-      {stats.attendancePercentage < 75 && stats.totalClasses > 0 && (
+      {stats.attendancePercentage < 75 && stats.totalSessions > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-5 h-5 text-yellow-600" />
@@ -228,16 +236,17 @@ export default function StudentAttendance() {
         
         <div className="divide-y divide-gray-200">
           {attendanceRecords.map((record, index) => {
-            const status = getAttendanceStatus(record.present);
-            const StatusIcon = status.icon;
+            const sessions = [
+              { session: 'Forenoon Theory', attended: record.fn_theory },
+              { session: 'Forenoon Practical', attended: record.fn_practical },
+              { session: 'Afternoon Theory', attended: record.an_theory },
+              { session: 'Afternoon Practical', attended: record.an_practical }
+            ].filter(s => s.attended !== null && s.attended !== undefined);
             
             return (
               <div key={`attendance-record-${record.id}-${index}-${record.date}`} className="px-6 py-4 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${status.bg}`}>
-                      <StatusIcon className={`w-5 h-5 ${status.color}`} />
-                    </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium text-gray-900">
                         {new Date(record.date).toLocaleDateString('en-US', {
@@ -251,15 +260,25 @@ export default function StudentAttendance() {
                         Recorded on {new Date(record.created_at).toLocaleDateString()}
                       </p>
                     </div>
+                    <div className="text-right">
+                      <span className="text-sm text-gray-600">
+                        {sessions.filter(s => s.attended).length} / {sessions.length} sessions attended
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      record.present 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {status.text}
-                    </span>
+                  
+                  {/* Sessions Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {sessions.map((sessionInfo, sessionIndex) => (
+                      <div key={`session-${sessionIndex}`} className={`p-2 rounded-lg text-center text-xs ${
+                        sessionInfo.attended 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        <div className="font-medium">{sessionInfo.session}</div>
+                        <div className="text-xs mt-1">{sessionInfo.attended ? 'Present' : 'Absent'}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

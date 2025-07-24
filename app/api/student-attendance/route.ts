@@ -34,20 +34,38 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
-    // Calculate statistics
-    const totalClasses = attendanceRecords?.length || 0;
-    const attendedClasses = attendanceRecords?.filter(record => record.present).length || 0;
-    const absentClasses = totalClasses - attendedClasses;
-    const attendancePercentage = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
+    // Calculate statistics based on correct session structure
+    // Each day has max 2 sessions: FN (Forenoon) and AN (Afternoon)
+    // Each session can be either Theory OR Practical
+    const totalSessions = attendanceRecords?.reduce((total, record) => {
+      let sessionCount = 0;
+      // Count FN session if either theory or practical is marked
+      if (record.fn_theory !== null || record.fn_practical !== null) sessionCount++;
+      // Count AN session if either theory or practical is marked
+      if (record.an_theory !== null || record.an_practical !== null) sessionCount++;
+      return total + sessionCount;
+    }, 0) || 0;
+    
+    const attendedSessions = attendanceRecords?.reduce((total, record) => {
+      let attendedCount = 0;
+      // Count FN session as attended if theory OR practical is true
+      if (record.fn_theory === true || record.fn_practical === true) attendedCount++;
+      // Count AN session as attended if theory OR practical is true
+      if (record.an_theory === true || record.an_practical === true) attendedCount++;
+      return total + attendedCount;
+    }, 0) || 0;
+    
+    const absentSessions = totalSessions - attendedSessions;
+    const attendancePercentage = totalSessions > 0 ? (attendedSessions / totalSessions) * 100 : 0;
 
     return NextResponse.json({
       success: true,
       data: {
         records: attendanceRecords || [],
         statistics: {
-          totalClasses,
-          attendedClasses,
-          absentClasses,
+          totalSessions,
+          attendedSessions,
+          absentSessions,
           attendancePercentage: Math.round(attendancePercentage * 100) / 100
         },
         period: {

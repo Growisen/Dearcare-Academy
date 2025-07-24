@@ -3,14 +3,18 @@
 import { useState, useEffect } from "react";
 import { getUserSession } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
-import { Calendar, Users, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Calendar, Users, CheckCircle, XCircle, Clock, Eye } from "lucide-react";
+import StudentAttendanceInsight from '@/components/attendance/StudentAttendanceInsight';
 
 interface AttendanceRecord {
   id: number;
   student_id: number;
   student_name: string;
   date: string;
-  present: boolean;
+  fn_theory: boolean;
+  an_theory: boolean;
+  fn_practical: boolean;
+  an_practical: boolean;
   notes?: string;
 }
 
@@ -21,15 +25,14 @@ interface Student {
   course: string;
 }
 
-
-
-
-
 interface AttendanceData {
   id: number;
   student_id: number;
   date: string;
-  present: boolean;
+  fn_theory: boolean;
+  an_theory: boolean;
+  fn_practical: boolean;
+  an_practical: boolean;
   notes?: string;
   students: {
     name: string;
@@ -43,6 +46,15 @@ export default function SupervisorAttendance() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  
+  // Insight modal state
+  const [insightModalOpen, setInsightModalOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+
+  const openInsightModal = (studentId: number) => {
+    setSelectedStudentId(studentId);
+    setInsightModalOpen(true);
+  };
 
   useEffect(() => {
     const initializeData = async () => {
@@ -114,7 +126,10 @@ export default function SupervisorAttendance() {
         student_id: record.student_id,
         student_name: record.students.name,
         date: record.date,
-        present: record.present,
+        fn_theory: record.fn_theory,
+        an_theory: record.an_theory,
+        fn_practical: record.fn_practical,
+        an_practical: record.an_practical,
         notes: record.notes
       })) || [];
 
@@ -127,30 +142,35 @@ export default function SupervisorAttendance() {
     }
   };
 
-  const markAttendance = async (studentId: number, present: boolean) => {
+  const markAttendance = async (studentId: number, session: 'fn' | 'an', type: 'theory' | 'practical', isPresent: boolean) => {
     try {
       setSaving(true);
       setError(null);
       
-      const existingRecord = attendanceRecords.find(r => r.student_id === studentId);
+      const currentUser = getUserSession();
+      if (!currentUser) {
+        setError('User session not found. Please sign in again.');
+        return;
+      }
 
-      if (existingRecord) {
-        const { error } = await supabase
-          .from('academy_student_attendance')
-          .update({ present })
-          .eq('id', existingRecord.id);
+      const response = await fetch('/api/supervisor-attendance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supervisorId: currentUser.id,
+          studentId,
+          date: selectedDate,
+          session,
+          type,
+          isPresent
+        }),
+      });
 
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('academy_student_attendance')
-          .insert({
-            student_id: studentId,
-            date: selectedDate,
-            present
-          });
-
-        if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save attendance');
       }
 
       // Refresh attendance data
@@ -163,9 +183,12 @@ export default function SupervisorAttendance() {
     }
   };
 
-  const getAttendanceStatus = (studentId: number) => {
+  const getAttendanceStatus = (studentId: number, session: 'fn' | 'an', type: 'theory' | 'practical') => {
     const record = attendanceRecords.find(r => r.student_id === studentId);
-    return record ? record.present : null;
+    if (!record) return null;
+    
+    const fieldName = `${session}_${type}` as keyof AttendanceRecord;
+    return record[fieldName] as boolean;
   };
 
   if (loading) {
@@ -230,9 +253,16 @@ export default function SupervisorAttendance() {
           <div className="flex items-center space-x-3">
             <CheckCircle className="w-6 h-6 text-green-600" />
             <div>
-              <p className="text-sm text-gray-500">Present</p>
+              <p className="text-sm text-gray-500">Sessions Attended</p>
               <p className="text-xl font-bold text-gray-900">
-                {attendanceRecords.filter(r => r.present).length}
+                {attendanceRecords.reduce((count, r) => {
+                  let sessionsAttended = 0;
+                  // Count FN session as attended if theory OR practical is true
+                  if (r.fn_theory === true || r.fn_practical === true) sessionsAttended++;
+                  // Count AN session as attended if theory OR practical is true
+                  if (r.an_theory === true || r.an_practical === true) sessionsAttended++;
+                  return count + sessionsAttended;
+                }, 0)}
               </p>
             </div>
           </div>
@@ -242,9 +272,9 @@ export default function SupervisorAttendance() {
           <div className="flex items-center space-x-3">
             <XCircle className="w-6 h-6 text-red-600" />
             <div>
-              <p className="text-sm text-gray-500">Absent</p>
+              <p className="text-sm text-gray-500">Students with Records</p>
               <p className="text-xl font-bold text-gray-900">
-                {attendanceRecords.filter(r => !r.present).length}
+                {attendanceRecords.length}
               </p>
             </div>
           </div>
@@ -274,41 +304,163 @@ export default function SupervisorAttendance() {
         
         <div className="divide-y divide-gray-200">
           {students.map((student, index) => {
-            const status = getAttendanceStatus(student.id);
+            const fnTheoryStatus = getAttendanceStatus(student.id, 'fn', 'theory');
+            const anTheoryStatus = getAttendanceStatus(student.id, 'an', 'theory');
+            const fnPracticalStatus = getAttendanceStatus(student.id, 'fn', 'practical');
+            const anPracticalStatus = getAttendanceStatus(student.id, 'an', 'practical');
+            
             return (
               <div key={`attendance-${student.id}-${index}-${student.register_no || student.name || 'unknown'}`} className="p-6 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Users className="w-5 h-5 text-blue-600" />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Users className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">{student.name}</h3>
+                        <p className="text-sm text-gray-500">{student.register_no} • {student.course}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">{student.name}</h3>
-                      <p className="text-sm text-gray-500">{student.register_no} • {student.course}</p>
+                    <button
+                      onClick={() => openInsightModal(student.id)}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="View Student Attendance Insights"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  {/* Forenoon Sessions */}
+                  <div className="border rounded-lg p-4 bg-blue-50">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-3">Forenoon (FN)</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* FN Theory */}
+                      <div>
+                        <p className="text-xs text-gray-600 mb-2">Theory</p>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => markAttendance(student.id, 'fn', 'theory', true)}
+                            disabled={fnPracticalStatus === true}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              fnTheoryStatus === true
+                                ? 'bg-green-600 text-white'
+                                : fnPracticalStatus === true
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                            }`}
+                          >
+                            Present
+                          </button>
+                          <button
+                            onClick={() => markAttendance(student.id, 'fn', 'theory', false)}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              fnTheoryStatus === false
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                            }`}
+                          >
+                            Absent
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* FN Practical */}
+                      <div>
+                        <p className="text-xs text-gray-600 mb-2">Practical</p>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => markAttendance(student.id, 'fn', 'practical', true)}
+                            disabled={fnTheoryStatus === true}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              fnPracticalStatus === true
+                                ? 'bg-green-600 text-white'
+                                : fnTheoryStatus === true
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                            }`}
+                          >
+                            Present
+                          </button>
+                          <button
+                            onClick={() => markAttendance(student.id, 'fn', 'practical', false)}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              fnPracticalStatus === false
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                            }`}
+                          >
+                            Absent
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => markAttendance(student.id, true)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        status === true
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-green-100'
-                      }`}
-                    >
-                      Present
-                    </button>
-                    <button
-                      onClick={() => markAttendance(student.id, false)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        status === false
-                          ? 'bg-red-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-red-100'
-                      }`}
-                    >
-                      Absent
-                    </button>
+                  {/* Afternoon Sessions */}
+                  <div className="border rounded-lg p-4 bg-orange-50">
+                    <h4 className="text-sm font-semibold text-orange-900 mb-3">Afternoon (AN)</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* AN Theory */}
+                      <div>
+                        <p className="text-xs text-gray-600 mb-2">Theory</p>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => markAttendance(student.id, 'an', 'theory', true)}
+                            disabled={anPracticalStatus === true}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              anTheoryStatus === true
+                                ? 'bg-green-600 text-white'
+                                : anPracticalStatus === true
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                            }`}
+                          >
+                            Present
+                          </button>
+                          <button
+                            onClick={() => markAttendance(student.id, 'an', 'theory', false)}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              anTheoryStatus === false
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                            }`}
+                          >
+                            Absent
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* AN Practical */}
+                      <div>
+                        <p className="text-xs text-gray-600 mb-2">Practical</p>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => markAttendance(student.id, 'an', 'practical', true)}
+                            disabled={anTheoryStatus === true}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              anPracticalStatus === true
+                                ? 'bg-green-600 text-white'
+                                : anTheoryStatus === true
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                            }`}
+                          >
+                            Present
+                          </button>
+                          <button
+                            onClick={() => markAttendance(student.id, 'an', 'practical', false)}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              anPracticalStatus === false
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                            }`}
+                          >
+                            Absent
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -324,6 +476,18 @@ export default function SupervisorAttendance() {
           </div>
         )}
       </div>
+      
+      {/* Student Attendance Insight Modal */}
+      {selectedStudentId && (
+        <StudentAttendanceInsight
+          studentId={selectedStudentId}
+          isOpen={insightModalOpen}
+          onClose={() => {
+            setInsightModalOpen(false);
+            setSelectedStudentId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
