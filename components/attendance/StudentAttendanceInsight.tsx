@@ -27,10 +27,6 @@ interface AttendanceStats {
   attendedSessions: number;
   absentSessions: number;
   attendancePercentage: number;
-  fnAttendance: number;
-  anAttendance: number;
-  theoryAttendance: number;
-  practicalAttendance: number;
 }
 
 interface StudentAttendanceInsightProps {
@@ -47,11 +43,7 @@ export default function StudentAttendanceInsight({ studentId, isOpen, onClose }:
     totalSessions: 0,
     attendedSessions: 0,
     absentSessions: 0,
-    attendancePercentage: 0,
-    fnAttendance: 0,
-    anAttendance: 0,
-    theoryAttendance: 0,
-    practicalAttendance: 0
+    attendancePercentage: 0
   });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -120,58 +112,14 @@ export default function StudentAttendanceInsight({ studentId, isOpen, onClose }:
       return total + attendedCount;
     }, 0);
 
-    // Calculate FN/AN specific attendance
-    let fnTotal = 0, fnAttended = 0, anTotal = 0, anAttended = 0;
-    let theoryTotal = 0, theoryAttended = 0, practicalTotal = 0, practicalAttended = 0;
-
-    records.forEach(record => {
-      // FN Session
-      if (record.fn_theory !== null || record.fn_practical !== null) {
-        fnTotal++;
-        if (record.fn_theory === true || record.fn_practical === true) fnAttended++;
-        
-        // Track theory vs practical for FN
-        if (record.fn_theory !== null) {
-          theoryTotal++;
-          if (record.fn_theory === true) theoryAttended++;
-        } else if (record.fn_practical !== null) {
-          practicalTotal++;
-          if (record.fn_practical === true) practicalAttended++;
-        }
-      }
-      
-      // AN Session  
-      if (record.an_theory !== null || record.an_practical !== null) {
-        anTotal++;
-        if (record.an_theory === true || record.an_practical === true) anAttended++;
-        
-        // Track theory vs practical for AN
-        if (record.an_theory !== null) {
-          theoryTotal++;
-          if (record.an_theory === true) theoryAttended++;
-        } else if (record.an_practical !== null) {
-          practicalTotal++;
-          if (record.an_practical === true) practicalAttended++;
-        }
-      }
-    });
-
     const absentSessions = totalSessions - attendedSessions;
     const attendancePercentage = totalSessions > 0 ? (attendedSessions / totalSessions) * 100 : 0;
-    const fnAttendance = fnTotal > 0 ? (fnAttended / fnTotal) * 100 : 0;
-    const anAttendance = anTotal > 0 ? (anAttended / anTotal) * 100 : 0;
-    const theoryAttendance = theoryTotal > 0 ? (theoryAttended / theoryTotal) * 100 : 0;
-    const practicalAttendance = practicalTotal > 0 ? (practicalAttended / practicalTotal) * 100 : 0;
 
     setStats({
       totalSessions,
       attendedSessions,
       absentSessions,
-      attendancePercentage: Math.round(attendancePercentage * 100) / 100,
-      fnAttendance: Math.round(fnAttendance * 100) / 100,
-      anAttendance: Math.round(anAttendance * 100) / 100,
-      theoryAttendance: Math.round(theoryAttendance * 100) / 100,
-      practicalAttendance: Math.round(practicalAttendance * 100) / 100
+      attendancePercentage: Math.round(attendancePercentage * 100) / 100
     });
   };
 
@@ -314,37 +262,6 @@ export default function StudentAttendanceInsight({ studentId, isOpen, onClose }:
                     </div>
                     <Clock className="w-8 h-8 text-gray-500" />
                   </div>
-                </div>
-              </div>
-
-              {/* Detailed Statistics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white border rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-600">Forenoon Sessions</p>
-                  <p className={`text-xl font-bold ${getAttendanceColor(stats.fnAttendance)}`}>
-                    {stats.fnAttendance}%
-                  </p>
-                </div>
-
-                <div className="bg-white border rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-600">Afternoon Sessions</p>
-                  <p className={`text-xl font-bold ${getAttendanceColor(stats.anAttendance)}`}>
-                    {stats.anAttendance}%
-                  </p>
-                </div>
-
-                <div className="bg-white border rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-600">Theory Classes</p>
-                  <p className={`text-xl font-bold ${getAttendanceColor(stats.theoryAttendance)}`}>
-                    {stats.theoryAttendance}%
-                  </p>
-                </div>
-
-                <div className="bg-white border rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-600">Practical Classes</p>
-                  <p className={`text-xl font-bold ${getAttendanceColor(stats.practicalAttendance)}`}>
-                    {stats.practicalAttendance}%
-                  </p>
                 </div>
               </div>
 
