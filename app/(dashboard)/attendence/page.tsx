@@ -525,7 +525,7 @@ function StudentAttendanceCard({
                       ? 'bg-green-600 text-white'
                       : studentAttendance.fn_practical === true
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                      : 'bg-gray-100 text-black hover:bg-green-100'
                   }`}
                 >
                   Present
@@ -535,7 +535,7 @@ function StudentAttendanceCard({
                   className={`px-3 py-1 text-xs ${
                     studentAttendance.fn_theory === false
                       ? 'bg-red-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                      : 'bg-gray-100 text-black hover:bg-red-100'
                   }`}
                 >
                   Absent
@@ -555,7 +555,7 @@ function StudentAttendanceCard({
                       ? 'bg-green-600 text-white'
                       : studentAttendance.fn_theory === true
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                      : 'bg-gray-100 text-black hover:bg-green-100'
                   }`}
                 >
                   Present
@@ -565,7 +565,7 @@ function StudentAttendanceCard({
                   className={`px-3 py-1 text-xs ${
                     studentAttendance.fn_practical === false
                       ? 'bg-red-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                      : 'bg-gray-100 text-black hover:bg-red-100'
                   }`}
                 >
                   Absent
@@ -591,7 +591,7 @@ function StudentAttendanceCard({
                       ? 'bg-green-600 text-white'
                       : studentAttendance.an_practical === true
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                      : 'bg-gray-100 text-black hover:bg-green-100'
                   }`}
                 >
                   Present
@@ -601,7 +601,7 @@ function StudentAttendanceCard({
                   className={`px-3 py-1 text-xs ${
                     studentAttendance.an_theory === false
                       ? 'bg-red-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                      : 'bg-gray-100 text-black hover:bg-red-100'
                   }`}
                 >
                   Absent
@@ -621,7 +621,7 @@ function StudentAttendanceCard({
                       ? 'bg-green-600 text-white'
                       : studentAttendance.an_theory === true
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-100 text-gray-700 hover:bg-green-100'
+                      : 'bg-gray-100 text-black hover:bg-green-100'
                   }`}
                 >
                   Present
@@ -631,7 +631,7 @@ function StudentAttendanceCard({
                   className={`px-3 py-1 text-xs ${
                     studentAttendance.an_practical === false
                       ? 'bg-red-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-red-100'
+                      : 'bg-gray-100 text-black hover:bg-red-100'
                   }`}
                 >
                   Absent
