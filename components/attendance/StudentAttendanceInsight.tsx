@@ -126,28 +126,54 @@ export default function StudentAttendanceInsight({ studentId, isOpen, onClose }:
   const getSessionDisplay = (record: AttendanceRecord) => {
     const sessions = [];
     
-    // FN Session
+    // FN Session - show both theory and practical with mutual exclusion
     if (record.fn_theory !== null || record.fn_practical !== null) {
-      const fnType = record.fn_theory !== null ? 'Theory' : 'Practical';
-      const fnStatus = (record.fn_theory === true || record.fn_practical === true) ? 'Present' : 'Absent';
-      sessions.push({
-        period: 'Forenoon',
-        type: fnType,
-        status: fnStatus,
-        color: fnStatus === 'Present' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
-      });
+      // FN Theory
+      if (record.fn_theory !== null) {
+        sessions.push({
+          period: 'Forenoon',
+          type: 'Theory',
+          status: record.fn_theory ? 'Present' : 'Absent',
+          color: record.fn_theory ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50',
+          disabled: record.fn_practical === true // Disabled if practical is present
+        });
+      }
+      
+      // FN Practical
+      if (record.fn_practical !== null) {
+        sessions.push({
+          period: 'Forenoon',
+          type: 'Practical',
+          status: record.fn_practical ? 'Present' : 'Absent',
+          color: record.fn_practical ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50',
+          disabled: record.fn_theory === true // Disabled if theory is present
+        });
+      }
     }
 
-    // AN Session
+    // AN Session - show both theory and practical with mutual exclusion
     if (record.an_theory !== null || record.an_practical !== null) {
-      const anType = record.an_theory !== null ? 'Theory' : 'Practical';
-      const anStatus = (record.an_theory === true || record.an_practical === true) ? 'Present' : 'Absent';
-      sessions.push({
-        period: 'Afternoon',
-        type: anType,
-        status: anStatus,
-        color: anStatus === 'Present' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
-      });
+      // AN Theory
+      if (record.an_theory !== null) {
+        sessions.push({
+          period: 'Afternoon',
+          type: 'Theory',
+          status: record.an_theory ? 'Present' : 'Absent',
+          color: record.an_theory ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50',
+          disabled: record.an_practical === true // Disabled if practical is present
+        });
+      }
+      
+      // AN Practical
+      if (record.an_practical !== null) {
+        sessions.push({
+          period: 'Afternoon',
+          type: 'Practical',
+          status: record.an_practical ? 'Present' : 'Absent',
+          color: record.an_practical ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50',
+          disabled: record.an_theory === true // Disabled if theory is present
+        });
+      }
     }
 
     return sessions;
@@ -304,7 +330,13 @@ export default function StudentAttendanceInsight({ studentId, isOpen, onClose }:
                               </div>
                               <div className="flex items-center space-x-2">
                                 {sessions.map((session, sessionIndex) => (
-                                  <div key={sessionIndex} className={`px-3 py-1 rounded-full text-xs font-medium ${session.color}`}>
+                                  <div 
+                                    key={sessionIndex} 
+                                    className={`px-3 py-1 rounded-full text-xs font-medium ${session.color} ${
+                                      session.disabled ? 'opacity-50 line-through' : ''
+                                    }`}
+                                    title={session.disabled ? 'Disabled due to mutual exclusion' : ''}
+                                  >
                                     {session.period} {session.type}: {session.status}
                                   </div>
                                 ))}
