@@ -85,7 +85,7 @@ export default function CorporateEnquiryPage() {
       } else {
         setError('Failed to delete corporate enquiry');
       }
-    } catch (error) {
+    } catch {
       setError('Failed to delete corporate enquiry');
     }
   };
