@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { 
   Users,  
   Home, LogOut, ArrowLeftCircle, GraduationCap, 
-  Building2, MessageCircle, ClipboardList
+  Building2, MessageCircle, ClipboardList, Building
 } from "lucide-react"
 import { useEffect } from "react"
 import { logout } from "../lib/auth"
@@ -63,6 +63,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
              // { icon: DollarSign, label: "Finance", href: "/finance" },
               { icon: ClipboardList, label: "Attendance", href: "/attendence" },
               { icon: MessageCircle, label: "Enquiry", href: "/enquiry" },
+              { icon: Building, label: "Corporate Enquiry", href: "/corporate-enquiry" },
              // { icon: Settings, label: "Settings", href: "/settings" },
             ].map((item) => {
               const isActive = pathname === item.href

@@ -327,3 +327,70 @@ export const getDashboardStats = async () => {
     };
   }
 };
+
+// Corporate Enquiry Functions
+export const insertCorporateEnquiryData = async (formData: {
+  organization_type: string;
+  organization_name: string;
+  contact_person: string;
+  designation: string;
+  email: string;
+  phone_no: string;
+  staff_count: number;
+  message?: string;
+}) => {
+  try {
+    const corporateEnquiryData = {
+      organization_type: formData.organization_type,
+      organization_name: formData.organization_name,
+      contact_person: formData.contact_person,
+      designation: formData.designation,
+      email: formData.email,
+      phone_no: formData.phone_no,
+      staff_count: formData.staff_count,
+      ...(formData.message && { message: formData.message }),
+    };
+
+    const { data, error } = await supabase
+      .from('corporate_enquiries')
+      .insert([corporateEnquiryData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error inserting corporate enquiry:', error);
+    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};
+
+export const getVisibleCorporateEnquiries = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('corporate_enquiries')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching corporate enquiries:', error);
+    return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};
+
+export const hideCorporateEnquiry = async (id: number) => {
+  try {
+    const { error } = await supabase
+      .from('corporate_enquiries')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    console.error('Error deleting corporate enquiry:', error);
+    return { error: error instanceof Error ? error : new Error('Unknown error') };
+  }
+};
