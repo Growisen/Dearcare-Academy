@@ -101,8 +101,8 @@ const FORM_CONFIG = {
     ],
     courses: [
       "Advanced Home Care & Care Giver Training",
-      "Diploma in Healthcare Assistance",
-      "Ayurveda Nursing & Baby Care"
+      "General Duty Assistant",
+      "Ayurveda Nursing"
     ],
   },
   steps: [
