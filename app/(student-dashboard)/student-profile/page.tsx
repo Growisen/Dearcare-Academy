@@ -26,6 +26,8 @@ export default function StudentProfile() {
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [editedProfile, setEditedProfile] = useState<StudentProfile | null>(null);
+  const [internshipActive, setInternshipActive] = useState(false);
+  const [supervisorNotes, setSupervisorNotes] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async (studentId: number) => {
     try {
@@ -38,6 +40,15 @@ export default function StudentProfile() {
       if (error) throw error;
       setProfile(data);
       setEditedProfile(data);
+      // Check internship status and get supervisor notes
+      const { data: internshipData } = await supabase
+        .from('internships')
+        .select('id, supervisor_notes')
+        .eq('student_id', studentId)
+        .eq('status', 'active')
+        .single();
+      setInternshipActive(!!internshipData);
+      setSupervisorNotes(internshipData?.supervisor_notes ?? null);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -142,7 +153,7 @@ export default function StudentProfile() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center space-x-6 mb-6">
             <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
               <User className="w-12 h-12 text-blue-600" />
@@ -153,6 +164,19 @@ export default function StudentProfile() {
               <p className="text-sm text-gray-500">{profile.register_no}</p>
             </div>
           </div>
+
+          {internshipActive && (
+            <div className="mt-4">
+              <span className="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-full font-semibold">
+                Promoted to Internship
+              </span>
+              {supervisorNotes && (
+                <div className="mt-2 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg">
+                  <span className="font-semibold">Supervisor Notes:</span> {supervisorNotes}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">

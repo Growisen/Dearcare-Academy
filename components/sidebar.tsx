@@ -64,9 +64,11 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
               { icon: ClipboardList, label: "Attendance", href: "/attendence" },
               { icon: MessageCircle, label: "Enquiry", href: "/enquiry" },
               { icon: Building, label: "Corporate Enquiry", href: "/corporate-enquiry" },
-             // { icon: Settings, label: "Settings", href: "/settings" },
+              { icon: Building, label: "Organizations", href: "/organizations" },
+              //{ icon: ClipboardList, label: "Internships", href: "/supervisor-dashboard/supervisor-internship" }
             ].map((item) => {
-              const isActive = pathname === item.href
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
@@ -82,14 +84,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
                       ? 'bg-indigo-500 text-white' 
                       : 'text-slate-400 group-hover:text-slate-200'
                     }`}>
-                    <item.icon className="w-[18px] h-[18px]" />
+                    <Icon className="w-[18px] h-[18px]" />
                   </div>
                   <span className="text-sm font-medium">{item.label}</span>
                   {isActive && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-indigo-500 rounded-r-full" />
                   )}
                 </Link>
-              )
+              );
             })}
           </nav>
         </div>        {/* Logout Button */}

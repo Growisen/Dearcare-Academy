@@ -276,6 +276,19 @@ export default function SupervisorDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Internship Management Card */}
+        <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center justify-center">
+          <Award className="w-10 h-10 text-green-600 mb-2" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Internship Management</h3>
+          <p className="text-gray-600 mb-4 text-center">Promote or demote students for internships, manage internship assignments and details.</p>
+          <button
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            onClick={() => router.push('/supervisor-internship')}
+          >
+            Go to Internship Management
+          </button>
+        </div>
       </div>
     </div>
   );
