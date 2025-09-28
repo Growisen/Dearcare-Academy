@@ -14,6 +14,21 @@ import { logout } from "../lib/auth"
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
+
+  const navItems = [
+    { icon: Home, label: "Dashboard", href: "/dashboard" },
+    { icon: Users, label: "Supervisors", href: "/supervisors" },
+    { icon: GraduationCap, label: "Faculties", href: "/faculties" },
+    { icon: Building2, label: "Students", href: "/students" },
+    // { icon: Book, label: "Academics", href: "/academics" },
+    // { icon: DollarSign, label: "Finance", href: "/finance" },
+    { icon: ClipboardList, label: "Attendance", href: "/attendence" },
+    { icon: ClipboardList, label: "Faculty Wage Filling", href: "/facultywagefilling" },
+    { icon: MessageCircle, label: "Enquiry", href: "/enquiry" },
+    { icon: Building, label: "Corporate Enquiry", href: "/corporate-enquiry" },
+    { icon: Building, label: "Organizations", href: "/organizations" },
+    //{ icon: ClipboardList, label: "Internships", href: "/supervisor-dashboard/supervisor-internship" }
+  ];
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const sidebar = document.getElementById('sidebar')
@@ -54,19 +69,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
         {/* Main Navigation */}
         <div className="flex-1 p-3 space-y-1">
           <nav className="space-y-0.5">
-            {[
-              { icon: Home, label: "Dashboard", href: "/dashboard" },
-              { icon: Users, label: "Supervisors", href: "/supervisors" },
-              { icon: GraduationCap, label: "Faculties", href: "/faculties" },
-              { icon: Building2, label: "Students", href: "/students" },
-             // { icon: Book, label: "Academics", href: "/academics" },
-             // { icon: DollarSign, label: "Finance", href: "/finance" },
-              { icon: ClipboardList, label: "Attendance", href: "/attendence" },
-              { icon: MessageCircle, label: "Enquiry", href: "/enquiry" },
-              { icon: Building, label: "Corporate Enquiry", href: "/corporate-enquiry" },
-              { icon: Building, label: "Organizations", href: "/organizations" },
-              //{ icon: ClipboardList, label: "Internships", href: "/supervisor-dashboard/supervisor-internship" }
-            ].map((item) => {
+            {navItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
               return (
