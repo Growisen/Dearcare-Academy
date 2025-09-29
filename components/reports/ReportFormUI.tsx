@@ -374,35 +374,41 @@ export default function ReportFormUI({ student, initialData, onSubmit, onCancel 
               </section>
             )}
             {tab === 6 && (
-              <section className="bg-gray-100 rounded-xl shadow-md p-6 border border-slate-200 flex flex-col justify-between transition-all duration-200">
+              <section className="bg-gray-100 rounded-xl shadow-md p-6 border border-slate-200 flex flex-col gap-6 transition-all duration-200">
                 <div>
                   <div className="mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
                     <span className="text-indigo-700 font-bold text-lg">6.</span>
                     <h2 className="font-bold text-lg tracking-wide">Internal Assessment (Summary)</h2>
                   </div>
-                  <div className="text-slate-600 text-sm mb-4">This section is read-only and summarizes data from previous sections.</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="text-slate-600 text-sm mb-6">This section is read-only and shows exactly what you entered in the previous sections.</div>
+                  <div className="flex flex-col gap-6">
                     {/* GENERAL BEHAVIOR */}
-                    <div className="col-span-1">
-                      <h3 className="font-semibold text-slate-700 mb-2">A. General Behavior</h3>
-                      <div className="mb-1 flex justify-between"><span>Study Time Attendance</span><span className="font-mono">{general.study_time_attendance || '-'}</span></div>
-                      <div className="mb-1 flex justify-between"><span>Follows Instruction</span><span className="font-mono">{general.follows_instruction || '-'}</span></div>
-                      <div className="mb-1 flex justify-between"><span>Shows Respect For Authority</span><span className="font-mono">{general.shows_respect_for_authority || '-'}</span></div>
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4 flex flex-col gap-2">
+                      <h3 className="font-semibold text-indigo-700 mb-2 text-base border-b pb-1 border-slate-100">A. General Behavior</h3>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between"><span>Study Time Attendance</span><span className="font-mono">{general.study_time_attendance || '-'}</span></div>
+                        <div className="flex justify-between"><span>Follows Instruction</span><span className="font-mono">{general.follows_instruction || '-'}</span></div>
+                        <div className="flex justify-between"><span>Shows Respect For Authority</span><span className="font-mono">{general.shows_respect_for_authority || '-'}</span></div>
+                      </div>
                     </div>
                     {/* ACADEMIC BEHAVIOR */}
-                    <div className="col-span-1">
-                      <h3 className="font-semibold text-slate-700 mb-2">B. Academic Behavior</h3>
-                      <div className="mb-1 flex justify-between"><span>Focused On Studies</span><span className="font-mono">{academic.focused_on_studies || '-'}</span></div>
-                      <div className="mb-1 flex justify-between"><span>Willing To Put Effort Into Daily Work</span><span className="font-mono">{academic.willing_to_put_effort || '-'}</span></div>
-                      <div className="mb-1 flex justify-between"><span>Able To Manage Time Well</span><span className="font-mono">{academic.able_to_manage_time_well || '-'}</span></div>
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4 flex flex-col gap-2">
+                      <h3 className="font-semibold text-indigo-700 mb-2 text-base border-b pb-1 border-slate-100">B. Academic Behavior</h3>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between"><span>Focused On Studies</span><span className="font-mono">{academic.focused_on_studies || '-'}</span></div>
+                        <div className="flex justify-between"><span>Willing To Put Effort Into Daily Work</span><span className="font-mono">{academic.willing_to_put_effort || '-'}</span></div>
+                        <div className="flex justify-between"><span>Able To Manage Time Well</span><span className="font-mono">{academic.able_to_manage_time_well || '-'}</span></div>
+                      </div>
                     </div>
                     {/* CHARACTER & LIFESTYLE */}
-                    <div className="col-span-1 md:col-span-2">
-                      <h3 className="font-semibold text-slate-700 mb-2 mt-4">C. Character & Lifestyle</h3>
-                      <div className="mb-1 flex justify-between"><span>Display Neatness & Cleanliness</span><span className="font-mono">{character.display_neatness || '-'}</span></div>
-                      <div className="mb-1 flex justify-between"><span>Dress Appropriately</span><span className="font-mono">{character.dress_appropriately || '-'}</span></div>
-                      <div className="mb-1 flex justify-between"><span>Maintain Good Classmate Relation</span><span className="font-mono">{character.maintain_good_classmate_relation || '-'}</span></div>
-                      <div className="mb-1 flex justify-between"><span>Shows Discipline In Personal Habits</span><span className="font-mono">{character.shows_discipline_in_habits || '-'}</span></div>
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4 flex flex-col gap-2">
+                      <h3 className="font-semibold text-indigo-700 mb-2 text-base border-b pb-1 border-slate-100">C. Character & Lifestyle</h3>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between"><span>Display Neatness & Cleanliness</span><span className="font-mono">{character.display_neatness || '-'}</span></div>
+                        <div className="flex justify-between"><span>Dress Appropriately</span><span className="font-mono">{character.dress_appropriately || '-'}</span></div>
+                        <div className="flex justify-between"><span>Maintain Good Classmate Relation</span><span className="font-mono">{character.maintain_good_classmate_relation || '-'}</span></div>
+                        <div className="flex justify-between"><span>Shows Discipline In Personal Habits</span><span className="font-mono">{character.shows_discipline_in_habits || '-'}</span></div>
+                      </div>
                     </div>
                   </div>
                 </div>
