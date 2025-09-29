@@ -1,3 +1,4 @@
+// Authenticate user across all three user types
 import { supabase } from './supabase';
 
 export interface AuthUser {

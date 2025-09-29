@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { useEffect } from "react"
 import { logout } from "../lib/auth"
+import { Icon } from "@mui/material"
 
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const pathname = usePathname()
@@ -22,6 +23,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean, onClose:
     { icon: Building2, label: "Students", href: "/students" },
     // { icon: Book, label: "Academics", href: "/academics" },
     // { icon: DollarSign, label: "Finance", href: "/finance" },
+    { icon: ClipboardList, label: "Report Generation", href: "/reportgeneration" },
     { icon: ClipboardList, label: "Attendance", href: "/attendence" },
     { icon: ClipboardList, label: "Faculty Wage Filling", href: "/facultywagefilling" },
     { icon: MessageCircle, label: "Enquiry", href: "/enquiry" },

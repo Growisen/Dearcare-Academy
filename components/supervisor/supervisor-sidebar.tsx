@@ -45,6 +45,7 @@ export default function SupervisorSidebar({ isOpen, onClose, user }: SupervisorS
   }, [isOpen, onClose]);
   const navigationItems = [
     { icon: Home, label: "Dashboard", href: "/supervisor-dashboard" },
+    { icon: ClipboardList, label: "Report Generation", href: "/supervisor-reportgeneration" },
     { icon: Users, label: "My Students", href: "/supervisor-students" },
     { icon: ClipboardList, label: "Attendance", href: "/supervisor-attendance" },
     { icon: User, label: "Profile", href: "/supervisor-profile" },
