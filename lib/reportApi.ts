@@ -18,7 +18,7 @@ import {
 export async function fetchStudentsWithBatch() {
   return supabase
     .from('students')
-    .select('id, name, batch, course, student_reports(id)')
+    .select('id, name, batch, course, student_reports(id)', { head: false })
     .not('batch', 'is', null);
 }
 
@@ -26,7 +26,7 @@ export async function fetchStudentsWithBatch() {
 export async function fetchSupervisorStudents(supervisorId: number) {
   return supabase
     .from('supervisor_assignment')
-    .select('student_id, students(id, name, batch, course, student_reports(id))')
+    .select('student_id, students(id, name, batch, course, student_reports(id))', { head: false })
     .eq('supervisor_id', supervisorId);
 }
 

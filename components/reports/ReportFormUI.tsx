@@ -172,21 +172,23 @@ export default function ReportFormUI({ student, initialData, onSubmit, onCancel 
                     <h2 className="font-bold text-lg tracking-wide">Performance in Similar Area</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(performance).map(([key, value]) => (
-                      <div key={key} className="mb-2">
-                        <label className="block text-sm mb-1 font-semibold capitalize text-slate-700">{key.replace(/_/g, " ")}</label>
-                        <select
-                          className="border rounded px-2 py-1 w-full focus:ring-2 focus:ring-indigo-200"
-                          value={typeof value === "string" ? value : ""}
-                          onChange={e => setPerformance({ ...performance, [key]: e.target.value })}
-                        >
-                          <option value="">Select</option>
-                          {performanceOptions.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
+                    {Object.entries(performance)
+                      .filter(([key]) => key !== 'id' && key !== 'report_id')
+                      .map(([key, value]) => (
+                        <div key={key} className="mb-2">
+                          <label className="block text-sm mb-1 font-semibold capitalize text-slate-700">{key.replace(/_/g, " ")}</label>
+                          <select
+                            className="border rounded px-2 py-1 w-full focus:ring-2 focus:ring-indigo-200"
+                            value={typeof value === "string" ? value : ""}
+                            onChange={e => setPerformance({ ...performance, [key]: e.target.value })}
+                          >
+                            <option value="">Select</option>
+                            {performanceOptions.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
                   </div>
                 </div>
               </section>
@@ -209,19 +211,21 @@ export default function ReportFormUI({ student, initialData, onSubmit, onCancel 
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    {Object.entries(general).filter(([k]) => k !== "study_time_attendance" && k !== "complaints_while_studies").map(([key, value]) => (
-                      <div key={key} className="mb-2">
-                        <label className="block text-sm mb-1 font-semibold capitalize text-slate-700">{key.replace(/_/g, " ")}</label>
-                        <div className="flex gap-2 flex-wrap">
-                          {fivePointOptions.map(opt => (
-                            <label key={opt} className="inline-flex items-center gap-1">
-                              <input type="radio" name={key} value={opt} checked={value === opt} onChange={() => setGeneral({ ...general, [key]: opt })} />
-                              <span>{opt.replace("_", " ")}</span>
-                            </label>
-                          ))}
+                    {Object.entries(general)
+                      .filter(([k]) => k !== "study_time_attendance" && k !== "complaints_while_studies" && k !== 'id' && k !== 'report_id')
+                      .map(([key, value]) => (
+                        <div key={key} className="mb-2">
+                          <label className="block text-sm mb-1 font-semibold capitalize text-slate-700">{key.replace(/_/g, " ")}</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {fivePointOptions.map(opt => (
+                              <label key={opt} className="inline-flex items-center gap-1">
+                                <input type="radio" name={key} value={opt} checked={value === opt} onChange={() => setGeneral({ ...general, [key]: opt })} />
+                                <span>{opt.replace("_", " ")}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               </section>
@@ -234,19 +238,21 @@ export default function ReportFormUI({ student, initialData, onSubmit, onCancel 
                     <h2 className="font-bold text-lg tracking-wide">Academic Behavior</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(academic).map(([key, value]) => (
-                      <div key={key} className="mb-2">
-                        <label className="block text-sm mb-1 font-semibold capitalize text-slate-700">{key.replace(/_/g, " ")}</label>
-                        <div className="flex gap-2 flex-wrap">
-                          {fivePointOptions.map(opt => (
-                            <label key={opt} className="inline-flex items-center gap-1">
-                              <input type="radio" name={key} value={opt} checked={value === opt} onChange={() => setAcademic({ ...academic, [key]: opt })} />
-                              <span>{opt.replace("_", " ")}</span>
-                            </label>
-                          ))}
+                    {Object.entries(academic)
+                      .filter(([key]) => key !== 'id' && key !== 'report_id')
+                      .map(([key, value]) => (
+                        <div key={key} className="mb-2">
+                          <label className="block text-sm mb-1 font-semibold capitalize text-slate-700">{key.replace(/_/g, " ")}</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {fivePointOptions.map(opt => (
+                              <label key={opt} className="inline-flex items-center gap-1">
+                                <input type="radio" name={key} value={opt} checked={value === opt} onChange={() => setAcademic({ ...academic, [key]: opt })} />
+                                <span>{opt.replace("_", " ")}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               </section>
@@ -259,19 +265,21 @@ export default function ReportFormUI({ student, initialData, onSubmit, onCancel 
                     <h2 className="font-bold text-lg tracking-wide">Character & Lifestyle</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(character).map(([key, value]) => (
-                      <div key={key} className="mb-2">
-                        <label className="block text-sm mb-1 font-semibold capitalize text-slate-700">{key.replace(/_/g, " ")}</label>
-                        <div className="flex gap-2 flex-wrap">
-                          {fivePointOptions.map(opt => (
-                            <label key={opt} className="inline-flex items-center gap-1">
-                              <input type="radio" name={key} value={opt} checked={value === opt} onChange={() => setCharacter({ ...character, [key]: opt })} />
-                              <span>{opt.replace("_", " ")}</span>
-                            </label>
-                          ))}
+                    {Object.entries(character)
+                      .filter(([key]) => key !== 'id' && key !== 'report_id')
+                      .map(([key, value]) => (
+                        <div key={key} className="mb-2">
+                          <label className="block text-sm mb-1 font-semibold capitalize text-slate-700">{key.replace(/_/g, " ")}</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {fivePointOptions.map(opt => (
+                              <label key={opt} className="inline-flex items-center gap-1">
+                                <input type="radio" name={key} value={opt} checked={value === opt} onChange={() => setCharacter({ ...character, [key]: opt })} />
+                                <span>{opt.replace("_", " ")}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               </section>

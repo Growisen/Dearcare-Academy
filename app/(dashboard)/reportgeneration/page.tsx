@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { getUserSession } from "@/lib/auth";
 import { fetchStudentsWithBatch, fetchSupervisorStudents, fetchFullReport, upsertReportSections, replaceReportAssessments } from "@/lib/reportApi";
+import { supabase } from "@/lib/supabase";
 import ReportFormUI from "@/components/reports/ReportFormUI";
 
 interface StudentRow {
@@ -35,29 +36,44 @@ export default function ReportGenerationPage() {
       setLoading(true);
       if (role === "admin") {
         const { data } = await fetchStudentsWithBatch();
-        setStudents(
-          (data || []).map((s: any) => ({
-            id: s.id,
-            name: s.name,
-            batch: s.batch,
-            course: s.course || "",
-            reportExists: !!(s.student_reports && s.student_reports.length > 0)
-          }))
-        );
-      } else if (role === "supervisor" && userId) {
-        const { data } = await fetchSupervisorStudents(userId);
-        setStudents(
-          (data || []).map((row: any) => {
-            const s = row.students;
+        const studentsWithReportStatus = await Promise.all(
+          (data || []).map(async (s: any) => {
+            // Query student_reports for this student using Supabase client
+            const { data: reportRow } = await supabase
+              .from('student_reports')
+              .select('id')
+              .eq('student_id', s.id)
+              .maybeSingle();
             return {
               id: s.id,
               name: s.name,
               batch: s.batch,
               course: s.course || "",
-              reportExists: !!(s.student_reports && s.student_reports.length > 0)
+              reportExists: !!reportRow,
             };
           })
         );
+        setStudents(studentsWithReportStatus);
+      } else if (role === "supervisor" && userId) {
+        const { data } = await fetchSupervisorStudents(userId);
+        const studentsWithReportStatus = await Promise.all(
+          (data || []).map(async (row: any) => {
+            const s = row.students;
+            const { data: reportRow } = await supabase
+              .from('student_reports')
+              .select('id')
+              .eq('student_id', s.id)
+              .maybeSingle();
+            return {
+              id: s.id,
+              name: s.name,
+              batch: s.batch,
+              course: s.course || "",
+              reportExists: !!reportRow,
+            };
+          })
+        );
+        setStudents(studentsWithReportStatus);
       }
       setLoading(false);
     }
@@ -147,8 +163,8 @@ export default function ReportGenerationPage() {
                     ...a,
                     report_id: reportId
                   })));
-                  setShowForm(false);
-                  // Refresh student list
+                  setShowForm(false); // Auto-close modal immediately after save
+                  // Refresh student list (after modal closes)
                   if (role === "admin") {
                     const { data } = await fetchStudentsWithBatch();
                     setStudents(
